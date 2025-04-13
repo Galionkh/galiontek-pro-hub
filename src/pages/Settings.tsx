@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
 type ProfileFormValues = {
+  id?: number;
   name: string;
   email: string;
   tel: string;
@@ -51,6 +52,7 @@ export default function Settings() {
       if (data) {
         setProfile(data);
         form.reset({
+          id: data.id,
           name: data.name || "",
           email: data.email || "",
           tel: data.tel || "",
