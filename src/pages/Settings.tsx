@@ -1,13 +1,127 @@
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Moon, Sun, Save } from "lucide-react";
+import { Moon, Sun, Save, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+
+type ProfileFormValues = {
+  name: string;
+  email: string;
+  tel: string;
+  orgname: string;
+};
 
 export default function Settings() {
+  const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<ProfileFormValues | null>(null);
+  const { toast } = useToast();
+  
+  const form = useForm<ProfileFormValues>({
+    defaultValues: {
+      name: "",
+      email: "",
+      tel: "",
+      orgname: "",
+    },
+  });
+
+  // פונקציה לטעינת נתוני הפרופיל מהדאטאבייס
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("profile")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+        form.reset({
+          name: data.name || "",
+          email: data.email || "",
+          tel: data.tel || "",
+          orgname: data.orgname || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // פונקציה לשמירת נתוני הפרופיל בדאטאבייס
+  const saveProfile = async (data: ProfileFormValues) => {
+    try {
+      setLoading(true);
+      
+      if (profile) {
+        // עדכון פרופיל קיים
+        const { error } = await supabase
+          .from("profile")
+          .update({
+            name: data.name,
+            email: data.email,
+            tel: data.tel,
+            orgname: data.orgname,
+          })
+          .eq("id", profile.id);
+
+        if (error) throw error;
+      } else {
+        // יצירת פרופיל חדש
+        const { error } = await supabase
+          .from("profile")
+          .insert([
+            {
+              name: data.name,
+              email: data.email,
+              tel: data.tel,
+              orgname: data.orgname,
+            },
+          ]);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "הפרופיל נשמר בהצלחה",
+        description: "הפרטים האישיים שלך עודכנו במערכת",
+      });
+      
+      // טעינה מחדש של הנתונים
+      fetchProfile();
+    } catch (error: any) {
+      console.error("Error saving profile:", error);
+      toast({
+        title: "שגיאה בשמירת הפרופיל",
+        description: error.message || "אירעה שגיאה בעת שמירת הפרטים האישיים",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // טעינת נתוני הפרופיל בעת טעינת העמוד
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-3xl font-bold">הגדרות</h1>
@@ -25,27 +139,71 @@ export default function Settings() {
               <CardTitle>פרטים אישיים</CardTitle>
               <CardDescription>עדכן את הפרטים האישיים שלך</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">שם מלא</Label>
-                <Input id="name" placeholder="שם מלא" defaultValue="אלעד ישראלי" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">אימייל</Label>
-                <Input id="email" type="email" placeholder="אימייל" defaultValue="elad@example.com" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">טלפון</Label>
-                <Input id="phone" placeholder="טלפון" defaultValue="050-1234567" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="business">שם העסק</Label>
-                <Input id="business" placeholder="שם העסק" defaultValue="הרצאות וסדנאות מקצועיות" />
-              </div>
-              <Button className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                <span>שמור שינויים</span>
-              </Button>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(saveProfile)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel htmlFor="name">שם מלא</FormLabel>
+                        <FormControl>
+                          <Input id="name" placeholder="שם מלא" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel htmlFor="email">אימייל</FormLabel>
+                        <FormControl>
+                          <Input id="email" type="email" placeholder="אימייל" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="tel"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel htmlFor="phone">טלפון</FormLabel>
+                        <FormControl>
+                          <Input id="phone" placeholder="טלפון" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="orgname"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel htmlFor="business">שם העסק</FormLabel>
+                        <FormControl>
+                          <Input id="business" placeholder="שם העסק" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button type="submit" disabled={loading} className="flex items-center gap-2">
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    <span>שמור שינויים</span>
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>
