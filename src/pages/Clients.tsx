@@ -57,7 +57,6 @@ const getStatusText = (status: Client["status"]) => {
 export default function Clients() {
   const { user } = useAuth();
   const toast = useToast();
-
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -65,7 +64,7 @@ export default function Clients() {
   const [editOpen, setEditOpen] = useState(false);
   const [toEdit, setToEdit] = useState<Client | null>(null);
 
-  // טוען את כל הלקוחות של המשתמש
+  // טוען את הרשימה
   const fetchClients = async () => {
     if (!user?.id) return;
     setLoading(true);
@@ -76,6 +75,7 @@ export default function Clients() {
       .order("created_at", { ascending: false });
     setLoading(false);
     if (error) {
+      console.error(error);
       toast({
         title: "שגיאה בטעינת לקוחות",
         description: error.message,
@@ -90,53 +90,6 @@ export default function Clients() {
     fetchClients();
   }, [user?.id]);
 
-  // בודק אם קיימת לפחות הזמנה אחת של אותו לקוח
-  const hasOrders = async (clientId: number) => {
-    const { data, error } = await supabase
-      .from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("client_id", clientId);
-    if (error) {
-      console.error("Error checking orders:", error);
-      return true; // אם יש שגיאה, נמנע מחיקה
-    }
-    return (data as unknown as { count: number }).count > 0;
-  };
-
-  // מחיקת לקוח עם בדיקה
-  const handleDelete = async (c: Client) => {
-    // 1. בדיקת קשר להזמנות
-    const linked = await hasOrders(c.id);
-    if (linked) {
-      toast({
-        title: "לא ניתן למחוק לקוח",
-        description: "יש הזמנות קשורות ללקוח זה.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // 2. אישור מחיקה
-    const ok = window.confirm(`האם אתה בטוח שברצונך למחוק את "${c.name}"?`);
-    if (!ok) return;
-
-    // 3. ביצוע מחיקה
-    const { error } = await supabase
-      .from("clients")
-      .delete()
-      .eq("id", c.id);
-    if (error) {
-      toast({
-        title: "שגיאה במחיקת הלקוח",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({ title: "הלקוח נמחק בהצלחה" });
-      fetchClients();
-    }
-  };
-
   const filtered = clients.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.contact.toLowerCase().includes(search.toLowerCase()) ||
@@ -148,7 +101,7 @@ export default function Clients() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">לקוחות ומוסדות</h1>
 
-        {/* דיאלוג הוספה */}
+        {/* כפתור + דיאלוג הוספה */}
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
             <Button variant="default" className="flex items-center gap-2">
@@ -204,8 +157,8 @@ export default function Clients() {
                 {c.notes && (
                   <p className="text-sm text-muted-foreground">{c.notes}</p>
                 )}
-                <div className="mt-4 flex gap-2">
-                  {/* כפתור דיאלוג עריכה */}
+                <div className="mt-4">
+                  {/* כפתור + דיאלוג עריכה */}
                   <Dialog
                     open={editOpen && toEdit?.id === c.id}
                     onOpenChange={(o) => {
@@ -238,15 +191,6 @@ export default function Clients() {
                       )}
                     </DialogContent>
                   </Dialog>
-
-                  {/* כפתור מחיקה */}
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(c)}
-                  >
-                    מחק לקוח
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -288,9 +232,12 @@ function NewClientForm({ user, onSuccess }: NewClientFormProps) {
         variant: "destructive",
       });
     } else {
-      toast({ title: "הלקוח נוסף בהצלחה" });
+      toast({ title: "!!!הלקוח נוסף בהצלחה" });
       onSuccess();
-      setName(""); setContact(""); setStatus("active"); setNotes("");
+      setName("");
+      setContact("");
+      setStatus("active");
+      setNotes("");
     }
   };
 
