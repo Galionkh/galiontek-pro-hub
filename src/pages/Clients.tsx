@@ -1,18 +1,17 @@
 // src/pages/Clients.tsx
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
-  CardContent,
   CardHeader,
   CardTitle,
+  CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, UserPlus, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/components/auth/AuthProvider";
 import {
   Dialog,
   DialogTrigger,
@@ -21,6 +20,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Search, UserPlus, Loader2 } from "lucide-react";
 
 type Client = {
   id: number;
@@ -55,31 +55,34 @@ const getStatusText = (status: Client["status"]) => {
 };
 
 export default function Clients() {
-  const { toast } = useToast();
   const { user } = useAuth();
-
+  const toast = useToast();
   const [clients, setClients] = useState<Client[]>([]);
-  const [loadingClients, setLoadingClients] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [current, setCurrent] = useState<Client | null>(null);
+  const [toEdit, setToEdit] = useState<Client | null>(null);
 
+  // טוען את הרשימה
   const fetchClients = async () => {
     if (!user?.id) return;
-    setLoadingClients(true);
-    try {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    setLoading(false);
+    if (error) {
+      console.error(error);
+      toast({
+        title: "שגיאה בטעינת לקוחות",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
       setClients(data || []);
-    } catch (err: any) {
-      toast({ title: "שגיאה בטעינת לקוחות", description: err.message, variant: "destructive" });
-    } finally {
-      setLoadingClients(false);
     }
   };
 
@@ -88,9 +91,9 @@ export default function Clients() {
   }, [user?.id]);
 
   const filtered = clients.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (c.notes && c.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.contact.toLowerCase().includes(search.toLowerCase()) ||
+    (c.notes && c.notes.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -98,11 +101,12 @@ export default function Clients() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">לקוחות ומוסדות</h1>
 
-        {/* הוספת לקוח */}
+        {/* כפתור + דיאלוג הוספה */}
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
             <Button variant="default" className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" /> לקוח חדש
+              <UserPlus className="h-4 w-4" />
+              לקוח חדש
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -111,7 +115,7 @@ export default function Clients() {
             </DialogHeader>
             <NewClientForm
               user={user}
-              onClientAdded={() => {
+              onSuccess={() => {
                 fetchClients();
                 setAddOpen(false);
               }}
@@ -120,77 +124,82 @@ export default function Clients() {
         </Dialog>
       </div>
 
-      {/* חיפוש */}
+      {/* שדה חיפוש */}
       <div className="relative">
         <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="חיפוש לקוחות..."
           className="pl-10 pr-10"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
       {/* רשימת לקוחות */}
-      {loadingClients ? (
+      {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : filtered.length > 0 ? (
         <div className="grid gap-4">
-          {filtered.map((client) => (
-            <Card key={client.id} className="card-hover">
+          {filtered.map((c) => (
+            <Card key={c.id} className="card-hover">
               <CardHeader className="flex justify-between items-center">
-                <CardTitle className="text-xl">{client.name}</CardTitle>
-                <Badge className={getStatusColor(client.status)}>
-                  {getStatusText(client.status)}
+                <CardTitle>{c.name}</CardTitle>
+                <Badge className={getStatusColor(c.status)}>
+                  {getStatusText(c.status)}
                 </Badge>
               </CardHeader>
               <CardContent>
                 <p className="mb-2">
-                  <strong>איש קשר:</strong> {client.contact}
+                  <strong>איש קשר:</strong> {c.contact}
                 </p>
-                {client.notes && (
-                  <p className="text-sm text-muted-foreground">{client.notes}</p>
+                {c.notes && (
+                  <p className="text-sm text-muted-foreground">{c.notes}</p>
                 )}
-                <div className="mt-4 flex gap-2">
-                  {/* עריכת לקוח */}
-                  <Dialog open={editOpen && current?.id === client.id} onOpenChange={setEditOpen}>
+                <div className="mt-4">
+                  {/* כפתור + דיאלוג עריכה */}
+                  <Dialog
+                    open={editOpen && toEdit?.id === c.id}
+                    onOpenChange={(o) => {
+                      setEditOpen(o);
+                      if (!o) setToEdit(null);
+                    }}
+                  >
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">ערוך פרטים</Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setToEdit(c)}
+                      >
+                        ערוך פרטים
+                      </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>עריכת לקוח</DialogTitle>
                       </DialogHeader>
-                      {current && (
+                      {toEdit && (
                         <EditClientForm
-                          client={current}
-                          onClientUpdated={() => {
+                          client={toEdit}
+                          onSuccess={() => {
                             fetchClients();
                             setEditOpen(false);
+                            setToEdit(null);
                           }}
                         />
                       )}
                     </DialogContent>
                   </Dialog>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCurrent(client);
-                      setEditOpen(true);
-                    }}
-                  >
-                    ערוך פרטים
-                  </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <p className="text-center text-muted-foreground">אין לקוחות להצגה</p>
+        <p className="text-center text-muted-foreground">
+          אין לקוחות להצגה
+        </p>
       )}
     </div>
   );
@@ -198,44 +207,62 @@ export default function Clients() {
 
 interface NewClientFormProps {
   user: any;
-  onClientAdded: () => void;
+  onSuccess: () => void;
 }
 
-function NewClientForm({ user, onClientAdded }: NewClientFormProps) {
-  const { toast } = useToast();
+function NewClientForm({ user, onSuccess }: NewClientFormProps) {
+  const toast = useToast();
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
-  const [status, setStatus] = useState<"active"|"pending"|"closed">("active");
+  const [status, setStatus] = useState<Client["status"]>("active");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleSave = async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("clients")
-      .insert({ name, contact, status, notes, user_id: user.id })
-      .select();
+      .insert({ name, contact, status, notes, user_id: user.id });
     setLoading(false);
     if (error) {
-      toast({ title: "שגיאה בהוספת הלקוח", description: error.message, variant: "destructive" });
-      return;
+      toast({
+        title: "שגיאה בהוספת הלקוח",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "!!!הלקוח נוסף בהצלחה" });
+      onSuccess();
+      setName("");
+      setContact("");
+      setStatus("active");
+      setNotes("");
     }
-    toast({ title: "הלקוח נוסף בהצלחה" });
-    onClientAdded();
-    setName(""); setContact(""); setStatus("active"); setNotes("");
   };
 
   return (
     <>
       <div className="space-y-4 py-4">
-        <Input placeholder="שם הלקוח" value={name} onChange={e => setName(e.target.value)} />
-        <Input placeholder="פרטי קשר" value={contact} onChange={e => setContact(e.target.value)} />
-        <Input placeholder="הערות" value={notes} onChange={e => setNotes(e.target.value)} />
+        <Input
+          placeholder="שם הלקוח"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <Input
+          placeholder="פרטי קשר"
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
+        />
+        <Input
+          placeholder="הערות"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
         <select
           className="w-full border rounded p-2"
           value={status}
-          onChange={e => setStatus(e.target.value as any)}
+          onChange={(e) => setStatus(e.target.value as any)}
         >
           <option value="active">פעיל</option>
           <option value="pending">ממתין</option>
@@ -243,7 +270,7 @@ function NewClientForm({ user, onClientAdded }: NewClientFormProps) {
         </select>
       </div>
       <DialogFooter>
-        <Button onClick={handleSubmit} disabled={loading}>
+        <Button onClick={handleSave} disabled={loading}>
           {loading ? "שומר..." : "שמור לקוח"}
         </Button>
       </DialogFooter>
@@ -253,11 +280,11 @@ function NewClientForm({ user, onClientAdded }: NewClientFormProps) {
 
 interface EditClientFormProps {
   client: Client;
-  onClientUpdated: () => void;
+  onSuccess: () => void;
 }
 
-function EditClientForm({ client, onClientUpdated }: EditClientFormProps) {
-  const { toast } = useToast();
+function EditClientForm({ client, onSuccess }: EditClientFormProps) {
+  const toast = useToast();
   const [name, setName] = useState(client.name);
   const [contact, setContact] = useState(client.contact);
   const [status, setStatus] = useState<Client["status"]>(client.status);
@@ -266,30 +293,45 @@ function EditClientForm({ client, onClientUpdated }: EditClientFormProps) {
 
   const handleUpdate = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("clients")
       .update({ name, contact, status, notes })
-      .eq("id", client.id)
-      .select();
+      .eq("id", client.id);
     setLoading(false);
     if (error) {
-      toast({ title: "שגיאה בעדכון הלקוח", description: error.message, variant: "destructive" });
-      return;
+      toast({
+        title: "שגיאה בעדכון הלקוח",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "הלקוח עודכן בהצלחה" });
+      onSuccess();
     }
-    toast({ title: "הלקוח עודכן בהצלחה" });
-    onClientUpdated();
   };
 
   return (
     <>
       <div className="space-y-4 py-4">
-        <Input placeholder="שם הלקוח" value={name} onChange={e => setName(e.target.value)} />
-        <Input placeholder="פרטי קשר" value={contact} onChange={e => setContact(e.target.value)} />
-        <Input placeholder="הערות" value={notes} onChange={e => setNotes(e.target.value)} />
+        <Input
+          placeholder="שם הלקוח"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <Input
+          placeholder="פרטי קשר"
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
+        />
+        <Input
+          placeholder="הערות"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
         <select
           className="w-full border rounded p-2"
           value={status}
-          onChange={e => setStatus(e.target.value as any)}
+          onChange={(e) => setStatus(e.target.value as any)}
         >
           <option value="active">פעיל</option>
           <option value="pending">ממתין</option>
