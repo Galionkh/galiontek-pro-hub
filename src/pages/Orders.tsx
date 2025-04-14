@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,11 +9,11 @@ import { Loader2 } from "lucide-react";
 
 // Updated Order type to match database structure
 type Order = {
-  id: number; // Changed from string to number
+  id: number;
   title: string;
   client_name: string;
   date: string;
-  status: "draft" | "sent" | "confirmed" | "completed";
+  status: string;
   created_at: string;
   user_id?: string;
 };
@@ -85,7 +84,6 @@ export default function Orders() {
         description: "טופס ההזמנה החדש נוצר בהצלחה",
       });
 
-      // Refresh the orders list
       fetchOrders();
     } catch (error: any) {
       console.error("Error creating order form:", error.message);
@@ -96,6 +94,28 @@ export default function Orders() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to get the appropriate status class
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case "draft": return "bg-gray-100";
+      case "sent": return "bg-blue-100 text-blue-800";
+      case "confirmed": return "bg-green-100 text-green-800";
+      case "completed": return "bg-purple-100 text-purple-800";
+      default: return "bg-gray-100";
+    }
+  };
+
+  // Helper function to get the localized status text
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "draft": return "טיוטה";
+      case "sent": return "נשלח";
+      case "confirmed": return "מאושר";
+      case "completed": return "הושלם";
+      default: return status;
     }
   };
 
@@ -131,15 +151,8 @@ export default function Orders() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-xl flex justify-between">
                   {order.title}
-                  <span className={`text-sm px-2 py-1 rounded-full ${
-                    order.status === "draft" ? "bg-gray-100" :
-                    order.status === "sent" ? "bg-blue-100 text-blue-800" :
-                    order.status === "confirmed" ? "bg-green-100 text-green-800" :
-                    "bg-purple-100 text-purple-800"
-                  }`}>
-                    {order.status === "draft" ? "טיוטה" :
-                     order.status === "sent" ? "נשלח" :
-                     order.status === "confirmed" ? "מאושר" : "הושלם"}
+                  <span className={`text-sm px-2 py-1 rounded-full ${getStatusClass(order.status)}`}>
+                    {getStatusText(order.status)}
                   </span>
                 </CardTitle>
               </CardHeader>

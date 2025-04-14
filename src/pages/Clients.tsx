@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ type Client = {
   id: number;
   name: string;
   contact: string;
-  status: "active" | "pending" | "closed";
+  status: string; // Changed from union type to string to match database
   notes?: string;
   created_at: string;
   user_id?: string;
@@ -27,7 +28,7 @@ const getStatusColor = (status: Client["status"]) => {
     case "closed":
       return "bg-gray-100 text-gray-800";
     default:
-      return "";
+      return "bg-gray-100 text-gray-800";
   }
 };
 
@@ -40,7 +41,7 @@ const getStatusText = (status: Client["status"]) => {
     case "closed":
       return "סגור";
     default:
-      return "";
+      return status; // Return the status itself if it doesn't match our known types
   }
 };
 
@@ -125,8 +126,8 @@ export default function Clients() {
   };
 
   const filteredClients = clients.filter(client => 
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.contact?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (client.notes && client.notes.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
