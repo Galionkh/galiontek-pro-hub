@@ -197,8 +197,12 @@ function NewClientForm({ user, setClients, toast }: { user: any; setClients: Rea
     toast({ title: "הלקוח נוסף בהצלחה" });
 
     if (data && data.length > 0) {
-      setClients(prev => [data[0] as Client, ...prev]);
+      setClients((prev) => [data[0] as Client, ...prev]);
       setOpen(false);
+      setName("");
+      setContact("");
+      setStatus("active");
+      setNotes("");
     }
   };
 
