@@ -1,9 +1,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function WelcomeCard() {
-  // Get current user's name - would come from context/state in real app
-  const userName = "אלעד";
+  const { profile } = useProfile();
   
   // Get current date in Hebrew
   const currentDate = new Date();
@@ -18,7 +18,9 @@ export default function WelcomeCard() {
   return (
     <Card className="card-hover">
       <CardHeader className="pb-2">
-        <CardTitle className="text-2xl font-bold">ברוך הבא, {userName}</CardTitle>
+        <CardTitle className="text-2xl font-bold">
+          ברוך הבא, {profile?.name || 'משתמש'}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-muted-foreground mb-2">{hebrewDate}</p>
