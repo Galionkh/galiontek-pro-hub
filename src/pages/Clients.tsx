@@ -56,15 +56,17 @@ const getStatusText = (status: Client["status"]) => {
 
 export default function Clients() {
   const { user } = useAuth();
-  const toast = useToast();
+  const { toast } = useToast();
+
   const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [addOpen, setAddOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [search, setSearch] = useState<string>("");
+
+  const [addOpen, setAddOpen] = useState<boolean>(false);
+  const [editOpen, setEditOpen] = useState<boolean>(false);
   const [toEdit, setToEdit] = useState<Client | null>(null);
 
-  // טוען את הרשימה
+  // טוען את רשימת הלקוחות
   const fetchClients = async () => {
     if (!user?.id) return;
     setLoading(true);
@@ -74,13 +76,9 @@ export default function Clients() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     setLoading(false);
+
     if (error) {
-      console.error(error);
-      toast({
-        title: "שגיאה בטעינת לקוחות",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה בטעינת לקוחות", description: error.message, variant: "destructive" });
     } else {
       setClients(data || []);
     }
@@ -90,23 +88,52 @@ export default function Clients() {
     fetchClients();
   }, [user?.id]);
 
+  // בודק אם יש להזמנות של לקוח
+  const hasOrders = async (clientId: number): Promise<boolean> => {
+    const { count, error } = await supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", clientId);
+    if (error) {
+      console.error(error);
+      return true; // במקרה של שגיאה נמנע מחיקה
+    }
+    return (count ?? 0) > 0;
+  };
+
+  // מחיקת לקוח עם בדיקה
+  const handleDelete = async (c: Client) => {
+    const linked = await hasOrders(c.id);
+    if (linked) {
+      toast({ title: "לא ניתן למחוק לקוח", description: "יש הזמנות קשורות.", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm(`למחוק את "${c.name}"? פעולה לא ניתנת לביטול.`)) return;
+
+    const { error } = await supabase.from("clients").delete().eq("id", c.id);
+    if (error) {
+      toast({ title: "שגיאה במחיקה", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "הלקוח נמחק בהצלחה" });
+      fetchClients();
+    }
+  };
+
   const filtered = clients.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.contact.toLowerCase().includes(search.toLowerCase()) ||
-    (c.notes && c.notes.toLowerCase().includes(search.toLowerCase()))
+    (c.notes?.toLowerCase().includes(search.toLowerCase()) ?? false)
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
+      {/* כותרת + כפתור הוספה */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">לקוחות ומוסדות</h1>
-
-        {/* כפתור + דיאלוג הוספה */}
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
             <Button variant="default" className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" />
-              לקוח חדש
+              <UserPlus className="h-4 w-4" /> לקוח חדש
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -124,7 +151,7 @@ export default function Clients() {
         </Dialog>
       </div>
 
-      {/* שדה חיפוש */}
+      {/* חיפוש */}
       <div className="relative">
         <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
@@ -135,7 +162,7 @@ export default function Clients() {
         />
       </div>
 
-      {/* רשימת לקוחות */}
+      {/* תצוגת רשימה */}
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin" />
@@ -151,14 +178,11 @@ export default function Clients() {
                 </Badge>
               </CardHeader>
               <CardContent>
-                <p className="mb-2">
-                  <strong>איש קשר:</strong> {c.contact}
-                </p>
-                {c.notes && (
-                  <p className="text-sm text-muted-foreground">{c.notes}</p>
-                )}
-                <div className="mt-4">
-                  {/* כפתור + דיאלוג עריכה */}
+                <p className="mb-2"><strong>איש קשר:</strong> {c.contact}</p>
+                {c.notes && <p className="text-sm text-muted-foreground">{c.notes}</p>}
+
+                <div className="mt-4 flex gap-2">
+                  {/* עריכה */}
                   <Dialog
                     open={editOpen && toEdit?.id === c.id}
                     onOpenChange={(o) => {
@@ -191,15 +215,22 @@ export default function Clients() {
                       )}
                     </DialogContent>
                   </Dialog>
+
+                  {/* מחיקה */}
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(c)}
+                  >
+                    מחק לקוח
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <p className="text-center text-muted-foreground">
-          אין לקוחות להצגה
-        </p>
+        <p className="text-center text-muted-foreground">אין לקוחות להצגה</p>
       )}
     </div>
   );
@@ -211,7 +242,7 @@ interface NewClientFormProps {
 }
 
 function NewClientForm({ user, onSuccess }: NewClientFormProps) {
-  const toast = useToast();
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [status, setStatus] = useState<Client["status"]>("active");
@@ -225,14 +256,11 @@ function NewClientForm({ user, onSuccess }: NewClientFormProps) {
       .from("clients")
       .insert({ name, contact, status, notes, user_id: user.id });
     setLoading(false);
+
     if (error) {
-      toast({
-        title: "שגיאה בהוספת הלקוח",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה בהוספת הלקוח", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "!!!הלקוח נוסף בהצלחה" });
+      toast({ title: "הלקוח נוסף בהצלחה" });
       onSuccess();
       setName("");
       setContact("");
@@ -244,26 +272,10 @@ function NewClientForm({ user, onSuccess }: NewClientFormProps) {
   return (
     <>
       <div className="space-y-4 py-4">
-        <Input
-          placeholder="שם הלקוח"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Input
-          placeholder="פרטי קשר"
-          value={contact}
-          onChange={(e) => setContact(e.target.value)}
-        />
-        <Input
-          placeholder="הערות"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-        <select
-          className="w-full border rounded p-2"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as any)}
-        >
+        <Input placeholder="שם הלקוח" value={name} onChange={e => setName(e.target.value)} />
+        <Input placeholder="פרטי קשר" value={contact} onChange={e => setContact(e.target.value)} />
+        <Input placeholder="הערות" value={notes} onChange={e => setNotes(e.target.value)} />
+        <select className="w-full border rounded p-2" value={status} onChange={e => setStatus(e.target.value as any)}>
           <option value="active">פעיל</option>
           <option value="pending">ממתין</option>
           <option value="closed">סגור</option>
@@ -284,7 +296,7 @@ interface EditClientFormProps {
 }
 
 function EditClientForm({ client, onSuccess }: EditClientFormProps) {
-  const toast = useToast();
+  const { toast } = useToast();
   const [name, setName] = useState(client.name);
   const [contact, setContact] = useState(client.contact);
   const [status, setStatus] = useState<Client["status"]>(client.status);
@@ -298,12 +310,9 @@ function EditClientForm({ client, onSuccess }: EditClientFormProps) {
       .update({ name, contact, status, notes })
       .eq("id", client.id);
     setLoading(false);
+
     if (error) {
-      toast({
-        title: "שגיאה בעדכון הלקוח",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה בעדכון", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "הלקוח עודכן בהצלחה" });
       onSuccess();
@@ -313,26 +322,10 @@ function EditClientForm({ client, onSuccess }: EditClientFormProps) {
   return (
     <>
       <div className="space-y-4 py-4">
-        <Input
-          placeholder="שם הלקוח"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Input
-          placeholder="פרטי קשר"
-          value={contact}
-          onChange={(e) => setContact(e.target.value)}
-        />
-        <Input
-          placeholder="הערות"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-        <select
-          className="w-full border rounded p-2"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as any)}
-        >
+        <Input placeholder="שם הלקוח" value={name} onChange={e => setName(e.target.value)} />
+        <Input placeholder="פרטי קשר" value={contact} onChange={e => setContact(e.target.value)} />
+        <Input placeholder="הערות" value={notes} onChange={e => setNotes(e.target.value)} />
+        <select className="w-full border rounded p-2" value={status} onChange={e => setStatus(e.target.value as any)}>
           <option value="active">פעיל</option>
           <option value="pending">ממתין</option>
           <option value="closed">סגור</option>
