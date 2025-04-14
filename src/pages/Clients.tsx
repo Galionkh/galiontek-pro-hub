@@ -70,15 +70,16 @@ export default function Clients() {
 
   useEffect(() => {
     fetchClients();
-  }, []);
+  }, [user?.id]);
 
   const fetchClients = async () => {
+    if (!user?.id) return;
     try {
       setIsLoadingClients(true);
       const { data, error } = await supabase
         .from("clients")
         .select("*")
-        .eq("user_id", user?.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -105,7 +106,7 @@ export default function Clients() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">לקוחות ומוסדות</h1>
-        <NewClientForm onClientAdded={fetchClients} setClients={setClients} />
+        <NewClientForm user={user} setClients={setClients} toast={toast} />
       </div>
 
       <div className="relative">
@@ -162,14 +163,13 @@ export default function Clients() {
   );
 }
 
-function NewClientForm({ onClientAdded, setClients }: { onClientAdded: () => void; setClients: React.Dispatch<React.SetStateAction<Client[]>> }) {
-  const { user } = useAuth();
-  const { toast } = useToast();
+function NewClientForm({ user, setClients, toast }: { user: any; setClients: React.Dispatch<React.SetStateAction<Client[]>>; toast: any }) {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [status, setStatus] = useState<"active" | "pending" | "closed">("active");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -195,16 +195,15 @@ function NewClientForm({ onClientAdded, setClients }: { onClientAdded: () => voi
     }
 
     toast({ title: "הלקוח נוסף בהצלחה" });
-    console.log("Inserted client:", data);
 
     if (data && data.length > 0) {
       setClients(prev => [data[0] as Client, ...prev]);
-      onClientAdded();
+      setOpen(false);
     }
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="default" className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
@@ -242,13 +241,12 @@ function NewClientForm({ onClientAdded, setClients }: { onClientAdded: () => voi
           </select>
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button onClick={handleSubmit} disabled={loading}>
-              {loading ? "שומר..." : "שמור לקוח"}
-            </Button>
-          </DialogClose>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "שומר..." : "שמור לקוח"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
