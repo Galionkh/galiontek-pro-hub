@@ -176,28 +176,37 @@ function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
     if (!user) return;
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("clients")
-      .insert({
-        name,
-        contact,
-        status,
-        notes,
-        user_id: user.id,
-      })
-      .select();
+const handleSubmit = async () => {
+  if (!user) return;
+  setLoading(true);
 
-    console.log("Inserted client:", data);
+  const { data, error } = await supabase
+    .from("clients")
+    .insert({
+      name,
+      contact,
+      status,
+      notes,
+      user_id: user.id,
+    })
+    .select();
 
-    setLoading(false);
+  setLoading(false);
 
-    if (error) {
-      toast({ title: "שגיאה", description: error.message });
-    } else {
-      toast({ title: "הלקוח נוסף בהצלחה" });
-      onClientAdded();
-    }
-  };
+  if (error) {
+    console.error("Insert error:", error);
+    toast({ title: "שגיאה", description: error.message });
+    return;
+  }
+
+  toast({ title: "הלקוח נוסף בהצלחה" });
+  console.log("Inserted client:", data);
+
+  if (data && data.length > 0) {
+    onClientAdded(); // או setClients(prev => [data[0], ...prev]) אם תעדיף להוסיף מיידית
+  }
+};
+
 
   return (
     <Dialog>
