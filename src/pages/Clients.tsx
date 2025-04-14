@@ -23,7 +23,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-
 // טיפוס לקוח
 
 type Client = {
@@ -106,7 +105,7 @@ export default function Clients() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">לקוחות ומוסדות</h1>
-        <NewClientForm onClientAdded={fetchClients} />
+        <NewClientForm onClientAdded={fetchClients} setClients={setClients} />
       </div>
 
       <div className="relative">
@@ -163,7 +162,7 @@ export default function Clients() {
   );
 }
 
-function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
+function NewClientForm({ onClientAdded, setClients }: { onClientAdded: () => void; setClients: React.Dispatch<React.SetStateAction<Client[]>> }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [name, setName] = useState("");
@@ -199,6 +198,7 @@ function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
     console.log("Inserted client:", data);
 
     if (data && data.length > 0) {
+      setClients(prev => [data[0] as Client, ...prev]);
       onClientAdded();
     }
   };
@@ -252,4 +252,3 @@ function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
     </Dialog>
   );
 }
-
