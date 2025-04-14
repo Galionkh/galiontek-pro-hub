@@ -174,13 +174,18 @@ function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
     if (!user) return;
     setLoading(true);
 
-    const { error } = await supabase.from("clients").insert({
-      name,
-      contact,
-      status,
-      notes,
-      user_id: user.id,
-    });
+    const { data, error } = await supabase
+      .from("clients")
+      .insert({
+        name,
+        contact,
+        status,
+        notes,
+        user_id: user.id,
+      })
+      .select();
+
+    console.log("Inserted client:", data);
 
     setLoading(false);
 
