@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar as CalendarIcon, Plus, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Loader2, Pencil, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,8 +25,13 @@ export default function Calendar() {
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    if (user) {
+      fetchEvents();
+    } else {
+      setEvents([]);
+      setIsLoadingEvents(false);
+    }
+  }, [user]);
 
   const fetchEvents = async () => {
     try {
@@ -98,6 +104,37 @@ export default function Calendar() {
     }
   };
 
+  const deleteEvent = async (id: number) => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      
+      const { error } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "נמחק בהצלחה",
+        description: "האירוע נמחק בהצלחה",
+      });
+
+      fetchEvents();
+    } catch (error: any) {
+      console.error("Error deleting event:", error.message);
+      toast({
+        title: "שגיאה במחיקת אירוע",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const groupedEvents = events.reduce((groups, event) => {
     const date = new Date(event.date);
     const month = date.toLocaleString('he-IL', { month: 'long', year: 'numeric' });
@@ -157,7 +194,21 @@ export default function Calendar() {
                             <p className="mt-2 text-sm">{event.description}</p>
                           )}
                         </div>
-                        <Button variant="outline" size="sm">ערוך</Button>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Pencil className="h-4 w-4 mr-1" />
+                            ערוך
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                            onClick={() => deleteEvent(event.id)}
+                          >
+                            <Trash className="h-4 w-4 mr-1" />
+                            מחק
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
