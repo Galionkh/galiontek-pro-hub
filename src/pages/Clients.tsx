@@ -1,6 +1,10 @@
-
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, UserPlus, Loader2 } from "lucide-react";
@@ -8,12 +12,23 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+
+// טיפוס לקוח
 
 type Client = {
   id: number;
   name: string;
   contact: string;
-  status: string; // Changed from union type to string to match database
+  status: string;
   notes?: string;
   created_at: string;
   user_id?: string;
@@ -41,14 +56,13 @@ const getStatusText = (status: Client["status"]) => {
     case "closed":
       return "סגור";
     default:
-      return status; // Return the status itself if it doesn't match our known types
+      return status;
   }
 };
 
 export default function Clients() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -63,6 +77,7 @@ export default function Clients() {
       const { data, error } = await supabase
         .from("clients")
         .select("*")
+        .eq("user_id", user?.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -79,53 +94,7 @@ export default function Clients() {
     }
   };
 
-  const createNewClient = async () => {
-    if (!user) {
-      toast({
-        title: "יש להתחבר תחילה",
-        description: "עליך להתחבר כדי ליצור לקוח חדש",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      
-      const { data, error } = await supabase
-        .from("clients")
-        .insert([
-          {
-            name: "לקוח חדש",
-            contact: "פרטי קשר חדשים",
-            status: "pending",
-            notes: "יש להשלים פרטים",
-            user_id: user.id
-          },
-        ])
-        .select();
-
-      if (error) throw error;
-
-      toast({
-        title: "נוצר בהצלחה",
-        description: "הלקוח החדש נוצר בהצלחה",
-      });
-
-      fetchClients();
-    } catch (error: any) {
-      console.error("Error creating client:", error.message);
-      toast({
-        title: "שגיאה ביצירת לקוח",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const filteredClients = clients.filter(client => 
+  const filteredClients = clients.filter((client) =>
     client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.contact?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (client.notes && client.notes.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -135,20 +104,9 @@ export default function Clients() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">לקוחות ומוסדות</h1>
-        <Button 
-          className="flex items-center gap-2"
-          onClick={createNewClient}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Plus className="h-4 w-4" />
-          )}
-          <span>לקוח חדש</span>
-        </Button>
+        <NewClientForm onClientAdded={fetchClients} />
       </div>
-      
+
       <div className="relative">
         <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
@@ -158,7 +116,7 @@ export default function Clients() {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
-      
+
       {isLoadingClients ? (
         <div className="flex flex-col items-center justify-center h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin mb-4" />
@@ -166,7 +124,7 @@ export default function Clients() {
         </div>
       ) : filteredClients.length > 0 ? (
         <div className="grid gap-4">
-          {filteredClients.map(client => (
+          {filteredClients.map((client) => (
             <Card key={client.id} className="card-hover">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-xl">{client.name}</CardTitle>
@@ -175,7 +133,9 @@ export default function Clients() {
                 </Badge>
               </CardHeader>
               <CardContent>
-                <p className="mb-2"><strong>איש קשר:</strong> {client.contact}</p>
+                <p className="mb-2">
+                  <strong>איש קשר:</strong> {client.contact}
+                </p>
                 {client.notes && (
                   <p className="text-muted-foreground text-sm">{client.notes}</p>
                 )}
@@ -200,3 +160,83 @@ export default function Clients() {
     </div>
   );
 }
+
+function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [status, setStatus] = useState<"active" | "pending" | "closed">("active");
+  const [notes, setNotes] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!user) return;
+    setLoading(true);
+
+    const { error } = await supabase.from("clients").insert({
+      name,
+      contact,
+      status,
+      notes,
+      user_id: user.id,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast({ title: "שגיאה", description: error.message });
+    } else {
+      toast({ title: "הלקוח נוסף בהצלחה" });
+      onClientAdded();
+    }
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="default" className="flex items-center gap-2">
+          <UserPlus className="h-4 w-4" />
+          לקוח חדש
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>לקוח חדש</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input
+            placeholder="שם הלקוח"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
+            placeholder="פרטי קשר"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+          />
+          <Input
+            placeholder="הערות"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+          <select
+            className="w-full border rounded p-2"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as any)}
+          >
+            <option value="active">פעיל</option>
+            <option value="pending">ממתין</option>
+            <option value="closed">סגור</option>
+          </select>
+        </div>
+        <DialogFooter>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "שומר..." : "שמור לקוח"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
