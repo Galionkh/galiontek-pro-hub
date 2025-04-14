@@ -1,4 +1,4 @@
-
+// src/pages/Clients.tsx
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, UserPlus, Loader2 } from "lucide-react";
+import { Search, UserPlus, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,18 +62,16 @@ const getStatusText = (status: Client["status"]) => {
 export default function Clients() {
   const { toast } = useToast();
   const { user } = useAuth();
+
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    fetchClients();
-  }, [user?.id]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const fetchClients = async () => {
     if (!user?.id) return;
+    setIsLoadingClients(true);
     try {
-      setIsLoadingClients(true);
       const { data, error } = await supabase
         .from("clients")
         .select("*")
@@ -83,7 +81,7 @@ export default function Clients() {
       if (error) throw error;
       setClients(data || []);
     } catch (error: any) {
-      console.error("Error fetching clients:", error.message);
+      console.error(error);
       toast({
         title: "שגיאה בטעינת לקוחות",
         description: error.message,
@@ -94,19 +92,48 @@ export default function Clients() {
     }
   };
 
-  const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (client.notes && client.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+  useEffect(() => {
+    fetchClients();
+  }, [user?.id]);
+
+  const filteredClients = clients.filter((c) =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (c.notes && c.notes.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">לקוחות ומוסדות</h1>
-        <NewClientForm user={user} setClients={setClients} toast={toast} />
+
+        {/* Dialog controlled ב־Clients */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="default" className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" />
+              לקוח חדש
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>לקוח חדש</DialogTitle>
+            </DialogHeader>
+
+            {/* הטופס */}
+            <NewClientForm
+              user={user}
+              toast={toast}
+              onClientAdded={() => {
+                fetchClients();           // רענון הרשימה
+                setIsDialogOpen(false);   // סגירת הדיאלוג
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
+      {/* חיפוש */}
       <div className="relative">
         <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
@@ -117,6 +144,7 @@ export default function Clients() {
         />
       </div>
 
+      {/* תצוגת לקוחות */}
       {isLoadingClients ? (
         <div className="flex flex-col items-center justify-center h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin mb-4" />
@@ -126,7 +154,7 @@ export default function Clients() {
         <div className="grid gap-4">
           {filteredClients.map((client) => (
             <Card key={client.id} className="card-hover">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardHeader className="pb-2 flex justify-between">
                 <CardTitle className="text-xl">{client.name}</CardTitle>
                 <Badge className={getStatusColor(client.status)}>
                   {getStatusText(client.status)}
@@ -139,11 +167,6 @@ export default function Clients() {
                 {client.notes && (
                   <p className="text-muted-foreground text-sm">{client.notes}</p>
                 )}
-                <div className="mt-4">
-                  <Button variant="outline" size="sm">
-                    ערוך פרטים
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           ))}
@@ -153,7 +176,7 @@ export default function Clients() {
           <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
             <UserPlus className="h-12 w-12 mb-4 text-muted-foreground/50" />
             <h2 className="text-xl font-semibold mb-2">אין לקוחות עדיין</h2>
-            <p>לחץ על "לקוח חדש" כדי להוסיף את הלקוח הראשון שלך</p>
+            <p>לחץ על "לקוח חדש" כדי להוסיף לקוח ראשון</p>
           </div>
         </Card>
       )}
@@ -161,21 +184,18 @@ export default function Clients() {
   );
 }
 
-function NewClientForm({
-  user,
-  setClients,
-  toast,
-}: {
+interface NewClientFormProps {
   user: any;
-  setClients: React.Dispatch<React.SetStateAction<Client[]>>;
   toast: any;
-}) {
+  onClientAdded: () => void;
+}
+
+function NewClientForm({ user, toast, onClientAdded }: NewClientFormProps) {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [status, setStatus] = useState<"active" | "pending" | "closed">("active");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -183,19 +203,13 @@ function NewClientForm({
 
     const { data, error } = await supabase
       .from("clients")
-      .insert({
-        name,
-        contact,
-        status,
-        notes,
-        user_id: user.id,
-      })
+      .insert({ name, contact, status, notes, user_id: user.id })
       .select();
 
     setLoading(false);
 
     if (error) {
-      console.error("Insert error:", error);
+      console.error(error);
       toast({
         title: "שגיאה בהוספת הלקוח",
         description: error.message,
@@ -206,63 +220,49 @@ function NewClientForm({
 
     toast({ title: "הלקוח נוסף בהצלחה" });
 
-    if (data && data.length > 0) {
-      // מוסיף ללקוח החדש בראש הרשימה
-      setClients((prev) => [data[0] as Client, ...prev]);
-      // סוגר את הדיאלוג
-      setOpen(false);
-      // מנקה שדות
-      setName("");
-      setContact("");
-      setStatus("active");
-      setNotes("");
-    }
+    // קורא ל־onClientAdded שב־Clients
+    onClientAdded();
+
+    // מנקה שדות
+    setName("");
+    setContact("");
+    setStatus("active");
+    setNotes("");
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default" className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4" />
-          לקוח חדש
+    <>
+      <div className="space-y-4 py-4">
+        <Input
+          placeholder="שם הלקוח"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <Input
+          placeholder="פרטי קשר"
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
+        />
+        <Input
+          placeholder="הערות"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+        <select
+          className="w-full border rounded p-2"
+          value={status}
+          onChange={(e) => setStatus(e.target.value as any)}
+        >
+          <option value="active">פעיל</option>
+          <option value="pending">ממתין</option>
+          <option value="closed">סגור</option>
+        </select>
+      </div>
+      <DialogFooter>
+        <Button onClick={handleSubmit} disabled={loading}>
+          {loading ? "שומר..." : "שמור לקוח"}
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>לקוח חדש</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Input
-            placeholder="שם הלקוח"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Input
-            placeholder="פרטי קשר"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-          />
-          <Input
-            placeholder="הערות"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-          <select
-            className="w-full border rounded p-2"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as any)}
-          >
-            <option value="active">פעיל</option>
-            <option value="pending">ממתין</option>
-            <option value="closed">סגור</option>
-          </select>
-        </div>
-        <DialogFooter>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "שומר..." : "שמור לקוח"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </DialogFooter>
+    </>
   );
 }
