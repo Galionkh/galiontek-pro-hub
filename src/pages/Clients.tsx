@@ -22,12 +22,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-// טיפוס לקוח
 type Client = {
   id: number;
   name: string;
   contact: string;
-  status: string;
+  status: "active" | "pending" | "closed";
   notes?: string;
   created_at: string;
   user_id?: string;
@@ -41,8 +40,6 @@ const getStatusColor = (status: Client["status"]) => {
       return "bg-yellow-100 text-yellow-800";
     case "closed":
       return "bg-gray-100 text-gray-800";
-    default:
-      return "bg-gray-100 text-gray-800";
   }
 };
 
@@ -54,8 +51,6 @@ const getStatusText = (status: Client["status"]) => {
       return "ממתין";
     case "closed":
       return "סגור";
-    default:
-      return status;
   }
 };
 
@@ -64,31 +59,27 @@ export default function Clients() {
   const { user } = useAuth();
 
   const [clients, setClients] = useState<Client[]>([]);
-  const [isLoadingClients, setIsLoadingClients] = useState(true);
+  const [loadingClients, setLoadingClients] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [current, setCurrent] = useState<Client | null>(null);
 
   const fetchClients = async () => {
     if (!user?.id) return;
-    setIsLoadingClients(true);
+    setLoadingClients(true);
     try {
       const { data, error } = await supabase
         .from("clients")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       setClients(data || []);
-    } catch (error: any) {
-      console.error(error);
-      toast({
-        title: "שגיאה בטעינת לקוחות",
-        description: error.message,
-        variant: "destructive",
-      });
+    } catch (err: any) {
+      toast({ title: "שגיאה בטעינת לקוחות", description: err.message, variant: "destructive" });
     } finally {
-      setIsLoadingClients(false);
+      setLoadingClients(false);
     }
   };
 
@@ -96,7 +87,7 @@ export default function Clients() {
     fetchClients();
   }, [user?.id]);
 
-  const filteredClients = clients.filter((c) =>
+  const filtered = clients.filter((c) =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (c.notes && c.notes.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -104,29 +95,25 @@ export default function Clients() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">לקוחות ומוסדות</h1>
 
-        {/* Dialog controlled ב־Clients */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {/* הוספת לקוח */}
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
             <Button variant="default" className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" />
-              לקוח חדש
+              <UserPlus className="h-4 w-4" /> לקוח חדש
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>לקוח חדש</DialogTitle>
             </DialogHeader>
-
-            {/* הטופס */}
             <NewClientForm
               user={user}
-              toast={toast}
               onClientAdded={() => {
-                fetchClients();           // רענון הרשימה
-                setIsDialogOpen(false);   // סגירת הדיאלוג
+                fetchClients();
+                setAddOpen(false);
               }}
             />
           </DialogContent>
@@ -144,17 +131,16 @@ export default function Clients() {
         />
       </div>
 
-      {/* תצוגת לקוחות */}
-      {isLoadingClients ? (
-        <div className="flex flex-col items-center justify-center h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin mb-4" />
-          <p className="text-muted-foreground">טוען לקוחות...</p>
+      {/* רשימת לקוחות */}
+      {loadingClients ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
-      ) : filteredClients.length > 0 ? (
+      ) : filtered.length > 0 ? (
         <div className="grid gap-4">
-          {filteredClients.map((client) => (
+          {filtered.map((client) => (
             <Card key={client.id} className="card-hover">
-              <CardHeader className="pb-2 flex justify-between">
+              <CardHeader className="flex justify-between items-center">
                 <CardTitle className="text-xl">{client.name}</CardTitle>
                 <Badge className={getStatusColor(client.status)}>
                   {getStatusText(client.status)}
@@ -165,20 +151,46 @@ export default function Clients() {
                   <strong>איש קשר:</strong> {client.contact}
                 </p>
                 {client.notes && (
-                  <p className="text-muted-foreground text-sm">{client.notes}</p>
+                  <p className="text-sm text-muted-foreground">{client.notes}</p>
                 )}
+                <div className="mt-4 flex gap-2">
+                  {/* עריכת לקוח */}
+                  <Dialog open={editOpen && current?.id === client.id} onOpenChange={setEditOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">ערוך פרטים</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>עריכת לקוח</DialogTitle>
+                      </DialogHeader>
+                      {current && (
+                        <EditClientForm
+                          client={current}
+                          onClientUpdated={() => {
+                            fetchClients();
+                            setEditOpen(false);
+                          }}
+                        />
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setCurrent(client);
+                      setEditOpen(true);
+                    }}
+                  >
+                    ערוך פרטים
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <Card className="p-6">
-          <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-            <UserPlus className="h-12 w-12 mb-4 text-muted-foreground/50" />
-            <h2 className="text-xl font-semibold mb-2">אין לקוחות עדיין</h2>
-            <p>לחץ על "לקוח חדש" כדי להוסיף לקוח ראשון</p>
-          </div>
-        </Card>
+        <p className="text-center text-muted-foreground">אין לקוחות להצגה</p>
       )}
     </div>
   );
@@ -186,72 +198,44 @@ export default function Clients() {
 
 interface NewClientFormProps {
   user: any;
-  toast: any;
   onClientAdded: () => void;
 }
 
-function NewClientForm({ user, toast, onClientAdded }: NewClientFormProps) {
+function NewClientForm({ user, onClientAdded }: NewClientFormProps) {
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
-  const [status, setStatus] = useState<"active" | "pending" | "closed">("active");
+  const [status, setStatus] = useState<"active"|"pending"|"closed">("active");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
     if (!user) return;
     setLoading(true);
-
     const { data, error } = await supabase
       .from("clients")
       .insert({ name, contact, status, notes, user_id: user.id })
       .select();
-
     setLoading(false);
-
     if (error) {
-      console.error(error);
-      toast({
-        title: "שגיאה בהוספת הלקוח",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה בהוספת הלקוח", description: error.message, variant: "destructive" });
       return;
     }
-
     toast({ title: "הלקוח נוסף בהצלחה" });
-
-    // קורא ל־onClientAdded שב־Clients
     onClientAdded();
-
-    // מנקה שדות
-    setName("");
-    setContact("");
-    setStatus("active");
-    setNotes("");
+    setName(""); setContact(""); setStatus("active"); setNotes("");
   };
 
   return (
     <>
       <div className="space-y-4 py-4">
-        <Input
-          placeholder="שם הלקוח"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Input
-          placeholder="פרטי קשר"
-          value={contact}
-          onChange={(e) => setContact(e.target.value)}
-        />
-        <Input
-          placeholder="הערות"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
+        <Input placeholder="שם הלקוח" value={name} onChange={e => setName(e.target.value)} />
+        <Input placeholder="פרטי קשר" value={contact} onChange={e => setContact(e.target.value)} />
+        <Input placeholder="הערות" value={notes} onChange={e => setNotes(e.target.value)} />
         <select
           className="w-full border rounded p-2"
           value={status}
-          onChange={(e) => setStatus(e.target.value as any)}
+          onChange={e => setStatus(e.target.value as any)}
         >
           <option value="active">פעיל</option>
           <option value="pending">ממתין</option>
@@ -261,6 +245,60 @@ function NewClientForm({ user, toast, onClientAdded }: NewClientFormProps) {
       <DialogFooter>
         <Button onClick={handleSubmit} disabled={loading}>
           {loading ? "שומר..." : "שמור לקוח"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+interface EditClientFormProps {
+  client: Client;
+  onClientUpdated: () => void;
+}
+
+function EditClientForm({ client, onClientUpdated }: EditClientFormProps) {
+  const { toast } = useToast();
+  const [name, setName] = useState(client.name);
+  const [contact, setContact] = useState(client.contact);
+  const [status, setStatus] = useState<Client["status"]>(client.status);
+  const [notes, setNotes] = useState(client.notes || "");
+  const [loading, setLoading] = useState(false);
+
+  const handleUpdate = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("clients")
+      .update({ name, contact, status, notes })
+      .eq("id", client.id)
+      .select();
+    setLoading(false);
+    if (error) {
+      toast({ title: "שגיאה בעדכון הלקוח", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "הלקוח עודכן בהצלחה" });
+    onClientUpdated();
+  };
+
+  return (
+    <>
+      <div className="space-y-4 py-4">
+        <Input placeholder="שם הלקוח" value={name} onChange={e => setName(e.target.value)} />
+        <Input placeholder="פרטי קשר" value={contact} onChange={e => setContact(e.target.value)} />
+        <Input placeholder="הערות" value={notes} onChange={e => setNotes(e.target.value)} />
+        <select
+          className="w-full border rounded p-2"
+          value={status}
+          onChange={e => setStatus(e.target.value as any)}
+        >
+          <option value="active">פעיל</option>
+          <option value="pending">ממתין</option>
+          <option value="closed">סגור</option>
+        </select>
+      </div>
+      <DialogFooter>
+        <Button onClick={handleUpdate} disabled={loading}>
+          {loading ? "מעדכן..." : "עדכן לקוח"}
         </Button>
       </DialogFooter>
     </>
