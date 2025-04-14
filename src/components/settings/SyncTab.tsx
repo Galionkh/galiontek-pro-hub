@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
-import { Sync, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 export function SyncTab() {
   const { toast } = useToast();
@@ -48,7 +47,7 @@ export function SyncTab() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sync className="h-5 w-5" />
+          <RefreshCw className="h-5 w-5" />
           סנכרון עם שירותים חיצוניים
         </CardTitle>
         <CardDescription>חבר את החשבון שלך לשירותים חיצוניים</CardDescription>
