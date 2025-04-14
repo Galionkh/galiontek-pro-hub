@@ -1,3 +1,5 @@
+import { DialogClose } from "@/components/ui/dialog";
+
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -236,9 +238,12 @@ function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
           </select>
         </div>
         <DialogFooter>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "שומר..." : "שמור לקוח"}
-          </Button>
+<DialogClose asChild>
+  <Button onClick={handleSubmit} disabled={loading}>
+    {loading ? "שומר..." : "שמור לקוח"}
+  </Button>
+</DialogClose>
+
         </DialogFooter>
       </DialogContent>
     </Dialog>
