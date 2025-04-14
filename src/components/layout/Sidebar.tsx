@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   Calendar,
@@ -12,8 +12,11 @@ import {
   Settings,
   Menu,
   X,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useToast } from "@/components/ui/use-toast";
 
 type NavItem = {
   title: string;
@@ -62,9 +65,29 @@ const navItems: NavItem[] = [
 export default function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+  const { toast } = useToast();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "התנתקת בהצלחה",
+        description: "מקווים לראותך בקרוב!",
+      });
+      navigate("/login");
+    } catch (error) {
+      toast({
+        title: "שגיאה בהתנתקות",
+        description: "אירעה שגיאה בעת ההתנתקות",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -91,7 +114,7 @@ export default function Sidebar() {
         <div className="p-5">
           <h1 className="text-2xl font-bold text-white mb-6">GalionTek</h1>
         </div>
-        <nav className="px-3">
+        <nav className="px-3 flex flex-col justify-between h-[calc(100%-5rem)]">
           <ul className="space-y-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.href;
@@ -113,6 +136,17 @@ export default function Sidebar() {
               );
             })}
           </ul>
+          
+          <div className="px-3 pb-5 mt-auto">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-white"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-5 w-5 mr-2" />
+              התנתק
+            </Button>
+          </div>
         </nav>
       </div>
 
@@ -132,7 +166,7 @@ export default function Sidebar() {
                   <X className="h-6 w-6" />
                 </Button>
               </div>
-              <nav>
+              <nav className="flex flex-col justify-between h-[calc(100%-4rem)]">
                 <ul className="space-y-3">
                   {navItems.map((item) => {
                     const isActive = location.pathname === item.href;
@@ -155,6 +189,16 @@ export default function Sidebar() {
                     );
                   })}
                 </ul>
+                <div className="mt-auto pt-4">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-white"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-5 w-5 mr-2" />
+                    התנתק
+                  </Button>
+                </div>
               </nav>
             </div>
           </div>
