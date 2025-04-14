@@ -176,37 +176,32 @@ function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
     if (!user) return;
     setLoading(true);
 
-const handleSubmit = async () => {
-  if (!user) return;
-  setLoading(true);
+    const { data, error } = await supabase
+      .from("clients")
+      .insert({
+        name,
+        contact,
+        status,
+        notes,
+        user_id: user.id,
+      })
+      .select();
 
-  const { data, error } = await supabase
-    .from("clients")
-    .insert({
-      name,
-      contact,
-      status,
-      notes,
-      user_id: user.id,
-    })
-    .select();
+    setLoading(false);
 
-  setLoading(false);
+    if (error) {
+      console.error("Insert error:", error);
+      toast({ title: "שגיאה", description: error.message });
+      return;
+    }
 
-  if (error) {
-    console.error("Insert error:", error);
-    toast({ title: "שגיאה", description: error.message });
-    return;
-  }
+    toast({ title: "הלקוח נוסף בהצלחה" });
+    console.log("Inserted client:", data);
 
-  toast({ title: "הלקוח נוסף בהצלחה" });
-  console.log("Inserted client:", data);
-
-  if (data && data.length > 0) {
-    onClientAdded(); // או setClients(prev => [data[0], ...prev]) אם תעדיף להוסיף מיידית
-  }
-};
-
+    if (data && data.length > 0) {
+      onClientAdded();
+    }
+  };
 
   return (
     <Dialog>
@@ -247,12 +242,11 @@ const handleSubmit = async () => {
           </select>
         </div>
         <DialogFooter>
-<DialogClose asChild>
-  <Button onClick={handleSubmit} disabled={loading}>
-    {loading ? "שומר..." : "שמור לקוח"}
-  </Button>
-</DialogClose>
-
+          <DialogClose asChild>
+            <Button onClick={handleSubmit} disabled={loading}>
+              {loading ? "שומר..." : "שמור לקוח"}
+            </Button>
+          </DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>
