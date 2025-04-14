@@ -1,4 +1,3 @@
-import { DialogClose } from "@/components/ui/dialog";
 
 import { useState, useEffect } from "react";
 import {
@@ -16,15 +15,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   Dialog,
+  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 
 // טיפוס לקוח
-
 type Client = {
   id: number;
   name: string;
@@ -97,8 +95,8 @@ export default function Clients() {
   };
 
   const filteredClients = clients.filter((client) =>
-    client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.contact?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (client.notes && client.notes.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
@@ -163,7 +161,15 @@ export default function Clients() {
   );
 }
 
-function NewClientForm({ user, setClients, toast }: { user: any; setClients: React.Dispatch<React.SetStateAction<Client[]>>; toast: any }) {
+function NewClientForm({
+  user,
+  setClients,
+  toast,
+}: {
+  user: any;
+  setClients: React.Dispatch<React.SetStateAction<Client[]>>;
+  toast: any;
+}) {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [status, setStatus] = useState<"active" | "pending" | "closed">("active");
@@ -190,15 +196,22 @@ function NewClientForm({ user, setClients, toast }: { user: any; setClients: Rea
 
     if (error) {
       console.error("Insert error:", error);
-      toast({ title: "שגיאה", description: error.message });
+      toast({
+        title: "שגיאה בהוספת הלקוח",
+        description: error.message,
+        variant: "destructive",
+      });
       return;
     }
 
     toast({ title: "הלקוח נוסף בהצלחה" });
 
     if (data && data.length > 0) {
+      // מוסיף ללקוח החדש בראש הרשימה
       setClients((prev) => [data[0] as Client, ...prev]);
+      // סוגר את הדיאלוג
       setOpen(false);
+      // מנקה שדות
       setName("");
       setContact("");
       setStatus("active");
@@ -253,4 +266,3 @@ function NewClientForm({ user, setClients, toast }: { user: any; setClients: Rea
     </Dialog>
   );
 }
-
