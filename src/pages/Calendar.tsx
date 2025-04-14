@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar as CalendarIcon, Plus, Loader2 } from "lucide-react";
@@ -8,12 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 type Event = {
-  id: string;
+  id: number;
   title: string;
   date: string;
   location: string;
   description?: string;
   created_at: string;
+  user_id?: string;
 };
 
 export default function Calendar() {
@@ -62,7 +62,6 @@ export default function Calendar() {
     try {
       setIsLoading(true);
       
-      // Get tomorrow's date
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       
@@ -86,7 +85,6 @@ export default function Calendar() {
         description: "האירוע החדש נוצר בהצלחה",
       });
 
-      // Refresh the events list
       fetchEvents();
     } catch (error: any) {
       console.error("Error creating event:", error.message);
@@ -100,7 +98,6 @@ export default function Calendar() {
     }
   };
 
-  // Group events by month
   const groupedEvents = events.reduce((groups, event) => {
     const date = new Date(event.date);
     const month = date.toLocaleString('he-IL', { month: 'long', year: 'numeric' });

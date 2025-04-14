@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,12 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 type Client = {
-  id: string;
+  id: number;
   name: string;
   contact: string;
   status: "active" | "pending" | "closed";
   notes?: string;
   created_at: string;
+  user_id?: string;
 };
 
 const getStatusColor = (status: Client["status"]) => {
@@ -111,7 +111,6 @@ export default function Clients() {
         description: "הלקוח החדש נוצר בהצלחה",
       });
 
-      // Refresh the clients list
       fetchClients();
     } catch (error: any) {
       console.error("Error creating client:", error.message);

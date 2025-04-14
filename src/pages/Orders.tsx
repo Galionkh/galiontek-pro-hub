@@ -8,14 +8,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Loader2 } from "lucide-react";
 
-// Define the Order type
+// Updated Order type to match database structure
 type Order = {
-  id: string;
+  id: number; // Changed from string to number
   title: string;
   client_name: string;
   date: string;
   status: "draft" | "sent" | "confirmed" | "completed";
   created_at: string;
+  user_id?: string;
 };
 
 export default function Orders() {
