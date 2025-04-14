@@ -5,6 +5,7 @@ import { Calendar as CalendarIcon, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 type Event = {
   id: string;
@@ -17,6 +18,7 @@ type Event = {
 
 export default function Calendar() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
@@ -48,6 +50,15 @@ export default function Calendar() {
   };
 
   const createNewEvent = async () => {
+    if (!user) {
+      toast({
+        title: "יש להתחבר תחילה",
+        description: "עליך להתחבר כדי ליצור אירוע חדש",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       setIsLoading(true);
       
@@ -63,6 +74,7 @@ export default function Calendar() {
             date: tomorrow.toISOString().split("T")[0],
             location: "יש להגדיר מיקום",
             description: "פרטי האירוע",
+            user_id: user.id
           },
         ])
         .select();

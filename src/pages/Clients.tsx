@@ -7,6 +7,7 @@ import { Plus, Search, UserPlus, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 type Client = {
   id: string;
@@ -45,6 +46,7 @@ const getStatusText = (status: Client["status"]) => {
 
 export default function Clients() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
@@ -77,6 +79,15 @@ export default function Clients() {
   };
 
   const createNewClient = async () => {
+    if (!user) {
+      toast({
+        title: "יש להתחבר תחילה",
+        description: "עליך להתחבר כדי ליצור לקוח חדש",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       setIsLoading(true);
       
@@ -88,6 +99,7 @@ export default function Clients() {
             contact: "פרטי קשר חדשים",
             status: "pending",
             notes: "יש להשלים פרטים",
+            user_id: user.id
           },
         ])
         .select();

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText } from "lucide-react";
@@ -26,9 +26,9 @@ export default function Orders() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
 
   // Fetch orders on component mount
-  useState(() => {
+  useEffect(() => {
     fetchOrders();
-  });
+  }, []);
 
   const fetchOrders = async () => {
     try {
@@ -72,6 +72,7 @@ export default function Orders() {
             client_name: "לקוח חדש",
             date: new Date().toISOString().split("T")[0],
             status: "draft",
+            user_id: user.id
           },
         ])
         .select();

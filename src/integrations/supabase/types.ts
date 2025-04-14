@@ -9,6 +9,96 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      clients: {
+        Row: {
+          contact: string | null
+          created_at: string | null
+          id: number
+          name: string | null
+          notes: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string | null
+          id?: number
+          name?: string | null
+          notes?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string | null
+          id?: number
+          name?: string | null
+          notes?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          description: string | null
+          id: number
+          location: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: number
+          location?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: number
+          location?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          client_name: string | null
+          created_at: string | null
+          date: string | null
+          id: number
+          status: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string | null
+          date?: string | null
+          id?: number
+          status?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string | null
+          date?: string | null
+          id?: number
+          status?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profile: {
         Row: {
           email: string | null
@@ -16,6 +106,7 @@ export type Database = {
           name: string
           orgname: string | null
           tel: string | null
+          user_id: string | null
         }
         Insert: {
           email?: string | null
@@ -23,6 +114,7 @@ export type Database = {
           name: string
           orgname?: string | null
           tel?: string | null
+          user_id?: string | null
         }
         Update: {
           email?: string | null
@@ -30,6 +122,7 @@ export type Database = {
           name?: string
           orgname?: string | null
           tel?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
