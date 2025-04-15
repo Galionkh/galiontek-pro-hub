@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -186,14 +187,12 @@ export default function Clients() {
     }
   };
 
-  const archiveClient = async () => {
-    if (!clientToDelete) return;
-
+  const archiveClient = async (client: Client) => {
     try {
       const { error } = await supabase
         .from("clients")
         .update({ status: "closed" })
-        .eq("id", clientToDelete.id)
+        .eq("id", client.id)
         .eq("user_id", user?.id);
 
       if (error) throw error;
@@ -210,10 +209,13 @@ export default function Clients() {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setShowDeleteDialog(false);
-      setClientToDelete(null);
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('he-IL');
   };
 
   const filteredClients = clients.filter((client) =>
@@ -259,10 +261,24 @@ export default function Clients() {
                   <strong>איש קשר:</strong> {client.contact}
                 </p>
                 {client.notes && (
-                  <p className="text-muted-foreground text-sm">{client.notes}</p>
+                  <p className="text-muted-foreground text-sm mb-2">{client.notes}</p>
+                )}
+                {client.created_at && (
+                  <p className="text-muted-foreground text-sm mb-3">
+                    <strong>נוצר בתאריך:</strong> {formatDate(client.created_at)}
+                  </p>
                 )}
                 <div className="mt-4 flex space-x-2">
                   <EditClientForm client={client} onClientUpdated={fetchClients} />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 mr-2"
+                    onClick={() => archiveClient(client)}
+                  >
+                    <Archive className="h-4 w-4" />
+                    העבר לארכיון
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -304,7 +320,7 @@ export default function Clients() {
               <>
                 <Button 
                   variant="outline" 
-                  onClick={archiveClient}
+                  onClick={() => archiveClient(clientToDelete!)}
                   className="flex items-center gap-2"
                 >
                   <Archive className="h-4 w-4" />
