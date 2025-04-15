@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,10 +22,6 @@ export default function Clients() {
   const [clientHasOrders, setClientHasOrders] = useState(false);
   const [activeTab, setActiveTab] = useState<"active" | "archive">("active");
 
-  useEffect(() => {
-    fetchClients();
-  }, []);
-
   const fetchClients = async () => {
     try {
       setIsLoadingClients(true);
@@ -37,7 +32,13 @@ export default function Clients() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setClients(data || []);
+
+      const typedData = data?.map(client => ({
+        ...client,
+        status: (client.status || "active") as "active" | "pending" | "closed"
+      })) as Client[];
+
+      setClients(typedData || []);
     } catch (error: any) {
       console.error("Error fetching clients:", error.message);
       toast({
@@ -167,6 +168,10 @@ export default function Clients() {
       });
     }
   };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   const activeClients = clients.filter(client => client.status !== "closed");
   const archivedClients = clients.filter(client => client.status === "closed");
