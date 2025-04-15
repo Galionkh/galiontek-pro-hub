@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -20,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -123,7 +123,7 @@ export default function Clients() {
       const { data, error } = await supabase
         .from("orders")
         .select("*")
-        .eq("client_name", clientId)
+        .eq("client_name", clientId.toString())
         .eq("user_id", user?.id);
 
       if (error) throw error;
@@ -151,17 +151,15 @@ export default function Clients() {
 
     try {
       if (deleteOrders && clientHasOrders) {
-        // מחיקת ההזמנות הקשורות ללקוח
         const { error: ordersError } = await supabase
           .from("orders")
           .delete()
-          .eq("client_name", clientToDelete.id)
+          .eq("client_name", clientToDelete.id.toString())
           .eq("user_id", user?.id);
 
         if (ordersError) throw ordersError;
       }
 
-      // מחיקת הלקוח
       const { error } = await supabase
         .from("clients")
         .delete()
@@ -174,7 +172,6 @@ export default function Clients() {
         title: "הלקוח נמחק בהצלחה",
       });
 
-      // עדכון רשימת הלקוחות
       fetchClients();
     } catch (error: any) {
       console.error("Error deleting client:", error.message);
@@ -205,7 +202,6 @@ export default function Clients() {
         title: "הלקוח הועבר לארכיון",
       });
 
-      // עדכון רשימת הלקוחות
       fetchClients();
     } catch (error: any) {
       console.error("Error archiving client:", error.message);
@@ -291,7 +287,6 @@ export default function Clients() {
         </Card>
       )}
 
-      {/* דיאלוג אישור מחיקה */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -363,14 +358,11 @@ function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
       if (error) throw error;
 
       toast({ title: "הלקוח נוסף בהצלחה" });
-      // ניקוי השדות
       setName("");
       setContact("");
       setStatus("active");
       setNotes("");
-      // סגירת החלון
       setIsOpen(false);
-      // רענון רשימת הלקוחות
       onClientAdded();
     } catch (error: any) {
       toast({ 
@@ -441,7 +433,6 @@ function EditClientForm({ client, onClientUpdated }: { client: Client, onClientU
   const [notes, setNotes] = useState(client.notes || "");
   const [loading, setLoading] = useState(false);
 
-  // עדכון הערכים כאשר הלקוח משתנה
   useEffect(() => {
     setName(client.name);
     setContact(client.contact);
@@ -468,9 +459,7 @@ function EditClientForm({ client, onClientUpdated }: { client: Client, onClientU
       if (error) throw error;
 
       toast({ title: "הלקוח עודכן בהצלחה" });
-      // סגירת החלון
       setIsOpen(false);
-      // רענון רשימת הלקוחות
       onClientUpdated();
     } catch (error: any) {
       toast({ 
