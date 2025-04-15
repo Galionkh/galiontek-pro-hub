@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -7,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, UserPlus, Loader2 } from "lucide-react";
+import { Plus, Search, UserPlus, Loader2, Trash2, Edit, Archive } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,16 +21,36 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // טיפוס לקוח
-
 type Client = {
   id: number;
   name: string;
   contact: string;
   status: string;
   notes?: string;
+  created_at: string;
+  user_id?: string;
+};
+
+// טיפוס הזמנה
+type Order = {
+  id: number;
+  title: string;
+  client_name: string;
+  status: string;
+  date: string;
   created_at: string;
   user_id?: string;
 };
@@ -66,6 +87,9 @@ export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [clientHasOrders, setClientHasOrders] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -91,6 +115,108 @@ export default function Clients() {
       });
     } finally {
       setIsLoadingClients(false);
+    }
+  };
+
+  const checkClientOrders = async (clientId: number) => {
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("client_name", clientId)
+        .eq("user_id", user?.id);
+
+      if (error) throw error;
+      return data?.length > 0;
+    } catch (error: any) {
+      console.error("Error checking client orders:", error.message);
+      toast({
+        title: "שגיאה בבדיקת הזמנות",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const handleDeleteClient = async (client: Client) => {
+    setClientToDelete(client);
+    const hasOrders = await checkClientOrders(client.id);
+    setClientHasOrders(hasOrders);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteClient = async (deleteOrders: boolean = false) => {
+    if (!clientToDelete) return;
+
+    try {
+      if (deleteOrders && clientHasOrders) {
+        // מחיקת ההזמנות הקשורות ללקוח
+        const { error: ordersError } = await supabase
+          .from("orders")
+          .delete()
+          .eq("client_name", clientToDelete.id)
+          .eq("user_id", user?.id);
+
+        if (ordersError) throw ordersError;
+      }
+
+      // מחיקת הלקוח
+      const { error } = await supabase
+        .from("clients")
+        .delete()
+        .eq("id", clientToDelete.id)
+        .eq("user_id", user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "הלקוח נמחק בהצלחה",
+      });
+
+      // עדכון רשימת הלקוחות
+      fetchClients();
+    } catch (error: any) {
+      console.error("Error deleting client:", error.message);
+      toast({
+        title: "שגיאה במחיקת לקוח",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setShowDeleteDialog(false);
+      setClientToDelete(null);
+    }
+  };
+
+  const archiveClient = async () => {
+    if (!clientToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .update({ status: "closed" })
+        .eq("id", clientToDelete.id)
+        .eq("user_id", user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "הלקוח הועבר לארכיון",
+      });
+
+      // עדכון רשימת הלקוחות
+      fetchClients();
+    } catch (error: any) {
+      console.error("Error archiving client:", error.message);
+      toast({
+        title: "שגיאה בהעברה לארכיון",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setShowDeleteDialog(false);
+      setClientToDelete(null);
     }
   };
 
@@ -139,9 +265,16 @@ export default function Clients() {
                 {client.notes && (
                   <p className="text-muted-foreground text-sm">{client.notes}</p>
                 )}
-                <div className="mt-4">
-                  <Button variant="outline" size="sm">
-                    ערוך פרטים
+                <div className="mt-4 flex space-x-2">
+                  <EditClientForm client={client} onClientUpdated={fetchClients} />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                    onClick={() => handleDeleteClient(client)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    מחק
                   </Button>
                 </div>
               </CardContent>
@@ -157,6 +290,49 @@ export default function Clients() {
           </div>
         </Card>
       )}
+
+      {/* דיאלוג אישור מחיקה */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>מחיקת לקוח</AlertDialogTitle>
+            <AlertDialogDescription>
+              {clientHasOrders
+                ? "לקוח זה מקושר להזמנות. מה ברצונך לעשות?"
+                : "האם אתה בטוח שברצונך למחוק לקוח זה? פעולה זו אינה הפיכה."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            
+            {clientHasOrders ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={archiveClient}
+                  className="flex items-center gap-2"
+                >
+                  <Archive className="h-4 w-4" />
+                  העבר לארכיון
+                </Button>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => confirmDeleteClient(true)}
+                >
+                  מחק לקוח והזמנות
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={() => confirmDeleteClient(false)}
+              >
+                מחק לקוח
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -164,6 +340,7 @@ export default function Clients() {
 function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [status, setStatus] = useState<"active" | "pending" | "closed">("active");
@@ -174,26 +351,40 @@ function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
     if (!user) return;
     setLoading(true);
 
-    const { error } = await supabase.from("clients").insert({
-      name,
-      contact,
-      status,
-      notes,
-      user_id: user.id,
-    });
+    try {
+      const { error } = await supabase.from("clients").insert({
+        name,
+        contact,
+        status,
+        notes,
+        user_id: user.id,
+      });
 
-    setLoading(false);
+      if (error) throw error;
 
-    if (error) {
-      toast({ title: "שגיאה", description: error.message });
-    } else {
       toast({ title: "הלקוח נוסף בהצלחה" });
+      // ניקוי השדות
+      setName("");
+      setContact("");
+      setStatus("active");
+      setNotes("");
+      // סגירת החלון
+      setIsOpen(false);
+      // רענון רשימת הלקוחות
       onClientAdded();
+    } catch (error: any) {
+      toast({ 
+        title: "שגיאה", 
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="default" className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
@@ -240,3 +431,102 @@ function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
   );
 }
 
+function EditClientForm({ client, onClientUpdated }: { client: Client, onClientUpdated: () => void }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [name, setName] = useState(client.name);
+  const [contact, setContact] = useState(client.contact);
+  const [status, setStatus] = useState<"active" | "pending" | "closed">(client.status as any);
+  const [notes, setNotes] = useState(client.notes || "");
+  const [loading, setLoading] = useState(false);
+
+  // עדכון הערכים כאשר הלקוח משתנה
+  useEffect(() => {
+    setName(client.name);
+    setContact(client.contact);
+    setStatus(client.status as any);
+    setNotes(client.notes || "");
+  }, [client]);
+
+  const handleSubmit = async () => {
+    if (!user) return;
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .update({
+          name,
+          contact,
+          status,
+          notes,
+        })
+        .eq("id", client.id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast({ title: "הלקוח עודכן בהצלחה" });
+      // סגירת החלון
+      setIsOpen(false);
+      // רענון רשימת הלקוחות
+      onClientUpdated();
+    } catch (error: any) {
+      toast({ 
+        title: "שגיאה", 
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <Edit className="h-4 w-4" />
+          ערוך פרטים
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>עריכת לקוח</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input
+            placeholder="שם הלקוח"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
+            placeholder="פרטי קשר"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+          />
+          <Input
+            placeholder="הערות"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+          <select
+            className="w-full border rounded p-2"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as any)}
+          >
+            <option value="active">פעיל</option>
+            <option value="pending">ממתין</option>
+            <option value="closed">סגור</option>
+          </select>
+        </div>
+        <DialogFooter>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "מעדכן..." : "עדכן לקוח"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
