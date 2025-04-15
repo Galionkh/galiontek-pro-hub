@@ -1,86 +1,15 @@
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Search, UserPlus, Loader2, Trash2, Edit, Archive } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Loader2, Search, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-
-// טיפוס לקוח
-type Client = {
-  id: number;
-  name: string;
-  contact: string;
-  status: string;
-  notes?: string;
-  created_at: string;
-  user_id?: string;
-};
-
-// טיפוס הזמנה
-type Order = {
-  id: number;
-  title: string;
-  client_name: string;
-  status: string;
-  date: string;
-  created_at: string;
-  user_id?: string;
-};
-
-const getStatusColor = (status: Client["status"]) => {
-  switch (status) {
-    case "active":
-      return "bg-green-100 text-green-800";
-    case "pending":
-      return "bg-yellow-100 text-yellow-800";
-    case "closed":
-      return "bg-gray-100 text-gray-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-const getStatusText = (status: Client["status"]) => {
-  switch (status) {
-    case "active":
-      return "פעיל";
-    case "pending":
-      return "ממתין";
-    case "closed":
-      return "סגור";
-    default:
-      return status;
-  }
-};
+import { Client } from "@/features/clients/types";
+import { NewClientForm } from "@/features/clients/components/NewClientForm";
+import { ClientCard } from "@/features/clients/components/ClientCard";
+import { DeleteClientDialog } from "@/features/clients/components/DeleteClientDialog";
 
 export default function Clients() {
   const { toast } = useToast();
@@ -212,12 +141,6 @@ export default function Clients() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('he-IL');
-  };
-
   const filteredClients = clients.filter((client) =>
     client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.contact?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -249,48 +172,13 @@ export default function Clients() {
       ) : filteredClients.length > 0 ? (
         <div className="grid gap-4">
           {filteredClients.map((client) => (
-            <Card key={client.id} className="card-hover">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-xl">{client.name}</CardTitle>
-                <Badge className={getStatusColor(client.status)}>
-                  {getStatusText(client.status)}
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-2">
-                  <strong>איש קשר:</strong> {client.contact}
-                </p>
-                {client.notes && (
-                  <p className="text-muted-foreground text-sm mb-2">{client.notes}</p>
-                )}
-                {client.created_at && (
-                  <p className="text-muted-foreground text-sm mb-3">
-                    <strong>נוצר בתאריך:</strong> {formatDate(client.created_at)}
-                  </p>
-                )}
-                <div className="mt-4 flex space-x-2">
-                  <EditClientForm client={client} onClientUpdated={fetchClients} />
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex items-center gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 mr-2"
-                    onClick={() => archiveClient(client)}
-                  >
-                    <Archive className="h-4 w-4" />
-                    העבר לארכיון
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
-                    onClick={() => handleDeleteClient(client)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    מחק
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ClientCard
+              key={client.id}
+              client={client}
+              onEdit={fetchClients}
+              onArchive={archiveClient}
+              onDelete={handleDeleteClient}
+            />
           ))}
         </div>
       ) : (
@@ -303,235 +191,14 @@ export default function Clients() {
         </Card>
       )}
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>מחיקת לקוח</AlertDialogTitle>
-            <AlertDialogDescription>
-              {clientHasOrders
-                ? "לקוח זה מקושר להזמנות. מה ברצונך לעשות?"
-                : "האם אתה בטוח שברצונך למחוק לקוח זה? פעולה זו אינה הפיכה."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-            <AlertDialogCancel>ביטול</AlertDialogCancel>
-            
-            {clientHasOrders ? (
-              <>
-                <Button 
-                  variant="outline" 
-                  onClick={() => archiveClient(clientToDelete!)}
-                  className="flex items-center gap-2"
-                >
-                  <Archive className="h-4 w-4" />
-                  העבר לארכיון
-                </Button>
-                <AlertDialogAction
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                  onClick={() => confirmDeleteClient(true)}
-                >
-                  מחק לקוח והזמנות
-                </AlertDialogAction>
-              </>
-            ) : (
-              <AlertDialogAction
-                className="bg-red-600 hover:bg-red-700 text-white"
-                onClick={() => confirmDeleteClient(false)}
-              >
-                מחק לקוח
-              </AlertDialogAction>
-            )}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteClientDialog
+        isOpen={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        clientToDelete={clientToDelete}
+        hasOrders={clientHasOrders}
+        onConfirmDelete={confirmDeleteClient}
+        onArchive={archiveClient}
+      />
     </div>
-  );
-}
-
-function NewClientForm({ onClientAdded }: { onClientAdded: () => void }) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [contact, setContact] = useState("");
-  const [status, setStatus] = useState<"active" | "pending" | "closed">("active");
-  const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!user) return;
-    setLoading(true);
-
-    try {
-      const { error } = await supabase.from("clients").insert({
-        name,
-        contact,
-        status,
-        notes,
-        user_id: user.id,
-      });
-
-      if (error) throw error;
-
-      toast({ title: "הלקוח נוסף בהצלחה" });
-      setName("");
-      setContact("");
-      setStatus("active");
-      setNotes("");
-      setIsOpen(false);
-      onClientAdded();
-    } catch (error: any) {
-      toast({ 
-        title: "שגיאה", 
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default" className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4" />
-          לקוח חדש
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>לקוח חדש</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Input
-            placeholder="שם הלקוח"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Input
-            placeholder="פרטי קשר"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-          />
-          <Input
-            placeholder="הערות"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-          <select
-            className="w-full border rounded p-2"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as any)}
-          >
-            <option value="active">פעיל</option>
-            <option value="pending">ממתין</option>
-            <option value="closed">סגור</option>
-          </select>
-        </div>
-        <DialogFooter>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "שומר..." : "שמור לקוח"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function EditClientForm({ client, onClientUpdated }: { client: Client, onClientUpdated: () => void }) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState(client.name);
-  const [contact, setContact] = useState(client.contact);
-  const [status, setStatus] = useState<"active" | "pending" | "closed">(client.status as any);
-  const [notes, setNotes] = useState(client.notes || "");
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setName(client.name);
-    setContact(client.contact);
-    setStatus(client.status as any);
-    setNotes(client.notes || "");
-  }, [client]);
-
-  const handleSubmit = async () => {
-    if (!user) return;
-    setLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from("clients")
-        .update({
-          name,
-          contact,
-          status,
-          notes,
-        })
-        .eq("id", client.id)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      toast({ title: "הלקוח עודכן בהצלחה" });
-      setIsOpen(false);
-      onClientUpdated();
-    } catch (error: any) {
-      toast({ 
-        title: "שגיאה", 
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <Edit className="h-4 w-4" />
-          ערוך פרטים
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>עריכת לקוח</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Input
-            placeholder="שם הלקוח"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Input
-            placeholder="פרטי קשר"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-          />
-          <Input
-            placeholder="הערות"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-          <select
-            className="w-full border rounded p-2"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as any)}
-          >
-            <option value="active">פעיל</option>
-            <option value="pending">ממתין</option>
-            <option value="closed">סגור</option>
-          </select>
-        </div>
-        <DialogFooter>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "מעדכן..." : "עדכן לקוח"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
