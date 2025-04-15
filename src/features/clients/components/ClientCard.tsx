@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Archive, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { Client } from "../types";
 import { getStatusColor, getStatusText, formatDate } from "../utils/clientUtils";
 import { EditClientForm } from "./EditClientForm";
@@ -10,11 +10,20 @@ import { EditClientForm } from "./EditClientForm";
 interface ClientCardProps {
   client: Client;
   onEdit: () => void;
-  onArchive: (client: Client) => Promise<void>;
+  isArchived?: boolean;
+  onArchive?: (client: Client) => Promise<void>;
+  onRestore?: (client: Client) => Promise<void>;
   onDelete: (client: Client) => void;
 }
 
-export function ClientCard({ client, onEdit, onArchive, onDelete }: ClientCardProps) {
+export function ClientCard({ 
+  client, 
+  onEdit, 
+  isArchived = false,
+  onArchive,
+  onRestore,
+  onDelete 
+}: ClientCardProps) {
   return (
     <Card className="card-hover">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -36,16 +45,34 @@ export function ClientCard({ client, onEdit, onArchive, onDelete }: ClientCardPr
           </p>
         )}
         <div className="mt-4 flex space-x-2">
-          <EditClientForm client={client} onClientUpdated={onEdit} />
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 mr-2"
-            onClick={() => onArchive(client)}
-          >
-            <Archive className="h-4 w-4" />
-            העבר לארכיון
-          </Button>
+          {!isArchived ? (
+            <>
+              <EditClientForm client={client} onClientUpdated={onEdit} />
+              {onArchive && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 mr-2"
+                  onClick={() => onArchive(client)}
+                >
+                  <Archive className="h-4 w-4" />
+                  העבר לארכיון
+                </Button>
+              )}
+            </>
+          ) : (
+            onRestore && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-2 text-green-600 border-green-200 hover:bg-green-50 mr-2"
+                onClick={() => onRestore(client)}
+              >
+                <ArchiveRestore className="h-4 w-4" />
+                שחזר לקוח
+              </Button>
+            )
+          )}
           <Button 
             variant="outline" 
             size="sm" 

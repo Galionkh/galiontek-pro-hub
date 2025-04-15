@@ -3,7 +3,7 @@ export type Client = {
   id: number;
   name: string;
   contact: string;
-  status: string;
+  status: "active" | "pending" | "closed";
   notes?: string;
   created_at: string;
   user_id?: string;
