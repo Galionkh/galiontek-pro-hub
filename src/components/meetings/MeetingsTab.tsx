@@ -11,7 +11,7 @@ import { MeetingsList } from "./MeetingsList";
 import { MeetingsSummary } from "./MeetingsSummary";
 import { useMeetings } from "@/hooks/useMeetings";
 import { useToast } from "@/hooks/use-toast";
-import type { Order } from "@/hooks/useOrders";
+import type { Order } from "@/features/clients/types";
 import type { Meeting } from "@/hooks/useMeetings";
 import { exportToPDF, shareViaWhatsApp, sendEmail } from "@/utils/meetingExports";
 import { supabase } from "@/integrations/supabase/client";
@@ -152,6 +152,7 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
         // Convert client_id to number if it's a string
         const clientId = typeof order.client_id === 'string' ? parseInt(order.client_id, 10) : order.client_id;
         
+        // Use non-typed query to avoid TypeScript issues with column detection
         const { data, error } = await supabase
           .from("clients")
           .select("email")
@@ -160,6 +161,7 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
           
         if (error) throw error;
         
+        // Type guard to ensure data exists and has email property
         if (!data || !data.email) {
           toast({
             title: "חסר דואר אלקטרוני",
