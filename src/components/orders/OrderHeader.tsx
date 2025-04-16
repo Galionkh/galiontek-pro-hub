@@ -8,7 +8,7 @@ import type { Order } from "@/hooks/useOrders";
 interface OrderHeaderProps {
   order: Order;
   onEdit: () => void;
-  onDelete: () => Promise<void>;
+  onDelete: () => void;
   onSendToClient: () => Promise<void>;
 }
 

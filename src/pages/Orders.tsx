@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 
 export default function Orders() {
   const { user } = useAuth();
-  const { orders, isLoading, fetchOrders } = useOrders();
+  const { orders, isLoading, fetchOrders, createOrder, deleteOrder, sendOrderToClient } = useOrders();
   const [isOrderSheetOpen, setIsOrderSheetOpen] = useState(false);
 
   useEffect(() => {
@@ -20,8 +20,13 @@ export default function Orders() {
     }
   }, [user]);
 
-  const handleOrderAdded = () => {
+  const handleOrderFormSubmit = async (formData: any) => {
+    await createOrder(formData);
+    setIsOrderSheetOpen(false);
     fetchOrders();
+  };
+
+  const handleCloseForm = () => {
     setIsOrderSheetOpen(false);
   };
 
@@ -48,7 +53,10 @@ export default function Orders() {
             <SheetHeader>
               <SheetTitle>הזמנה חדשה</SheetTitle>
             </SheetHeader>
-            <OrderForm onOrderAdded={handleOrderAdded} />
+            <OrderForm 
+              onClose={handleCloseForm} 
+              onSubmit={handleOrderFormSubmit}
+            />
           </SheetContent>
         </Sheet>
       </div>
@@ -69,13 +77,21 @@ export default function Orders() {
                 <SheetHeader>
                   <SheetTitle>הזמנה חדשה</SheetTitle>
                 </SheetHeader>
-                <OrderForm onOrderAdded={handleOrderAdded} />
+                <OrderForm 
+                  onClose={handleCloseForm} 
+                  onSubmit={handleOrderFormSubmit} 
+                />
               </SheetContent>
             </Sheet>
           </div>
         </Card>
       ) : (
-        <OrdersList orders={orders} onOrdersChanged={fetchOrders} />
+        <OrdersList 
+          orders={orders} 
+          isLoadingOrders={isLoading} 
+          onDeleteOrder={deleteOrder} 
+          onSendToClient={sendOrderToClient}
+        />
       )}
     </div>
   );

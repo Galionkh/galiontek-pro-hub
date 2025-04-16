@@ -75,8 +75,6 @@ export const useOrderDetails = (orderId: number) => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("האם אתה בטוח שברצונך למחוק את ההזמנה?")) return;
-    
     try {
       const { error } = await supabase
         .from("orders")
