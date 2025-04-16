@@ -69,6 +69,53 @@ export type Database = {
         }
         Relationships: []
       }
+      meetings: {
+        Row: {
+          created_at: string
+          date: string
+          duration_minutes: number
+          end_time: string
+          id: string
+          order_id: number
+          start_time: string
+          teaching_units: number
+          topic: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          duration_minutes: number
+          end_time: string
+          id?: string
+          order_id: number
+          start_time: string
+          teaching_units: number
+          topic?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          duration_minutes?: number
+          end_time?: string
+          id?: string
+          order_id?: number
+          start_time?: string
+          teaching_units?: number
+          topic?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string | null

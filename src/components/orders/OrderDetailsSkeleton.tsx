@@ -3,6 +3,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const OrderDetailsSkeleton: React.FC = () => {
   return (
@@ -19,64 +20,71 @@ export const OrderDetailsSkeleton: React.FC = () => {
         </div>
       </div>
 
-      <Card className="p-6">
-        <div className="space-y-6">
-          <div>
-            <Skeleton className="h-6 w-36 mb-4" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Skeleton className="h-4 w-16 mb-2" />
-                <Skeleton className="h-5 w-48" />
-              </div>
-              <div>
-                <Skeleton className="h-4 w-16 mb-2" />
-                <Skeleton className="h-5 w-32" />
-              </div>
-              <div>
-                <Skeleton className="h-4 w-16 mb-2" />
-                <Skeleton className="h-5 w-24" />
-              </div>
-              <div>
-                <Skeleton className="h-4 w-16 mb-2" />
-                <Skeleton className="h-5 w-48" />
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <Skeleton className="h-6 w-36 mb-4" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Skeleton className="h-4 w-16 mb-2" />
-                <Skeleton className="h-5 w-24" />
-              </div>
-              <div>
-                <Skeleton className="h-4 w-16 mb-2" />
-                <Skeleton className="h-5 w-32" />
-              </div>
-              <div>
-                <Skeleton className="h-4 w-16 mb-2" />
-                <Skeleton className="h-5 w-32" />
-              </div>
-              <div>
-                <Skeleton className="h-4 w-16 mb-2" />
-                <Skeleton className="h-5 w-40" />
+      <Tabs defaultValue="details" className="space-y-4">
+        <TabsList className="grid w-full md:w-auto grid-cols-2">
+          <TabsTrigger value="details" disabled>פרטי הזמנה</TabsTrigger>
+          <TabsTrigger value="meetings" disabled>מפגשים</TabsTrigger>
+        </TabsList>
+        
+        <Card className="p-6">
+          <div className="space-y-6">
+            <div>
+              <Skeleton className="h-6 w-36 mb-4" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Skeleton className="h-4 w-16 mb-2" />
+                  <Skeleton className="h-5 w-48" />
+                </div>
+                <div>
+                  <Skeleton className="h-4 w-16 mb-2" />
+                  <Skeleton className="h-5 w-32" />
+                </div>
+                <div>
+                  <Skeleton className="h-4 w-16 mb-2" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
+                <div>
+                  <Skeleton className="h-4 w-16 mb-2" />
+                  <Skeleton className="h-5 w-48" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <Separator />
-          
-          <div>
-            <Skeleton className="h-6 w-36 mb-4" />
-            <Skeleton className="h-5 w-full" />
-            <Skeleton className="h-5 w-5/6 mt-2" />
-            <Skeleton className="h-5 w-4/6 mt-2" />
+            <Separator />
+
+            <div>
+              <Skeleton className="h-6 w-36 mb-4" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Skeleton className="h-4 w-16 mb-2" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
+                <div>
+                  <Skeleton className="h-4 w-16 mb-2" />
+                  <Skeleton className="h-5 w-32" />
+                </div>
+                <div>
+                  <Skeleton className="h-4 w-16 mb-2" />
+                  <Skeleton className="h-5 w-32" />
+                </div>
+                <div>
+                  <Skeleton className="h-4 w-16 mb-2" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+            
+            <div>
+              <Skeleton className="h-6 w-36 mb-4" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-5/6 mt-2" />
+              <Skeleton className="h-5 w-4/6 mt-2" />
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </Tabs>
     </div>
   );
 };
