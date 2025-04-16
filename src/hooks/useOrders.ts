@@ -9,7 +9,7 @@ export type Order = {
   id: number;
   title: string;
   client_name: string;
-  client_id?: string;
+  client_id: string;  // Now matching the database schema
   date: string;
   status: string;
   created_at: string;
@@ -86,7 +86,12 @@ export const useOrders = () => {
         }])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error details:", error);
+        throw error;
+      }
+
+      console.log("Order created successfully:", data);
 
       toast({
         title: "נוצר בהצלחה",

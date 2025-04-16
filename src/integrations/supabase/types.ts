@@ -107,41 +107,56 @@ export type Database = {
       orders: {
         Row: {
           amount: number | null
+          client_id: string | null
           client_name: string | null
           created_at: string | null
           date: string | null
           description: string | null
+          hourly_rate: number | null
+          hours: number | null
           id: number
           notes: string | null
           payment_terms: string | null
+          service_topic: string | null
           status: string | null
           title: string
+          total_amount: number | null
           user_id: string | null
         }
         Insert: {
           amount?: number | null
+          client_id?: string | null
           client_name?: string | null
           created_at?: string | null
           date?: string | null
           description?: string | null
+          hourly_rate?: number | null
+          hours?: number | null
           id?: number
           notes?: string | null
           payment_terms?: string | null
+          service_topic?: string | null
           status?: string | null
           title: string
+          total_amount?: number | null
           user_id?: string | null
         }
         Update: {
           amount?: number | null
+          client_id?: string | null
           client_name?: string | null
           created_at?: string | null
           date?: string | null
           description?: string | null
+          hourly_rate?: number | null
+          hours?: number | null
           id?: number
           notes?: string | null
           payment_terms?: string | null
+          service_topic?: string | null
           status?: string | null
           title?: string
+          total_amount?: number | null
           user_id?: string | null
         }
         Relationships: []
