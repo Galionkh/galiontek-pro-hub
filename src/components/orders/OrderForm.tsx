@@ -1,17 +1,13 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/features/clients/types";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { NewClientForm } from "@/features/clients/components/NewClientForm";
-import { Plus } from "lucide-react";
+import { FormField } from "./form/FormField";
+import { ClientSelector } from "./form/ClientSelector";
+import { StatusSelector } from "./form/StatusSelector";
+import { PricingFields } from "./form/PricingFields";
 
 interface OrderFormProps {
   onClose: () => void;
@@ -38,7 +34,6 @@ export function OrderForm({ onClose, onSubmit, initialData, isEdit = false }: Or
     hourly_rate: initialData?.hourly_rate || "",
     total_amount: initialData?.total_amount || 0,
   });
-  const [isClientSheetOpen, setIsClientSheetOpen] = useState(false);
 
   useEffect(() => {
     // Fetch clients for the dropdown
@@ -69,7 +64,7 @@ export function OrderForm({ onClose, onSubmit, initialData, isEdit = false }: Or
     }
 
     fetchClients();
-  }, [toast, isClientSheetOpen]);
+  }, [toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -129,173 +124,76 @@ export function OrderForm({ onClose, onSubmit, initialData, isEdit = false }: Or
     }
   };
 
-  const handleClientAdded = () => {
-    setIsClientSheetOpen(false);
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
-      <div className="space-y-2">
-        <Label htmlFor="title">כותרת הטופס</Label>
-        <Input 
-          id="title" 
-          name="title" 
-          value={formData.title} 
-          onChange={handleChange} 
-          required 
-        />
-      </div>
+      <FormField
+        id="title"
+        name="title"
+        label="כותרת הטופס"
+        value={formData.title}
+        onChange={handleChange}
+        required={true}
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="client_id">לקוח <span className="text-red-500">*</span></Label>
-        <div className="flex gap-2">
-          <Select 
-            value={formData.client_id} 
-            onValueChange={(value) => handleSelectChange("client_id", value)}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="בחר לקוח" />
-            </SelectTrigger>
-            <SelectContent>
-              {clients.map((client) => (
-                <SelectItem key={client.id} value={client.id.toString()}>
-                  {client.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Sheet open={isClientSheetOpen} onOpenChange={setIsClientSheetOpen}>
-            <SheetTrigger asChild>
-              <Button type="button" variant="outline" size="icon">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <SheetHeader>
-                <SheetTitle>הוספת לקוח חדש</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6">
-                <NewClientForm onClientAdded={handleClientAdded} />
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
+      <ClientSelector 
+        clientId={formData.client_id} 
+        clients={clients} 
+        onClientSelect={(value) => handleSelectChange("client_id", value)}
+        isRequired={true}
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="date">תאריך</Label>
-        <Input 
-          id="date" 
-          name="date" 
-          type="date" 
-          value={formData.date} 
-          onChange={handleChange} 
-        />
-      </div>
+      <FormField
+        id="date"
+        name="date"
+        label="תאריך"
+        type="date"
+        value={formData.date}
+        onChange={handleChange}
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="service_topic">נושא השירות / שם התוכנית</Label>
-        <Input 
-          id="service_topic" 
-          name="service_topic" 
-          value={formData.service_topic || ""} 
-          onChange={handleChange} 
-        />
-      </div>
+      <FormField
+        id="service_topic"
+        name="service_topic"
+        label="נושא השירות / שם התוכנית"
+        value={formData.service_topic || ""}
+        onChange={handleChange}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="hours">מספר שעות</Label>
-          <Input 
-            id="hours" 
-            name="hours" 
-            type="number" 
-            min="0"
-            step="0.5"
-            value={formData.hours || ""} 
-            onChange={handleChange} 
-            className="ltr-input"
-            dir="ltr"
-          />
-        </div>
+      <PricingFields 
+        hours={formData.hours} 
+        hourlyRate={formData.hourly_rate} 
+        totalAmount={formData.total_amount} 
+        onChange={handleChange}
+      />
 
-        <div className="space-y-2">
-          <Label htmlFor="hourly_rate">תעריף לשעה (₪)</Label>
-          <Input 
-            id="hourly_rate" 
-            name="hourly_rate" 
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.hourly_rate || ""} 
-            onChange={handleChange} 
-            className="ltr-input"
-            dir="ltr"
-          />
-        </div>
+      <FormField
+        id="payment_terms"
+        name="payment_terms"
+        label="תנאי תשלום"
+        value={formData.payment_terms || ""}
+        onChange={handleChange}
+      />
 
-        <div className="space-y-2">
-          <Label htmlFor="total_amount">סכום כולל (₪)</Label>
-          <Input 
-            id="total_amount" 
-            name="total_amount" 
-            type="number" 
-            value={formData.total_amount || 0} 
-            readOnly
-            className="bg-gray-50 ltr-input"
-            dir="ltr"
-          />
-        </div>
-      </div>
+      <StatusSelector 
+        status={formData.status} 
+        onStatusChange={(value) => handleSelectChange("status", value)}
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="payment_terms">תנאי תשלום</Label>
-        <Input 
-          id="payment_terms" 
-          name="payment_terms" 
-          value={formData.payment_terms || ""} 
-          onChange={handleChange} 
-        />
-      </div>
+      <FormField
+        id="description"
+        name="description"
+        label="תיאור"
+        value={formData.description || ""}
+        onChange={handleChange}
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="status">סטטוס</Label>
-        <Select 
-          value={formData.status} 
-          onValueChange={(value) => handleSelectChange("status", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="בחר סטטוס" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="draft">טיוטה</SelectItem>
-            <SelectItem value="sent">נשלח</SelectItem>
-            <SelectItem value="confirmed">מאושר</SelectItem>
-            <SelectItem value="completed">הושלם</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">תיאור</Label>
-        <Input 
-          id="description" 
-          name="description" 
-          value={formData.description || ""} 
-          onChange={handleChange} 
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="notes">הערות</Label>
-        <Input 
-          id="notes" 
-          name="notes" 
-          value={formData.notes || ""} 
-          onChange={handleChange} 
-        />
-      </div>
+      <FormField
+        id="notes"
+        name="notes"
+        label="הערות"
+        value={formData.notes || ""}
+        onChange={handleChange}
+      />
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onClose} className="ml-2">
