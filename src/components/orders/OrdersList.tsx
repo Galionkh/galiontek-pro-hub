@@ -7,9 +7,16 @@ import type { Order } from "@/hooks/useOrders";
 interface OrdersListProps {
   orders: Order[];
   isLoadingOrders: boolean;
+  onDeleteOrder: (id: number) => Promise<void>;
+  onSendToClient: (id: number) => Promise<void>;
 }
 
-export const OrdersList = ({ orders, isLoadingOrders }: OrdersListProps) => {
+export const OrdersList = ({ 
+  orders, 
+  isLoadingOrders, 
+  onDeleteOrder, 
+  onSendToClient 
+}: OrdersListProps) => {
   if (isLoadingOrders) {
     return (
       <Card className="p-6">
@@ -35,7 +42,12 @@ export const OrdersList = ({ orders, isLoadingOrders }: OrdersListProps) => {
   return (
     <div className="grid gap-4">
       {orders.map((order) => (
-        <OrderCard key={order.id} order={order} />
+        <OrderCard 
+          key={order.id} 
+          order={order} 
+          onDelete={onDeleteOrder}
+          onSendToClient={onSendToClient}
+        />
       ))}
     </div>
   );
