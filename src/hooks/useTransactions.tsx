@@ -38,7 +38,15 @@ export function useTransactions() {
         });
         return [];
       }
-      return data || [];
+      
+      // Convert DB data to our Transaction type
+      return (data || []).map(item => ({
+        id: item.id,
+        type: item.type as 'income' | 'expense',
+        amount: item.amount,
+        description: item.description || '',
+        date: item.date
+      }));
     },
     enabled: !!user,
   });

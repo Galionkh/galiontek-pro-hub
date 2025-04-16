@@ -35,7 +35,10 @@ export default function Finances() {
                 <DialogTitle className="text-right">רישום כספי חדש</DialogTitle>
               </DialogHeader>
               <TransactionForm 
-                onSubmit={addTransaction.mutateAsync}
+                onSubmit={async (data) => {
+                  await addTransaction.mutateAsync(data);
+                  return data;
+                }}
                 onClose={() => setOpen(false)}
                 isSubmitting={addTransaction.isPending}
               />

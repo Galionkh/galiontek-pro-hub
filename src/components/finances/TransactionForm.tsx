@@ -15,7 +15,7 @@ const transactionSchema = z.object({
 });
 
 type TransactionFormProps = {
-  onSubmit: (data: TransactionInput) => Promise<void>;
+  onSubmit: (data: TransactionInput) => Promise<any>;
   onClose: () => void;
   isSubmitting: boolean;
 };
@@ -32,14 +32,18 @@ export function TransactionForm({ onSubmit, onClose, isSubmitting }: Transaction
   });
 
   const handleSubmit = async (data: z.infer<typeof transactionSchema>) => {
-    await onSubmit(data);
-    form.reset({
-      type: 'income',
-      amount: 0,
-      description: '',
-      date: new Date().toISOString().split('T')[0],
-    });
-    onClose();
+    try {
+      await onSubmit(data as TransactionInput);
+      form.reset({
+        type: 'income',
+        amount: 0,
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+      });
+      onClose();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    }
   };
 
   return (

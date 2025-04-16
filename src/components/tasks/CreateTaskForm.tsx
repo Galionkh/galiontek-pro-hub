@@ -40,12 +40,20 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
 
   const onSubmit = async (data: TaskFormValues) => {
     try {
+      if (!user) throw new Error("User not authenticated");
+
+      // Map form fields to database fields
+      const taskData = {
+        title: data.title,
+        description: data.description || null,
+        due_date: data.dueDate,
+        category: data.category,
+        user_id: user.id
+      };
+
       const { error } = await supabase
         .from('tasks')
-        .insert([{
-          ...data,
-          user_id: user?.id,
-        }]);
+        .insert(taskData);
 
       if (error) throw error;
 
