@@ -83,6 +83,58 @@
     --sidebar-border: 262 30% 25%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  /* Theme Colors */
+  .theme-blue {
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 100% 97%;
+    --sidebar-background: 210 100% 50%;
+    --sidebar-accent: 210 100% 40%;
+    --sidebar-border: 210 100% 45%;
+  }
+
+  .theme-green {
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 142 76% 97%;
+    --sidebar-background: 142 76% 36%;
+    --sidebar-accent: 142 76% 30%;
+    --sidebar-border: 142 76% 31%;
+  }
+
+  .theme-orange {
+    --primary: 27 96% 61%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 27 100% 97%;
+    --sidebar-background: 27 96% 61%;
+    --sidebar-accent: 27 96% 51%;
+    --sidebar-border: 27 96% 56%;
+  }
+
+  .dark.theme-blue {
+    --primary: 210 100% 50%;
+    --secondary: 210 100% 30%;
+    --sidebar-background: 210 100% 30%;
+    --sidebar-accent: 210 100% 40%;
+    --sidebar-border: 210 100% 25%;
+  }
+
+  .dark.theme-green {
+    --primary: 142 76% 36%;
+    --secondary: 142 76% 20%;
+    --sidebar-background: 142 76% 26%;
+    --sidebar-accent: 142 76% 36%;
+    --sidebar-border: 142 76% 21%;
+  }
+
+  .dark.theme-orange {
+    --primary: 27 96% 61%;
+    --secondary: 27 96% 20%;
+    --sidebar-background: 27 96% 31%;
+    --sidebar-accent: 27 96% 41%;
+    --sidebar-border: 27 96% 26%;
+  }
 }
 
 @layer base {
@@ -93,6 +145,7 @@
   body {
     @apply bg-background text-foreground;
     direction: rtl;
+    transition: font-size 0.3s ease;
   }
 
   html {
@@ -111,5 +164,18 @@
   
   .ltr {
     direction: ltr;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 }

@@ -36,7 +36,71 @@ export function AppearanceTab() {
     } else {
       document.documentElement.classList.remove('dark');
     }
+
+    // Apply color scheme
+    applyColorScheme(savedColorScheme || 'purple');
+    
+    // Apply font size
+    applyFontSize(savedFontSize ? parseInt(savedFontSize) : 2);
   }, []);
+
+  // Function to apply color scheme to document
+  const applyColorScheme = (scheme: string) => {
+    // Remove any existing color scheme classes
+    document.documentElement.classList.remove('theme-purple', 'theme-blue', 'theme-green', 'theme-orange');
+    // Add new color scheme class
+    document.documentElement.classList.add(`theme-${scheme}`);
+    
+    // Update CSS variables based on the color scheme
+    let primary, secondary;
+    switch(scheme) {
+      case 'purple':
+        primary = '262 30% 50%';
+        secondary = '260 100% 97%';
+        break;
+      case 'blue':
+        primary = '210 100% 50%';
+        secondary = '210 100% 97%';
+        break;
+      case 'green':
+        primary = '142 76% 36%';
+        secondary = '142 76% 97%';
+        break;
+      case 'orange':
+        primary = '27 96% 61%';
+        secondary = '27 100% 97%';
+        break;
+      default:
+        primary = '262 30% 50%';
+        secondary = '260 100% 97%';
+    }
+
+    // Apply CSS variables for both light and dark mode
+    const root = document.documentElement;
+    root.style.setProperty('--primary', primary);
+    root.style.setProperty('--secondary', secondary);
+  };
+
+  // Function to apply font size
+  const applyFontSize = (size: number) => {
+    document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
+    document.documentElement.classList.add(getFontSizeClass(size));
+    
+    // Update font size on the body
+    switch(size) {
+      case 1:
+        document.body.style.fontSize = '0.875rem'; // text-sm
+        break;
+      case 2:
+        document.body.style.fontSize = '1rem'; // text-base
+        break;
+      case 3:
+        document.body.style.fontSize = '1.125rem'; // text-lg
+        break;
+      default:
+        document.body.style.fontSize = '1rem';
+    }
+  };
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -59,8 +123,8 @@ export function AppearanceTab() {
     setColorScheme(scheme);
     localStorage.setItem('colorScheme', scheme);
     
-    // Apply color scheme changes to CSS variables
-    document.documentElement.setAttribute('data-color-scheme', scheme);
+    // Apply color scheme
+    applyColorScheme(scheme);
     
     toast({
       title: "ערכת צבעים עודכנה",
@@ -73,10 +137,8 @@ export function AppearanceTab() {
     setFontSize(newSize);
     localStorage.setItem('fontSize', newSize.toString());
     
-    // Apply font size changes
-    const fontSizeClasses = ['text-sm', 'text-base', 'text-lg'];
-    document.documentElement.classList.remove(...fontSizeClasses);
-    document.documentElement.classList.add(getFontSizeClass(newSize));
+    // Apply font size
+    applyFontSize(newSize);
     
     toast({
       title: "גודל הטקסט עודכן",
@@ -139,25 +201,25 @@ export function AppearanceTab() {
           <div className="flex flex-row gap-2 mt-2">
             <button 
               onClick={() => handleColorSchemeChange('purple')}
-              className={`w-16 h-10 rounded-md bg-purple-500 ${colorScheme === 'purple' ? 'ring-2 ring-primary' : ''}`}
+              className={`w-16 h-10 rounded-md bg-purple-500 text-white ${colorScheme === 'purple' ? 'ring-2 ring-primary' : ''}`}
             >
               סגול
             </button>
             <button 
               onClick={() => handleColorSchemeChange('blue')}
-              className={`w-16 h-10 rounded-md bg-blue-500 ${colorScheme === 'blue' ? 'ring-2 ring-primary' : ''}`}
+              className={`w-16 h-10 rounded-md bg-blue-500 text-white ${colorScheme === 'blue' ? 'ring-2 ring-primary' : ''}`}
             >
               כחול
             </button>
             <button 
               onClick={() => handleColorSchemeChange('green')}
-              className={`w-16 h-10 rounded-md bg-green-500 ${colorScheme === 'green' ? 'ring-2 ring-primary' : ''}`}
+              className={`w-16 h-10 rounded-md bg-green-500 text-white ${colorScheme === 'green' ? 'ring-2 ring-primary' : ''}`}
             >
               ירוק
             </button>
             <button 
               onClick={() => handleColorSchemeChange('orange')}
-              className={`w-16 h-10 rounded-md bg-orange-300 ${colorScheme === 'orange' ? 'ring-2 ring-primary' : ''}`}
+              className={`w-16 h-10 rounded-md bg-orange-500 text-white ${colorScheme === 'orange' ? 'ring-2 ring-primary' : ''}`}
             >
               כתום
             </button>
