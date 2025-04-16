@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Client } from "@/features/clients/types";
 import { NewClientForm } from "@/features/clients/components/NewClientForm";
-import { DeleteClientDialog } from "@/features/clients/components/DeleteClientDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClientsSearch } from "@/features/clients/components/ClientsSearch";
 import { ClientsList } from "@/features/clients/components/ClientsList";
@@ -19,17 +18,7 @@ export default function Clients() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"active" | "archive">("active");
 
-  const {
-    showDeleteDialog,
-    setShowDeleteDialog,
-    clientToDelete,
-    clientHasOrders,
-    handleDeleteClient,
-    confirmDeleteClient,
-    archiveClient,
-    restoreClient
-  } = useClientManagement(fetchClients);
-
+  // Declare fetchClients function before using it
   const fetchClients = async () => {
     try {
       setIsLoadingClients(true);
@@ -59,6 +48,17 @@ export default function Clients() {
     }
   };
 
+  const {
+    showDeleteDialog,
+    setShowDeleteDialog,
+    clientToDelete,
+    clientHasOrders,
+    handleDeleteClient,
+    confirmDeleteClient,
+    archiveClient,
+    restoreClient
+  } = useClientManagement(fetchClients);
+
   useEffect(() => {
     fetchClients();
   }, []);
@@ -80,12 +80,12 @@ export default function Clients() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" dir="rtl">
         <h1 className="text-3xl font-bold">לקוחות ומוסדות</h1>
         <NewClientForm onClientAdded={fetchClients} />
       </div>
 
-      <Tabs defaultValue="active" onValueChange={(value) => setActiveTab(value as "active" | "archive")}>
+      <Tabs dir="rtl" defaultValue="active" onValueChange={(value) => setActiveTab(value as "active" | "archive")}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="active">לקוחות פעילים</TabsTrigger>
           <TabsTrigger value="archive">ארכיון</TabsTrigger>
@@ -101,8 +101,9 @@ export default function Clients() {
             clients={filteredActiveClients}
             isLoading={isLoadingClients}
             onArchive={archiveClient}
-            onDelete={handleDeleteClient}
             onEdit={fetchClients}
+            showDeleteButton={false}
+            dir="rtl"
           />
         </TabsContent>
 
@@ -112,21 +113,13 @@ export default function Clients() {
             isLoading={isLoadingClients}
             onArchive={archiveClient}
             onRestore={restoreClient}
-            onDelete={handleDeleteClient}
             onEdit={fetchClients}
             isArchived={true}
+            showDeleteButton={false}
+            dir="rtl"
           />
         </TabsContent>
       </Tabs>
-
-      <DeleteClientDialog
-        isOpen={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        clientToDelete={clientToDelete}
-        hasOrders={clientHasOrders}
-        onConfirmDelete={confirmDeleteClient}
-        onArchive={archiveClient}
-      />
     </div>
   );
 }

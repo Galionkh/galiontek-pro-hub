@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,9 @@ export type ProfileFormValues = {
 };
 
 export function ProfileTab() {
-  const { profile, loading, saveProfile } = useProfile();
+  const { profile, loading, saveProfile, fetchProfile } = useProfile();
   
+  // Recreate form when profile changes
   const form = useForm<ProfileFormValues>({
     defaultValues: {
       name: profile?.name || "",
@@ -28,12 +29,24 @@ export function ProfileTab() {
     },
   });
   
+  // Update form values when profile changes
+  useEffect(() => {
+    form.reset({
+      name: profile?.name || "",
+      email: profile?.email || "",
+      tel: profile?.tel || "",
+      orgname: profile?.orgname || "",
+    });
+  }, [profile, form]);
+  
   const handleSubmit = async (data: ProfileFormValues) => {
     await saveProfile(data);
+    // Immediately fetch the updated profile after saving
+    fetchProfile();
   };
 
   return (
-    <Card>
+    <Card dir="rtl">
       <CardHeader>
         <CardTitle>פרטים אישיים</CardTitle>
         <CardDescription>עדכן את הפרטים האישיים שלך</CardDescription>
@@ -48,7 +61,7 @@ export function ProfileTab() {
                 <FormItem className="space-y-2">
                   <FormLabel htmlFor="name">שם מלא</FormLabel>
                   <FormControl>
-                    <Input id="name" placeholder="שם מלא" {...field} />
+                    <Input id="name" placeholder="שם מלא" {...field} className="text-right" />
                   </FormControl>
                 </FormItem>
               )}
@@ -61,7 +74,7 @@ export function ProfileTab() {
                 <FormItem className="space-y-2">
                   <FormLabel htmlFor="email">אימייל</FormLabel>
                   <FormControl>
-                    <Input id="email" type="email" placeholder="אימייל" {...field} />
+                    <Input id="email" type="email" placeholder="אימייל" {...field} className="text-right" />
                   </FormControl>
                 </FormItem>
               )}
@@ -74,7 +87,7 @@ export function ProfileTab() {
                 <FormItem className="space-y-2">
                   <FormLabel htmlFor="phone">טלפון</FormLabel>
                   <FormControl>
-                    <Input id="phone" placeholder="טלפון" {...field} />
+                    <Input id="phone" placeholder="טלפון" {...field} className="text-right" />
                   </FormControl>
                 </FormItem>
               )}
@@ -87,7 +100,7 @@ export function ProfileTab() {
                 <FormItem className="space-y-2">
                   <FormLabel htmlFor="business">שם העסק</FormLabel>
                   <FormControl>
-                    <Input id="business" placeholder="שם העסק" {...field} />
+                    <Input id="business" placeholder="שם העסק" {...field} className="text-right" />
                   </FormControl>
                 </FormItem>
               )}

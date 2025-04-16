@@ -1,11 +1,14 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { RefreshCw } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
 
 export function SyncTab() {
   const { toast } = useToast();
+  const { profile } = useProfile();
   const [syncStatus, setSyncStatus] = useState({
     "google-calendar": false,
     "gmail": false,
@@ -15,6 +18,16 @@ export function SyncTab() {
   const [syncing, setSyncing] = useState<string | null>(null);
 
   const handleSyncToggle = (service: string) => {
+    // Check if profile email exists
+    if (service === "gmail" && (!profile?.email || profile.email.trim() === "")) {
+      toast({
+        title: "אין כתובת אימייל",
+        description: "יש להגדיר כתובת אימייל בהגדרות הפרופיל",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Simulate sync process
     setSyncing(service);
     
@@ -28,7 +41,7 @@ export function SyncTab() {
       // Show toast notification
       toast({
         title: syncStatus[service as keyof typeof syncStatus] ? "שירות מנותק" : "שירות מחובר",
-        description: `${getServiceName(service)} ${syncStatus[service as keyof typeof syncStatus] ? "נותק בהצלחה" : "חובר בהצלחה"}`,
+        description: `${getServiceName(service)} ${syncStatus[service as keyof typeof syncStatus] ? "נותק בהצלחה" : "חובר בהצלחה"}${service === "gmail" ? ` (${profile?.email})` : ""}`,
       });
     }, 1000);
   };
@@ -44,7 +57,7 @@ export function SyncTab() {
   };
 
   return (
-    <Card>
+    <Card dir="rtl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <RefreshCw className="h-5 w-5" />
@@ -74,7 +87,7 @@ export function SyncTab() {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="font-medium">Gmail</p>
-            <p className="text-sm text-muted-foreground">שליחת אימיילים אוטומטית דרך החשבון שלך</p>
+            <p className="text-sm text-muted-foreground">שליחת אימיילים אוטומטית דרך החשבון שלך{profile?.email ? ` (${profile.email})` : ""}</p>
           </div>
           <div className="flex items-center gap-2">
             {syncing === "gmail" && (

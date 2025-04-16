@@ -1,69 +1,70 @@
 
-import { Loader2, UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Client } from "../types";
+import { Loader2 } from "lucide-react";
 import { ClientCard } from "./ClientCard";
+import { Client } from "../types";
 
 interface ClientsListProps {
   clients: Client[];
   isLoading: boolean;
-  onArchive: (client: Client) => Promise<void>;
-  onRestore?: (client: Client) => Promise<void>;
-  onDelete: (client: Client) => void;
   onEdit: () => void;
+  onArchive: (client: Client) => Promise<void>;
+  onDelete?: (client: Client) => void;
+  onRestore?: (client: Client) => Promise<void>;
   isArchived?: boolean;
+  showDeleteButton?: boolean;
+  dir?: "ltr" | "rtl";
 }
 
 export function ClientsList({
   clients,
   isLoading,
-  onArchive,
-  onRestore,
-  onDelete,
   onEdit,
+  onArchive,
+  onDelete,
+  onRestore,
   isArchived = false,
+  showDeleteButton = true,
+  dir = "ltr"
 }: ClientsListProps) {
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin mb-4" />
-        <p className="text-muted-foreground">טוען לקוחות...</p>
-      </div>
+      <Card className="p-6">
+        <div className="flex flex-col items-center justify-center h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin mb-4" />
+          <p className="text-muted-foreground">טוען לקוחות...</p>
+        </div>
+      </Card>
     );
   }
 
   if (clients.length === 0) {
     return (
       <Card className="p-6">
-        <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-          {!isArchived ? (
-            <>
-              <UserPlus className="h-12 w-12 mb-4 text-muted-foreground/50" />
-              <h2 className="text-xl font-semibold mb-2">אין לקוחות פעילים</h2>
-              <p>לחץ על "לקוח חדש" כדי להוסיף לקוח חדש</p>
-            </>
-          ) : (
-            <>
-              <h2 className="text-xl font-semibold mb-2">אין לקוחות בארכיון</h2>
-              <p>לקוחות שהועברו לארכיון יופיעו כאן</p>
-            </>
-          )}
+        <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
+          <h2 className="text-xl font-semibold mb-2">
+            {isArchived ? "אין לקוחות בארכיון" : "אין לקוחות פעילים"}
+          </h2>
+          <p>
+            {isArchived ? "לקוחות שהועברו לארכיון יופיעו כאן" : "הוסף לקוח חדש כדי להתחיל"}
+          </p>
         </div>
       </Card>
     );
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4" dir={dir}>
       {clients.map((client) => (
         <ClientCard
           key={client.id}
           client={client}
           onEdit={onEdit}
-          isArchived={isArchived}
           onArchive={onArchive}
+          onDelete={showDeleteButton ? onDelete : undefined}
           onRestore={onRestore}
-          onDelete={onDelete}
+          isArchived={isArchived}
+          dir={dir}
         />
       ))}
     </div>

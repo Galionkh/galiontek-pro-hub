@@ -6,7 +6,7 @@ import { AppearanceTab } from "@/components/settings/AppearanceTab";
 
 export default function Settings() {
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" dir="rtl">
       <h1 className="text-3xl font-bold">הגדרות</h1>
       
       <Tabs defaultValue="profile">
