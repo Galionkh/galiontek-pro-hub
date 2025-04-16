@@ -69,30 +69,77 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          order_id: number | null
+          price: number | null
+          quantity: number
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          order_id?: number | null
+          price?: number | null
+          quantity?: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          order_id?: number | null
+          price?: number | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
+          amount: number | null
           client_name: string | null
           created_at: string | null
           date: string | null
+          description: string | null
           id: number
+          notes: string | null
+          payment_terms: string | null
           status: string | null
           title: string
           user_id: string | null
         }
         Insert: {
+          amount?: number | null
           client_name?: string | null
           created_at?: string | null
           date?: string | null
+          description?: string | null
           id?: number
+          notes?: string | null
+          payment_terms?: string | null
           status?: string | null
           title: string
           user_id?: string | null
         }
         Update: {
+          amount?: number | null
           client_name?: string | null
           created_at?: string | null
           date?: string | null
+          description?: string | null
           id?: number
+          notes?: string | null
+          payment_terms?: string | null
           status?: string | null
           title?: string
           user_id?: string | null
@@ -123,6 +170,72 @@ export type Database = {
           orgname?: string | null
           tel?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string
+          description: string | null
+          id: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
