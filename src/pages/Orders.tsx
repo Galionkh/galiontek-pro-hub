@@ -7,12 +7,18 @@ import { OrdersList } from "@/components/orders/OrdersList";
 import { OrderForm } from "@/components/orders/OrderForm";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useOrders } from "@/hooks/useOrders";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
 
 export default function Orders() {
   const { user } = useAuth();
   const { orders, isLoading, fetchOrders, createOrder, deleteOrder, sendOrderToClient } = useOrders();
-  const [isOrderSheetOpen, setIsOrderSheetOpen] = useState(false);
+  const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -22,12 +28,12 @@ export default function Orders() {
 
   const handleOrderFormSubmit = async (formData: any) => {
     await createOrder(formData);
-    setIsOrderSheetOpen(false);
+    setIsOrderDialogOpen(false);
     fetchOrders();
   };
 
   const handleCloseForm = () => {
-    setIsOrderSheetOpen(false);
+    setIsOrderDialogOpen(false);
   };
 
   if (isLoading) {
@@ -42,23 +48,23 @@ export default function Orders() {
     <div className="space-y-6 animate-fade-in" dir="rtl">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">הזמנות ופרויקטים</h1>
-        <Sheet open={isOrderSheetOpen} onOpenChange={setIsOrderSheetOpen}>
-          <SheetTrigger asChild>
+        <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+          <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               הזמנה חדשה
             </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>הזמנה חדשה</SheetTitle>
-            </SheetHeader>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl overflow-y-auto" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>הזמנה חדשה</DialogTitle>
+            </DialogHeader>
             <OrderForm 
               onClose={handleCloseForm} 
               onSubmit={handleOrderFormSubmit}
             />
-          </SheetContent>
-        </Sheet>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {orders.length === 0 ? (
@@ -66,23 +72,23 @@ export default function Orders() {
           <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
             <h2 className="text-xl font-semibold mb-2">אין הזמנות</h2>
             <p className="mb-6">הוסף הזמנה חדשה להתחיל לעקוב אחר הפרויקטים שלך</p>
-            <Sheet>
-              <SheetTrigger asChild>
+            <Dialog>
+              <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
                   הזמנה חדשה
                 </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>הזמנה חדשה</SheetTitle>
-                </SheetHeader>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl overflow-y-auto" dir="rtl">
+                <DialogHeader>
+                  <DialogTitle>הזמנה חדשה</DialogTitle>
+                </DialogHeader>
                 <OrderForm 
                   onClose={handleCloseForm} 
                   onSubmit={handleOrderFormSubmit} 
                 />
-              </SheetContent>
-            </Sheet>
+              </DialogContent>
+            </Dialog>
           </div>
         </Card>
       ) : (

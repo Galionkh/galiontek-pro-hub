@@ -1,10 +1,10 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Send, Edit, Trash2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Eye, Edit, Trash2, Send } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import type { Order } from "@/hooks/useOrders";
 
 interface OrderCardProps {
@@ -13,122 +13,111 @@ interface OrderCardProps {
   onSendToClient: (id: number) => Promise<void>;
 }
 
-export const OrderCard = ({ order, onDelete, onSendToClient }: OrderCardProps) => {
-  const { toast } = useToast();
+// Function to get status badge color and text
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case "draft":
+      return { className: "bg-yellow-200 text-yellow-800", text: "טיוטה" };
+    case "sent":
+      return { className: "bg-blue-200 text-blue-800", text: "נשלח" };
+    case "confirmed":
+      return { className: "bg-green-200 text-green-800", text: "מאושר" };
+    case "completed":
+      return { className: "bg-purple-200 text-purple-800", text: "הושלם" };
+    default:
+      return { className: "bg-gray-200 text-gray-800", text: status };
+  }
+};
+
+export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState<{ [key: string]: boolean }>({});
-
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case "draft": return "bg-gray-100";
-      case "sent": return "bg-blue-100 text-blue-800";
-      case "confirmed": return "bg-green-100 text-green-800";
-      case "completed": return "bg-purple-100 text-purple-800";
-      default: return "bg-gray-100";
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "draft": return "טיוטה";
-      case "sent": return "נשלח";
-      case "confirmed": return "מאושר";
-      case "completed": return "הושלם";
-      default: return status;
-    }
-  };
-
-  const handleView = () => {
+  const statusBadge = getStatusBadge(order.status);
+  
+  // Format date if available
+  const formattedDate = order.date ? new Date(order.date).toLocaleDateString('he-IL') : "לא צוין";
+  
+  // Handle view click
+  const handleViewClick = () => {
     navigate(`/orders/${order.id}`);
   };
-
-  const handleEdit = () => {
-    navigate(`/orders/edit/${order.id}`);
+  
+  // Handle edit click
+  const handleEditClick = () => {
+    navigate(`/orders/${order.id}`);
   };
-
+  
+  // Handle send to client
   const handleSendToClient = async () => {
-    try {
-      setIsLoading(prev => ({ ...prev, send: true }));
-      await onSendToClient(order.id);
-      toast({
-        title: "נשלח בהצלחה",
-        description: `הטופס נשלח ללקוח ${order.client_name}`,
-      });
-    } catch (error) {
-      console.error("Error sending order:", error);
-      toast({
-        title: "שגיאה בשליחה",
-        description: "לא ניתן לשלוח את הטופס, נסה שוב מאוחר יותר",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, send: false }));
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      setIsLoading(prev => ({ ...prev, delete: true }));
-      await onDelete(order.id);
-      toast({
-        title: "נמחק בהצלחה",
-        description: "הטופס נמחק מהמערכת",
-      });
-    } catch (error) {
-      console.error("Error deleting order:", error);
-      toast({
-        title: "שגיאה במחיקה",
-        description: "לא ניתן למחוק את הטופס, נסה שוב מאוחר יותר",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, delete: false }));
-    }
+    await onSendToClient(order.id);
   };
 
   return (
-    <Card className="card-hover">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl flex justify-between">
-          {order.title}
-          <span className={`text-sm px-2 py-1 rounded-full ${getStatusClass(order.status)}`}>
-            {getStatusText(order.status)}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p><strong>לקוח:</strong> {order.client_name}</p>
-        <p><strong>תאריך:</strong> {new Date(order.date).toLocaleDateString("he-IL")}</p>
-        <div className="mt-4 flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={handleView}>
-            <FileText className="h-4 w-4 mr-1" />
-            צפייה
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h3 className="text-lg font-semibold">{order.title}</h3>
+            <p className="text-sm text-muted-foreground">{order.client_name || "ללא לקוח"}</p>
+          </div>
+          <Badge className={statusBadge.className}>{statusBadge.text}</Badge>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-sm">
+          <div>
+            <span className="text-muted-foreground">תאריך:</span> {formattedDate}
+          </div>
+          <div>
+            <span className="text-muted-foreground">סכום:</span> {order.total_amount ? `₪${order.total_amount}` : "לא צוין"}
+          </div>
+          {order.service_topic && (
+            <div className="col-span-2">
+              <span className="text-muted-foreground">נושא:</span> {order.service_topic}
+            </div>
+          )}
+        </div>
+        
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="ghost" size="sm" onClick={handleViewClick}>
+            <Eye className="h-4 w-4 ml-1" /> צפייה
           </Button>
-          <Button variant="outline" size="sm" onClick={handleEdit}>
-            <Edit className="h-4 w-4 mr-1" />
-            עריכה
+          <Button variant="ghost" size="sm" onClick={handleEditClick}>
+            <Edit className="h-4 w-4 ml-1" /> עריכה
           </Button>
           <Button 
-            variant="outline" 
+            variant="ghost" 
             size="sm" 
             onClick={handleSendToClient}
-            disabled={isLoading.send}
+            disabled={order.status === "sent" || order.status === "confirmed" || order.status === "completed"}
           >
-            <Send className="h-4 w-4 mr-1" />
-            שלח ללקוח
+            <Send className="h-4 w-4 ml-1" /> שליחה
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleDelete}
-            disabled={isLoading.delete}
-            className="text-red-500 hover:text-red-700"
-          >
-            <Trash2 className="h-4 w-4 mr-1" />
-            בטל הזמנה
-          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4 ml-1" /> מחיקה
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>האם אתה בטוח שברצונך למחוק?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  פעולה זו לא ניתנת לביטול. זה יסיר לצמיתות את ההזמנה וכל המידע הקשור אליה.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={() => onDelete(order.id)} 
+                  className="bg-destructive text-destructive-foreground"
+                >
+                  מחק
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
-};
+}
