@@ -1,12 +1,13 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { ClientFormDialog } from "./ClientFormDialog";
+import { ClientFormField } from "./ClientFormField";
+import { ClientStatusSelector } from "./ClientStatusSelector";
 
 interface NewClientFormProps {
   onClientAdded: () => void;
@@ -55,50 +56,42 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
     }
   };
 
+  const triggerButton = (
+    <Button variant="default" className="flex items-center gap-2">
+      <UserPlus className="h-4 w-4" />
+      לקוח חדש
+    </Button>
+  );
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default" className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4" />
-          לקוח חדש
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>לקוח חדש</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Input
-            placeholder="שם הלקוח"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Input
-            placeholder="פרטי קשר"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-          />
-          <Input
-            placeholder="הערות"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-          <select
-            className="w-full border rounded p-2"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as any)}
-          >
-            <option value="active">פעיל</option>
-            <option value="pending">ממתין</option>
-            <option value="closed">סגור</option>
-          </select>
-        </div>
-        <DialogFooter>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "שומר..." : "שמור לקוח"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ClientFormDialog
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
+      onSubmit={handleSubmit}
+      title="לקוח חדש"
+      submitLabel="שמור לקוח"
+      isLoading={loading}
+      triggerButton={triggerButton}
+    >
+      <ClientFormField
+        placeholder="שם הלקוח"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <ClientFormField
+        placeholder="פרטי קשר"
+        value={contact}
+        onChange={(e) => setContact(e.target.value)}
+      />
+      <ClientFormField
+        placeholder="הערות"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+      />
+      <ClientStatusSelector
+        status={status}
+        onChange={(e) => setStatus(e.target.value as any)}
+      />
+    </ClientFormDialog>
   );
 }
