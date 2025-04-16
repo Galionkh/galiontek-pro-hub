@@ -2,7 +2,7 @@
 import React from "react";
 import { format, parseISO } from "date-fns";
 import { he } from "date-fns/locale";
-import { Trash2 } from "lucide-react";
+import { Trash2, Edit } from "lucide-react";
 import type { Meeting } from "@/hooks/useMeetings";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,12 +19,16 @@ interface MeetingsListProps {
   meetings: Meeting[];
   isLoading: boolean;
   onDelete: (id: string) => Promise<void>;
+  onEdit: (meeting: Meeting) => void;
+  use45MinuteUnits?: boolean;
 }
 
 export const MeetingsList: React.FC<MeetingsListProps> = ({
   meetings,
   isLoading,
   onDelete,
+  onEdit,
+  use45MinuteUnits = true,
 }) => {
   // Helper function to format time
   const formatTime = (timeString: string) => {
@@ -41,6 +45,15 @@ export const MeetingsList: React.FC<MeetingsListProps> = ({
   const formatDate = (dateString: string) => {
     const date = parseISO(dateString);
     return format(date, "dd/MM/yyyy");
+  };
+
+  // Calculate teaching units based on the setting
+  const calculateTeachingUnits = (durationMinutes: number) => {
+    if (use45MinuteUnits) {
+      return durationMinutes / 45;
+    } else {
+      return durationMinutes / 60;
+    }
   };
 
   if (isLoading) {
@@ -61,7 +74,7 @@ export const MeetingsList: React.FC<MeetingsListProps> = ({
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" dir="rtl">
       <Table>
         <TableHeader>
           <TableRow>
@@ -69,9 +82,9 @@ export const MeetingsList: React.FC<MeetingsListProps> = ({
             <TableHead>יום</TableHead>
             <TableHead>שעות</TableHead>
             <TableHead>משך</TableHead>
-            <TableHead>יחידות הוראה</TableHead>
+            <TableHead>{use45MinuteUnits ? 'יחידות הוראה' : 'שעות אקדמיות'}</TableHead>
             <TableHead>נושא</TableHead>
-            <TableHead className="w-[80px]"></TableHead>
+            <TableHead className="w-[100px]">פעולות</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -87,18 +100,30 @@ export const MeetingsList: React.FC<MeetingsListProps> = ({
               <TableCell>
                 {(meeting.duration_minutes / 60).toFixed(2)} שעות
               </TableCell>
-              <TableCell>{meeting.teaching_units.toFixed(2)}</TableCell>
+              <TableCell>
+                {calculateTeachingUnits(meeting.duration_minutes).toFixed(2)}
+              </TableCell>
               <TableCell className="max-w-[200px] truncate">
                 {meeting.topic || "-"}
               </TableCell>
               <TableCell>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(meeting.id)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEdit(meeting)}
+                    className="ml-1"
+                  >
+                    <Edit className="h-4 w-4 text-primary" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDelete(meeting.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import * as XLSX from 'xlsx';
 
 export type Meeting = {
   id: string;
@@ -63,6 +64,9 @@ export const useMeetings = (orderId: number) => {
         description: "המפגש נוצר בהצלחה",
       });
 
+      // Add to calendar (implement in a separate function)
+      await addToCalendar(data[0]);
+
       // Refresh meetings list
       fetchMeetings();
       setIsMeetingFormOpen(false);
@@ -78,6 +82,36 @@ export const useMeetings = (orderId: number) => {
     }
   };
 
+  const updateMeeting = async (id: string, meetingData: Partial<Meeting>) => {
+    try {
+      setIsCreating(true);
+      
+      const { error } = await supabase
+        .from("meetings")
+        .update(meetingData)
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Update calendar entry (implement in a separate function)
+      await updateCalendarEntry({id, ...meetingData} as Meeting);
+
+      // Refresh meetings list
+      fetchMeetings();
+      setIsMeetingFormOpen(false);
+    } catch (error: any) {
+      console.error("Error updating meeting:", error.message);
+      toast({
+        title: "שגיאה בעדכון מפגש",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const deleteMeeting = async (id: string) => {
     try {
       const { error } = await supabase
@@ -86,6 +120,9 @@ export const useMeetings = (orderId: number) => {
         .eq("id", id);
 
       if (error) throw error;
+
+      // Remove from calendar (implement in a separate function)
+      await removeFromCalendar(id);
 
       // Update local state
       setMeetings(meetings.filter(meeting => meeting.id !== id));
@@ -104,6 +141,125 @@ export const useMeetings = (orderId: number) => {
     }
   };
 
+  // Calendar integration functions
+  const addToCalendar = async (meeting: Meeting) => {
+    try {
+      // This would be implemented to add the meeting to a calendar system
+      console.log("Adding meeting to calendar:", meeting);
+      // Actual implementation would depend on your calendar system
+    } catch (error) {
+      console.error("Error adding to calendar:", error);
+    }
+  };
+
+  const updateCalendarEntry = async (meeting: Meeting) => {
+    try {
+      // This would be implemented to update the meeting in a calendar system
+      console.log("Updating meeting in calendar:", meeting);
+      // Actual implementation would depend on your calendar system
+    } catch (error) {
+      console.error("Error updating calendar entry:", error);
+    }
+  };
+
+  const removeFromCalendar = async (meetingId: string) => {
+    try {
+      // This would be implemented to remove the meeting from a calendar system
+      console.log("Removing meeting from calendar:", meetingId);
+      // Actual implementation would depend on your calendar system
+    } catch (error) {
+      console.error("Error removing from calendar:", error);
+    }
+  };
+
+  const importFromExcel = async (file: File, use45MinuteUnits: boolean = true) => {
+    try {
+      setIsCreating(true);
+      
+      // Read the file
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      
+      // Process data
+      const newMeetings = jsonData.map((row: any) => {
+        // Parse date - expected format in Excel: DD/MM/YYYY
+        let meetingDate;
+        if (typeof row.date === 'string') {
+          const [day, month, year] = row.date.split('/');
+          meetingDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        } else if (row.date instanceof Date) {
+          meetingDate = format(row.date, 'yyyy-MM-dd');
+        } else {
+          throw new Error('Invalid date format in Excel file');
+        }
+        
+        // Parse times
+        const startTime = typeof row.start_time === 'string' ? row.start_time : '00:00';
+        const endTime = typeof row.end_time === 'string' ? row.end_time : '00:00';
+        
+        // Calculate duration
+        const getMinutes = (timeStr: string) => {
+          const [hours, minutes] = timeStr.split(":").map(Number);
+          return hours * 60 + minutes;
+        };
+        
+        const startMinutes = getMinutes(startTime);
+        const endMinutes = getMinutes(endTime);
+        const durationMinutes = endMinutes > startMinutes ? endMinutes - startMinutes : 0;
+        
+        // Calculate teaching units
+        const unitDuration = use45MinuteUnits ? 45 : 60;
+        const teachingUnits = parseFloat((durationMinutes / unitDuration).toFixed(2));
+        
+        return {
+          order_id: orderId,
+          date: meetingDate,
+          start_time: startTime,
+          end_time: endTime,
+          duration_minutes: durationMinutes,
+          teaching_units: teachingUnits,
+          topic: row.topic || null,
+        };
+      });
+      
+      // Filter out invalid meetings
+      const validMeetings = newMeetings.filter(meeting => 
+        meeting.duration_minutes > 0 && meeting.date
+      );
+      
+      if (validMeetings.length === 0) {
+        throw new Error('אין נתונים תקינים בקובץ האקסל');
+      }
+      
+      // Insert meetings
+      const { data, error } = await supabase
+        .from("meetings")
+        .insert(validMeetings)
+        .select();
+      
+      if (error) throw error;
+      
+      // Add to calendar
+      if (data) {
+        for (const meeting of data) {
+          await addToCalendar(meeting);
+        }
+      }
+      
+      // Refresh meetings list
+      fetchMeetings();
+      
+      return { importedCount: validMeetings.length };
+    } catch (error: any) {
+      console.error("Error importing from Excel:", error);
+      throw error;
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const openMeetingForm = () => {
     setIsMeetingFormOpen(true);
   };
@@ -113,11 +269,17 @@ export const useMeetings = (orderId: number) => {
   };
 
   // Calculate summary information
-  const getMeetingsSummary = () => {
+  const getMeetingsSummary = (use45MinuteUnits: boolean = true) => {
     const totalMeetings = meetings.length;
     const totalMinutes = meetings.reduce((sum, meeting) => sum + meeting.duration_minutes, 0);
     const totalHours = totalMinutes / 60;
-    const totalTeachingUnits = meetings.reduce((sum, meeting) => sum + meeting.teaching_units, 0);
+    
+    let totalTeachingUnits;
+    if (use45MinuteUnits) {
+      totalTeachingUnits = totalMinutes / 45;
+    } else {
+      totalTeachingUnits = totalMinutes / 60;
+    }
     
     return {
       totalMeetings,
@@ -133,7 +295,9 @@ export const useMeetings = (orderId: number) => {
     isMeetingFormOpen,
     fetchMeetings,
     createMeeting,
+    updateMeeting,
     deleteMeeting,
+    importFromExcel,
     openMeetingForm,
     closeMeetingForm,
     getMeetingsSummary

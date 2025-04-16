@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { CalendarIcon, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import type { Meeting } from "@/hooks/useMeetings";
 
 // Define form schema
 const formSchema = z.object({
@@ -46,6 +47,8 @@ interface MeetingFormProps {
   onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
   isSubmitting: boolean;
+  initialData?: Meeting | null;
+  use45MinuteUnits?: boolean;
 }
 
 export const MeetingForm: React.FC<MeetingFormProps> = ({
@@ -53,15 +56,27 @@ export const MeetingForm: React.FC<MeetingFormProps> = ({
   onSubmit,
   onCancel,
   isSubmitting,
+  initialData = null,
+  use45MinuteUnits = true,
 }) => {
+  // Initialize form with existing data if editing
+  const defaultValues: Partial<FormValues> = initialData
+    ? {
+        date: parse(initialData.date, 'yyyy-MM-dd', new Date()),
+        start_time: initialData.start_time,
+        end_time: initialData.end_time,
+        topic: initialData.topic || '',
+      }
+    : {
+        date: new Date(),
+        start_time: '',
+        end_time: '',
+        topic: '',
+      };
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      date: new Date(),
-      start_time: "",
-      end_time: "",
-      topic: "",
-    },
+    defaultValues,
   });
 
   // For duration preview
@@ -86,14 +101,16 @@ export const MeetingForm: React.FC<MeetingFormProps> = ({
       if (endMinutes > startMinutes) {
         const duration = endMinutes - startMinutes;
         setDurationMinutes(duration);
-        // Calculate teaching units (45-minute units)
-        setTeachingUnits(parseFloat((duration / 45).toFixed(2)));
+        
+        // Calculate teaching units based on the setting (45 or 60 minute units)
+        const unitDuration = use45MinuteUnits ? 45 : 60;
+        setTeachingUnits(parseFloat((duration / unitDuration).toFixed(2)));
       } else {
         setDurationMinutes(null);
         setTeachingUnits(null);
       }
     }
-  }, [form.watch("start_time"), form.watch("end_time")]);
+  }, [form.watch("start_time"), form.watch("end_time"), use45MinuteUnits]);
 
   const handleSubmit = async (values: FormValues) => {
     if (!durationMinutes || !teachingUnits) {
@@ -118,9 +135,12 @@ export const MeetingForm: React.FC<MeetingFormProps> = ({
     await onSubmit(meetingData);
   };
 
+  const unitType = use45MinuteUnits ? 'יחידות הוראה' : 'שעות אקדמיות';
+  const unitDuration = use45MinuteUnits ? 45 : 60;
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" dir="rtl">
         <FormField
           control={form.control}
           name="date"
@@ -210,7 +230,7 @@ export const MeetingForm: React.FC<MeetingFormProps> = ({
         {durationMinutes !== null && teachingUnits !== null && (
           <div className="p-3 bg-muted rounded-md text-sm">
             <p>משך המפגש: {(durationMinutes / 60).toFixed(2)} שעות ({durationMinutes} דקות)</p>
-            <p>יחידות הוראה: {teachingUnits.toFixed(2)} יחידות של 45 דקות</p>
+            <p>{unitType}: {teachingUnits.toFixed(2)} יחידות של {unitDuration} דקות</p>
           </div>
         )}
 
@@ -243,7 +263,7 @@ export const MeetingForm: React.FC<MeetingFormProps> = ({
             ביטול
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "שומר..." : "שמור מפגש"}
+            {isSubmitting ? "שומר..." : initialData ? "עדכן מפגש" : "שמור מפגש"}
           </Button>
         </div>
       </form>

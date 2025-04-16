@@ -9,6 +9,7 @@ interface MeetingsSummaryProps {
   totalHours: number;
   totalTeachingUnits: number;
   agreedHours?: number | null;
+  use45MinuteUnits?: boolean;
 }
 
 export const MeetingsSummary: React.FC<MeetingsSummaryProps> = ({
@@ -16,6 +17,7 @@ export const MeetingsSummary: React.FC<MeetingsSummaryProps> = ({
   totalHours,
   totalTeachingUnits,
   agreedHours,
+  use45MinuteUnits = true,
 }) => {
   // Check if we have agreed hours and if we've reached them
   const showCompletion = 
@@ -32,6 +34,8 @@ export const MeetingsSummary: React.FC<MeetingsSummaryProps> = ({
       ? (agreedHours - totalTeachingUnits).toFixed(2)
       : 0;
 
+  const unitType = use45MinuteUnits ? 'יחידות הוראה' : 'שעות אקדמיות';
+
   return (
     <Card className="mb-6">
       <CardContent className="p-4">
@@ -47,7 +51,7 @@ export const MeetingsSummary: React.FC<MeetingsSummaryProps> = ({
           </div>
           
           <div className="flex flex-col items-center p-3 bg-muted rounded-md">
-            <span className="text-sm text-muted-foreground">סך יחידות הוראה</span>
+            <span className="text-sm text-muted-foreground">סך {unitType}</span>
             <span className="text-2xl font-bold">{totalTeachingUnits.toFixed(2)}</span>
           </div>
         </div>
@@ -65,7 +69,7 @@ export const MeetingsSummary: React.FC<MeetingsSummaryProps> = ({
             ) : (
               <>
                 <AlertTriangle className="h-5 w-5 ml-2" />
-                <span className="font-medium">נותרו {remainingHours} שעות לסיום השירות</span>
+                <span className="font-medium">נותרו {remainingHours} {unitType} לסיום השירות</span>
               </>
             )}
           </div>
