@@ -1,15 +1,13 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Loader2, Search, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Client } from "@/features/clients/types";
 import { NewClientForm } from "@/features/clients/components/NewClientForm";
-import { ClientCard } from "@/features/clients/components/ClientCard";
 import { DeleteClientDialog } from "@/features/clients/components/DeleteClientDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ClientsSearch } from "@/features/clients/components/ClientsSearch";
+import { ClientsList } from "@/features/clients/components/ClientsList";
 
 export default function Clients() {
   const { toast } = useToast();
@@ -201,72 +199,31 @@ export default function Clients() {
           <TabsTrigger value="archive">ארכיון</TabsTrigger>
         </TabsList>
 
-        <div className="mt-4 relative">
-          <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="חיפוש לקוחות..."
-            className="pl-10 pr-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        <ClientsSearch 
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
 
         <TabsContent value="active" className="mt-4">
-          {isLoadingClients ? (
-            <div className="flex flex-col items-center justify-center h-[400px]">
-              <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p className="text-muted-foreground">טוען לקוחות...</p>
-            </div>
-          ) : filteredActiveClients.length > 0 ? (
-            <div className="grid gap-4">
-              {filteredActiveClients.map((client) => (
-                <ClientCard
-                  key={client.id}
-                  client={client}
-                  onEdit={fetchClients}
-                  onArchive={archiveClient}
-                  onDelete={handleDeleteClient}
-                />
-              ))}
-            </div>
-          ) : (
-            <Card className="p-6">
-              <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-                <UserPlus className="h-12 w-12 mb-4 text-muted-foreground/50" />
-                <h2 className="text-xl font-semibold mb-2">אין לקוחות פעילים</h2>
-                <p>לחץ על "לקוח חדש" כדי להוסיף לקוח חדש</p>
-              </div>
-            </Card>
-          )}
+          <ClientsList
+            clients={filteredActiveClients}
+            isLoading={isLoadingClients}
+            onArchive={archiveClient}
+            onDelete={handleDeleteClient}
+            onEdit={fetchClients}
+          />
         </TabsContent>
 
         <TabsContent value="archive" className="mt-4">
-          {isLoadingClients ? (
-            <div className="flex flex-col items-center justify-center h-[400px]">
-              <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p className="text-muted-foreground">טוען לקוחות...</p>
-            </div>
-          ) : filteredArchivedClients.length > 0 ? (
-            <div className="grid gap-4">
-              {filteredArchivedClients.map((client) => (
-                <ClientCard
-                  key={client.id}
-                  client={client}
-                  onEdit={fetchClients}
-                  isArchived={true}
-                  onRestore={restoreClient}
-                  onDelete={handleDeleteClient}
-                />
-              ))}
-            </div>
-          ) : (
-            <Card className="p-6">
-              <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-                <h2 className="text-xl font-semibold mb-2">אין לקוחות בארכיון</h2>
-                <p>לקוחות שהועברו לארכיון יופיעו כאן</p>
-              </div>
-            </Card>
-          )}
+          <ClientsList
+            clients={filteredArchivedClients}
+            isLoading={isLoadingClients}
+            onArchive={archiveClient}
+            onRestore={restoreClient}
+            onDelete={handleDeleteClient}
+            onEdit={fetchClients}
+            isArchived={true}
+          />
         </TabsContent>
       </Tabs>
 
