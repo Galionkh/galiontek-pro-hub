@@ -1,76 +1,48 @@
 
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OrderForm } from "@/components/orders/OrderForm";
-import { OrderDetailsSkeleton } from "@/components/orders/OrderDetailsSkeleton";
-import { OrderNotFound } from "@/components/orders/OrderNotFound";
+import { Card } from "@/components/ui/card";
 import { OrderHeader } from "@/components/orders/OrderHeader";
 import { OrderInfo } from "@/components/orders/OrderInfo";
-import { MeetingsTab } from "@/components/meetings/MeetingsTab";
+import { Separator } from "@/components/ui/separator";
+import { OrderNotFound } from "@/components/orders/OrderNotFound";
+import { OrderDetailsSkeleton } from "@/components/orders/OrderDetailsSkeleton";
 import { useOrderDetails } from "@/components/orders/useOrderDetails";
-import type { Order as OrderType } from "@/features/clients/types";
 
 export default function OrderDetails() {
-  const { id } = useParams<{ id: string }>();
-  const orderId = id ? parseInt(id, 10) : 0;
-  
+  const { id } = useParams();
   const {
     order,
     isLoading,
-    isEditDialogOpen,
-    setIsEditDialogOpen,
-    handleEdit,
-    handleUpdate,
-    handleDelete,
-    handleSendToClient
-  } = useOrderDetails(orderId);
-
-  if (isLoading) {
-    return <OrderDetailsSkeleton />;
-  }
-
-  if (!order) {
-    return <OrderNotFound />;
-  }
+    fetchOrderDetails,
+    deleteOrder,
+    onDeleteConfirm,
+    showDeleteDialog,
+    setShowDeleteDialog,
+  } = useOrderDetails(id);
 
   return (
-    <div className="animate-fade-in space-y-6" dir="rtl">
-      <OrderHeader 
-        order={order} 
-        onEdit={handleEdit} 
-        onDelete={handleDelete} 
-        onSendToClient={handleSendToClient} 
-      />
-
-      <Tabs defaultValue="details" className="space-y-4">
-        <TabsList className="grid w-full md:w-auto grid-cols-2">
-          <TabsTrigger value="details">פרטי הזמנה</TabsTrigger>
-          <TabsTrigger value="meetings">מפגשים</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="details">
-          <OrderInfo order={order} />
-        </TabsContent>
-        
-        <TabsContent value="meetings">
-          <MeetingsTab order={order} />
-        </TabsContent>
-      </Tabs>
-
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>עריכת הזמנה</DialogTitle>
-          </DialogHeader>
-          <OrderForm 
-            onClose={() => setIsEditDialogOpen(false)} 
-            onSubmit={handleUpdate}
-            initialData={order}
-            isEdit={true}
-          />
-        </DialogContent>
-      </Dialog>
+    <div className="space-y-6 animate-fade-in" dir="rtl">
+      {isLoading ? (
+        <OrderDetailsSkeleton />
+      ) : !order ? (
+        <OrderNotFound />
+      ) : (
+        <Card className="p-6">
+          <div className="space-y-4">
+            <OrderHeader
+              order={order}
+              onDeleteClick={deleteOrder}
+              onOrderUpdated={fetchOrderDetails}
+              showDeleteDialog={showDeleteDialog}
+              setShowDeleteDialog={setShowDeleteDialog}
+              onDeleteConfirm={onDeleteConfirm}
+            />
+            <Separator />
+            <OrderInfo order={order} />
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

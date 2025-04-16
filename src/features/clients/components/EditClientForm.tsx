@@ -38,24 +38,29 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
     setLoading(true);
 
     try {
+      console.log("Updating client with email:", email);
       const { error } = await supabase
         .from("clients")
         .update({
           name,
           contact,
-          email: email || null, // Use null for empty email strings
+          email: email || null, // Using null for empty email strings
           status,
           notes,
         })
         .eq("id", client.id)
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
 
       toast({ title: "הלקוח עודכן בהצלחה" });
       setIsOpen(false);
       onClientUpdated();
     } catch (error: any) {
+      console.error("Error updating client:", error);
       toast({ 
         title: "שגיאה", 
         description: error.message,

@@ -29,16 +29,20 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
     setLoading(true);
 
     try {
+      console.log("Submitting client data with email:", email);
       const { error } = await supabase.from("clients").insert({
         name,
         contact,
-        email: email || null, // Use null for empty email strings
+        email: email || null, // Using null for empty email strings
         status,
         notes,
         user_id: user.id,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
 
       toast({ title: "הלקוח נוסף בהצלחה" });
       setName("");
@@ -49,6 +53,7 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
       setIsOpen(false);
       onClientAdded();
     } catch (error: any) {
+      console.error("Error adding client:", error);
       toast({ 
         title: "שגיאה", 
         description: error.message,

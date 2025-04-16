@@ -22,14 +22,20 @@ export default function Clients() {
   const fetchClients = async () => {
     try {
       setIsLoadingClients(true);
+      console.log("Fetching clients for user ID:", user?.id);
+      
       const { data, error } = await supabase
         .from("clients")
         .select("*")
         .eq("user_id", user?.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
 
+      console.log("Fetched clients data:", data);
       const typedData = data?.map(client => ({
         ...client,
         status: (client.status || "active") as "active" | "pending" | "closed"
