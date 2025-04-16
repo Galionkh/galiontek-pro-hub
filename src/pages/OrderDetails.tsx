@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { OrderHeader } from "@/components/orders/OrderHeader";
@@ -8,7 +8,6 @@ import { Separator } from "@/components/ui/separator";
 import { OrderNotFound } from "@/components/orders/OrderNotFound";
 import { OrderDetailsSkeleton } from "@/components/orders/OrderDetailsSkeleton";
 import { useOrderDetails } from "@/components/orders/useOrderDetails";
-import { useState as useStateImport } from "react";
 import { 
   AlertDialog,
   AlertDialogAction,
