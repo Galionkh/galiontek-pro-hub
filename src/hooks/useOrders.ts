@@ -4,8 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { OrderForm } from "@/components/orders/OrderForm";
 
 export type Order = {
   id: number;
@@ -19,6 +17,10 @@ export type Order = {
   payment_terms?: string;
   description?: string;
   user_id?: string;
+  service_topic?: string;
+  hours?: number;
+  hourly_rate?: number;
+  total_amount?: number;
 };
 
 export const useOrders = () => {

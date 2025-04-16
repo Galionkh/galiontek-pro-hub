@@ -26,6 +26,12 @@ export const OrderInfo: React.FC<OrderInfoProps> = ({ order }) => {
     );
   };
   
+  // Format number to Israeli format (with comma separators and 2 decimal places)
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return "";
+    return new Intl.NumberFormat('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+  };
+  
   return (
     <Card className="p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -48,17 +54,41 @@ export const OrderInfo: React.FC<OrderInfoProps> = ({ order }) => {
               <p className="text-muted-foreground">סטטוס:</p>
               <p className="font-medium">{getStatusDisplay(order.status)}</p>
             </div>
+            {order.service_topic && (
+              <div>
+                <p className="text-muted-foreground">נושא השירות / שם התוכנית:</p>
+                <p className="font-medium">{order.service_topic}</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">פרטים כספיים</h2>
+          <div className="space-y-3">
+            {order.hours !== undefined && (
+              <div>
+                <p className="text-muted-foreground">מספר שעות:</p>
+                <p className="font-medium">{order.hours}</p>
+              </div>
+            )}
+            {order.hourly_rate !== undefined && (
+              <div>
+                <p className="text-muted-foreground">תעריף לשעה:</p>
+                <p className="font-medium">₪{formatCurrency(order.hourly_rate)}</p>
+              </div>
+            )}
+            {order.total_amount !== undefined && (
+              <div>
+                <p className="text-muted-foreground">סכום כולל:</p>
+                <p className="font-medium">₪{formatCurrency(order.total_amount)}</p>
+              </div>
+            )}
             {order.payment_terms && (
               <div>
                 <p className="text-muted-foreground">תנאי תשלום:</p>
                 <p className="font-medium">{order.payment_terms}</p>
               </div>
             )}
-          </div>
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold mb-4">פרטים נוספים</h2>
-          <div className="space-y-3">
             {order.description && (
               <div>
                 <p className="text-muted-foreground">תיאור:</p>
