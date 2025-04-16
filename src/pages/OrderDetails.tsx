@@ -9,7 +9,7 @@ import { OrderHeader } from "@/components/orders/OrderHeader";
 import { OrderInfo } from "@/components/orders/OrderInfo";
 import { MeetingsTab } from "@/components/meetings/MeetingsTab";
 import { useOrderDetails } from "@/components/orders/useOrderDetails";
-import type { Order } from "@/features/clients/types";
+import type { Order as OrderType } from "@/features/clients/types";
 
 export default function OrderDetails() {
   const { id } = useParams<{ id: string }>();

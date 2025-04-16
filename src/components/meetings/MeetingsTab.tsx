@@ -11,7 +11,7 @@ import { MeetingsSummary } from "./MeetingsSummary";
 import { useMeetings, type Meeting } from "@/hooks/useMeetings";
 import { useToast } from "@/hooks/use-toast";
 import type { Order } from "@/features/clients/types";
-import { exportToPDF, shareViaWhatsApp, sendEmail } from "@/utils/meetingExports";
+import { exportToPDF, shareViaWhatsApp, sendEmail } from "@/features/meetings/exports";
 import { supabase } from "@/integrations/supabase/client";
 
 interface MeetingsTabProps {
