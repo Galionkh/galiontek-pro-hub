@@ -9,6 +9,8 @@ import { OrderNotFound } from "@/components/orders/OrderNotFound";
 import { OrderDetailsSkeleton } from "@/components/orders/OrderDetailsSkeleton";
 import { useOrderDetails } from "@/components/orders/useOrderDetails";
 import { OrderForm } from "@/components/orders/OrderForm";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MeetingsTab } from "@/components/meetings/MeetingsTab";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -65,6 +67,23 @@ export default function OrderDetails() {
               <OrderInfo order={order} />
             </div>
           </Card>
+
+          <Tabs defaultValue="info" className="mt-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="info">מידע</TabsTrigger>
+              <TabsTrigger value="meetings">מפגשים</TabsTrigger>
+            </TabsList>
+            <TabsContent value="info" className="p-4 border rounded-md mt-2">
+              <div className="prose max-w-none">
+                <p className="text-muted-foreground">
+                  {order.description || "אין תיאור להזמנה זו."}
+                </p>
+              </div>
+            </TabsContent>
+            <TabsContent value="meetings" className="p-4 border rounded-md mt-2">
+              <MeetingsTab order={order} />
+            </TabsContent>
+          </Tabs>
 
           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogContent className="max-w-3xl overflow-y-auto" dir="rtl">

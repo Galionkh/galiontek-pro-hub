@@ -52,7 +52,7 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
   };
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
+    <Card className="overflow-hidden transition-all hover:shadow-md" dir="rtl">
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <div>
@@ -98,7 +98,7 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
                 <Trash2 className="h-4 w-4 ml-1" /> מחיקה
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent dir="rtl">
               <AlertDialogHeader>
                 <AlertDialogTitle>האם אתה בטוח שברצונך למחוק?</AlertDialogTitle>
                 <AlertDialogDescription>
