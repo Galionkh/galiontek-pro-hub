@@ -1,21 +1,21 @@
 
-import React from "react";
 import { Input } from "@/components/ui/input";
+import React from "react";
 
 interface ClientFormFieldProps {
   placeholder: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  className?: string;
+  type?: string;
 }
 
-export function ClientFormField({ placeholder, value, onChange, className = "" }: ClientFormFieldProps) {
+export function ClientFormField({ placeholder, value, onChange, type = "text" }: ClientFormFieldProps) {
   return (
     <Input
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className={className}
+      type={type}
     />
   );
 }

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { Plus, FileDown, Mail, FileSpreadsheet, Share, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Order } from "@/hooks/useOrders";
 import type { Meeting } from "@/hooks/useMeetings";
 import { exportToPDF, shareViaWhatsApp, sendEmail } from "@/utils/meetingExports";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MeetingsTabProps {
   order: Order;
@@ -42,7 +42,6 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
 
   const { totalMeetings, totalHours, totalTeachingUnits } = getMeetingsSummary(use45MinuteUnits);
 
-  // Fetch meetings when the component mounts
   useEffect(() => {
     fetchMeetings();
   }, []);
@@ -66,7 +65,6 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
           description: "המפגש עודכן בהצלחה",
         });
       } else {
-        // Remove the use45MinuteUnits property from our form data
         const { use45MinuteUnits: _, ...meetingDataToSave } = meetingData;
         
         await createMeeting({
@@ -106,7 +104,6 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
         variant: "destructive",
       });
     } finally {
-      // Reset the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -149,12 +146,31 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
 
   const handleSendEmail = async () => {
     try {
+      if (order.client_id) {
+        const { data, error } = await supabase
+          .from("clients")
+          .select("email")
+          .eq("id", order.client_id)
+          .single();
+          
+        if (error) throw error;
+        
+        if (!data || !data.email) {
+          toast({
+            title: "חסר דואר אלקטרוני",
+            description: "לא נמצא דואר אלקטרוני ללקוח. ערוך את פרטי הלקוח כדי להוסיף דואר אלקטרוני.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      
       await sendEmail(order, meetings, use45MinuteUnits);
       toast({
         title: "שליחה למייל",
         description: "המפגשים נשלחו בהצלחה למייל",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending email:", error);
       toast({
         title: "שגיאה בשליחה",

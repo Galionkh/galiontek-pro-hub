@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns';
 import { he } from 'date-fns/locale';
 import type { Order } from '@/hooks/useOrders';
 import type { Meeting } from '@/hooks/useMeetings';
+import { supabase } from '@/integrations/supabase/client';
 
 // Helper function to get day of week in Hebrew
 const getDayOfWeek = (dateString: string) => {
@@ -21,6 +22,24 @@ const formatDate = (dateString: string) => {
 // Helper function to format time
 const formatTime = (timeString: string) => {
   return timeString.substring(0, 5);
+};
+
+// Helper function to get client email
+const getClientEmail = async (clientId: string) => {
+  if (!clientId) return null;
+  
+  const { data, error } = await supabase
+    .from('clients')
+    .select('email')
+    .eq('id', clientId)
+    .single();
+    
+  if (error || !data || !data.email) {
+    console.error('Error fetching client email:', error);
+    return null;
+  }
+  
+  return data.email;
 };
 
 // Create PDF
@@ -178,8 +197,8 @@ export const sendEmail = async (
   use45MinuteUnits: boolean = true
 ): Promise<void> => {
   try {
-    // For demonstration purposes, we'll open the default mail client
-    // In a real application, you would use an email API or service
+    // Get client email if available
+    const clientEmail = await getClientEmail(order.client_id);
     
     // Generate message text
     let subject = encodeURIComponent(`רשימת מפגשים: ${order.title || 'הזמנה'}`);
@@ -227,8 +246,11 @@ export const sendEmail = async (
       </table>
     `);
     
+    // Set destination email - if client email exists, use it as default
+    let mailTo = clientEmail ? clientEmail : '';
+    
     // Open the default mail client
-    window.location.href = `mailto:?subject=${subject}&body=${body}&html=true`;
+    window.location.href = `mailto:${mailTo}?subject=${subject}&body=${body}&html=true`;
   } catch (error) {
     console.error('Error sending email:', error);
     throw error;

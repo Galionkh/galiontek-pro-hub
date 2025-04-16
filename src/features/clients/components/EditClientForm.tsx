@@ -20,6 +20,7 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(client.name);
   const [contact, setContact] = useState(client.contact);
+  const [email, setEmail] = useState(client.email || "");
   const [status, setStatus] = useState<"active" | "pending" | "closed">(client.status as any);
   const [notes, setNotes] = useState(client.notes || "");
   const [loading, setLoading] = useState(false);
@@ -27,6 +28,7 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
   useEffect(() => {
     setName(client.name);
     setContact(client.contact);
+    setEmail(client.email || "");
     setStatus(client.status as any);
     setNotes(client.notes || "");
   }, [client]);
@@ -41,6 +43,7 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
         .update({
           name,
           contact,
+          email,
           status,
           notes,
         })
@@ -85,6 +88,12 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
             placeholder="פרטי קשר"
             value={contact}
             onChange={(e) => setContact(e.target.value)}
+          />
+          <Input
+            placeholder="דואר אלקטרוני"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <Input
             placeholder="הערות"

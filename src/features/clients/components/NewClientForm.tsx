@@ -19,6 +19,7 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"active" | "pending" | "closed">("active");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,6 +32,7 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
       const { error } = await supabase.from("clients").insert({
         name,
         contact,
+        email,
         status,
         notes,
         user_id: user.id,
@@ -41,6 +43,7 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
       toast({ title: "הלקוח נוסף בהצלחה" });
       setName("");
       setContact("");
+      setEmail("");
       setStatus("active");
       setNotes("");
       setIsOpen(false);
@@ -82,6 +85,12 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
         placeholder="פרטי קשר"
         value={contact}
         onChange={(e) => setContact(e.target.value)}
+      />
+      <ClientFormField
+        placeholder="דואר אלקטרוני"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        type="email"
       />
       <ClientFormField
         placeholder="הערות"
