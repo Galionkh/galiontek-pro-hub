@@ -18,4 +18,6 @@ export type Order = {
   date: string;
   created_at: string;
   user_id?: string;
+  client_id?: number;
+  hours?: number;
 };

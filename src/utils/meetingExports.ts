@@ -1,4 +1,3 @@
-
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { format, parseISO } from 'date-fns';
@@ -25,21 +24,29 @@ const formatTime = (timeString: string) => {
 };
 
 // Helper function to get client email
-const getClientEmail = async (clientId: string) => {
+const getClientEmail = async (clientId: number | string | undefined): Promise<string | null> => {
   if (!clientId) return null;
   
-  const { data, error } = await supabase
-    .from('clients')
-    .select('email')
-    .eq('id', clientId)
-    .single();
+  // Convert client_id to number if it's a string
+  const id = typeof clientId === 'string' ? parseInt(clientId, 10) : clientId;
+  
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('email')
+      .eq('id', id)
+      .single();
+      
+    if (error) {
+      console.error('Error fetching client email:', error);
+      return null;
+    }
     
-  if (error || !data || !data.email) {
-    console.error('Error fetching client email:', error);
+    return data?.email || null;
+  } catch (err) {
+    console.error('Exception fetching client email:', err);
     return null;
   }
-  
-  return data.email;
 };
 
 // Create PDF

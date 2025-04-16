@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { Plus, FileDown, Mail, FileSpreadsheet, Share, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,7 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
           description: "המפגש עודכן בהצלחה",
         });
       } else {
+        // Remove use45MinuteUnits from meetingData to avoid database errors
         const { use45MinuteUnits: _, ...meetingDataToSave } = meetingData;
         
         await createMeeting({
@@ -147,10 +149,13 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
   const handleSendEmail = async () => {
     try {
       if (order.client_id) {
+        // Convert client_id to number if it's a string
+        const clientId = typeof order.client_id === 'string' ? parseInt(order.client_id, 10) : order.client_id;
+        
         const { data, error } = await supabase
           .from("clients")
           .select("email")
-          .eq("id", order.client_id)
+          .eq("id", clientId)
           .single();
           
         if (error) throw error;
