@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from 'xlsx';
+import { format } from "date-fns";
 
 export type Meeting = {
   id: string;
@@ -65,7 +66,9 @@ export const useMeetings = (orderId: number) => {
       });
 
       // Add to calendar (implement in a separate function)
-      await addToCalendar(data[0]);
+      if (data && data.length > 0) {
+        await addToCalendar(data[0]);
+      }
 
       // Refresh meetings list
       fetchMeetings();
@@ -177,8 +180,8 @@ export const useMeetings = (orderId: number) => {
       setIsCreating(true);
       
       // Read the file
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
       
@@ -234,7 +237,7 @@ export const useMeetings = (orderId: number) => {
       }
       
       // Insert meetings
-      const { data, error } = await supabase
+      const { data: insertedData, error } = await supabase
         .from("meetings")
         .insert(validMeetings)
         .select();
@@ -242,8 +245,8 @@ export const useMeetings = (orderId: number) => {
       if (error) throw error;
       
       // Add to calendar
-      if (data) {
-        for (const meeting of data) {
+      if (insertedData) {
+        for (const meeting of insertedData) {
           await addToCalendar(meeting);
         }
       }
