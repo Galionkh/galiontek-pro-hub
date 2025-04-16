@@ -9,7 +9,7 @@ export default function Settings() {
     <div className="space-y-6 animate-fade-in" dir="rtl">
       <h1 className="text-3xl font-bold">הגדרות</h1>
       
-      <Tabs defaultValue="profile">
+      <Tabs defaultValue="appearance">
         <TabsList className="w-full md:w-auto grid grid-cols-3">
           <TabsTrigger value="profile">פרופיל</TabsTrigger>
           <TabsTrigger value="sync">סנכרון</TabsTrigger>

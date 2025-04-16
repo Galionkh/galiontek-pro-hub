@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Sun, Moon, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -56,20 +55,17 @@ export function AppearanceTab() {
     });
   };
 
-  const handleColorSchemeChange = (value: string) => {
-    if (value) {
-      setColorScheme(value);
-      localStorage.setItem('colorScheme', value);
-      
-      // Apply color scheme changes to CSS variables
-      // This is a simplified example - would need proper CSS variable updates
-      document.documentElement.setAttribute('data-color-scheme', value);
-      
-      toast({
-        title: "ערכת צבעים עודכנה",
-        description: `ערכת הצבעים השתנתה ל${getColorSchemeName(value)}`,
-      });
-    }
+  const handleColorSchemeChange = (scheme: string) => {
+    setColorScheme(scheme);
+    localStorage.setItem('colorScheme', scheme);
+    
+    // Apply color scheme changes to CSS variables
+    document.documentElement.setAttribute('data-color-scheme', scheme);
+    
+    toast({
+      title: "ערכת צבעים עודכנה",
+      description: `ערכת הצבעים השתנתה ל${getColorSchemeName(scheme)}`,
+    });
   };
 
   const handleFontSizeChange = (value: number[]) => {
@@ -119,7 +115,7 @@ export function AppearanceTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>תצוגה</CardTitle>
+        <CardTitle>ערכת צבעים</CardTitle>
         <CardDescription>התאם את התצוגה לפי העדפותיך</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -139,29 +135,33 @@ export function AppearanceTab() {
         </div>
         
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Palette className="h-4 w-4" />
-            <Label htmlFor="color-scheme">ערכת צבעים</Label>
-          </div>
-          <ToggleGroup 
-            type="single" 
-            value={colorScheme} 
-            onValueChange={handleColorSchemeChange}
-            className="justify-start"
-          >
-            <ToggleGroupItem value="purple" className="bg-purple-100 dark:bg-purple-900 border-purple-200 dark:border-purple-800">
+          <Label htmlFor="color-scheme">ערכת צבעים</Label>
+          <div className="flex flex-row gap-2 mt-2">
+            <button 
+              onClick={() => handleColorSchemeChange('purple')}
+              className={`w-16 h-10 rounded-md bg-purple-500 ${colorScheme === 'purple' ? 'ring-2 ring-primary' : ''}`}
+            >
               סגול
-            </ToggleGroupItem>
-            <ToggleGroupItem value="blue" className="bg-blue-100 dark:bg-blue-900 border-blue-200 dark:border-blue-800">
+            </button>
+            <button 
+              onClick={() => handleColorSchemeChange('blue')}
+              className={`w-16 h-10 rounded-md bg-blue-500 ${colorScheme === 'blue' ? 'ring-2 ring-primary' : ''}`}
+            >
               כחול
-            </ToggleGroupItem>
-            <ToggleGroupItem value="green" className="bg-green-100 dark:bg-green-900 border-green-200 dark:border-green-800">
+            </button>
+            <button 
+              onClick={() => handleColorSchemeChange('green')}
+              className={`w-16 h-10 rounded-md bg-green-500 ${colorScheme === 'green' ? 'ring-2 ring-primary' : ''}`}
+            >
               ירוק
-            </ToggleGroupItem>
-            <ToggleGroupItem value="orange" className="bg-orange-100 dark:bg-orange-900 border-orange-200 dark:border-orange-800">
+            </button>
+            <button 
+              onClick={() => handleColorSchemeChange('orange')}
+              className={`w-16 h-10 rounded-md bg-orange-300 ${colorScheme === 'orange' ? 'ring-2 ring-primary' : ''}`}
+            >
               כתום
-            </ToggleGroupItem>
-          </ToggleGroup>
+            </button>
+          </div>
         </div>
         
         <div className="space-y-2">
