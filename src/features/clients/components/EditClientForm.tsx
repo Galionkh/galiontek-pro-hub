@@ -38,22 +38,15 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
     setLoading(true);
 
     try {
-      // Create update data object without email if it's empty
-      const updateData: any = {
-        name,
-        contact,
-        status,
-        notes,
-      };
-      
-      // Only include email if it's not empty
-      if (email) {
-        updateData.email = email;
-      }
-
       const { error } = await supabase
         .from("clients")
-        .update(updateData)
+        .update({
+          name,
+          contact,
+          email: email || null, // Use null for empty email strings
+          status,
+          notes,
+        })
         .eq("id", client.id)
         .eq("user_id", user.id);
 
