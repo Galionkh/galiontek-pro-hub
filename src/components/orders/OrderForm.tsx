@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -110,6 +109,10 @@ export function OrderForm({ onClose, onSubmit, initialData, isEdit = false }: Or
     
     try {
       setIsLoading(true);
+      
+      // Log the form data before submission to help with debugging
+      console.log("Form data being submitted:", formData);
+      
       await onSubmit(formData);
       onClose();
     } catch (error: any) {

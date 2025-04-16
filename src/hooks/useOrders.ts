@@ -74,6 +74,10 @@ export const useOrders = () => {
 
     try {
       setIsLoading(true);
+      
+      // Log the orderData before insertion to debug
+      console.log("Order data being inserted:", orderData);
+      
       const { data, error } = await supabase
         .from("orders")
         .insert([{
