@@ -1,5 +1,7 @@
 
-import { FormField } from "./FormField";
+import { HoursField } from "./HoursField";
+import { HourlyRateField } from "./HourlyRateField";
+import { TotalAmountField } from "./TotalAmountField";
 
 interface PricingFieldsProps {
   hours: string | number;
@@ -11,43 +13,9 @@ interface PricingFieldsProps {
 export function PricingFields({ hours, hourlyRate, totalAmount, onChange }: PricingFieldsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <FormField
-        id="hours"
-        name="hours"
-        label="מספר שעות"
-        type="number"
-        min="0"
-        step="0.5"
-        value={hours}
-        onChange={onChange}
-        className="ltr-input"
-        dir="ltr"
-      />
-
-      <FormField
-        id="hourly_rate"
-        name="hourly_rate"
-        label="תעריף לשעה (₪)"
-        type="number"
-        min="0"
-        step="0.01"
-        value={hourlyRate}
-        onChange={onChange}
-        className="ltr-input"
-        dir="ltr"
-      />
-
-      <FormField
-        id="total_amount"
-        name="total_amount"
-        label="סכום כולל (₪)"
-        type="number"
-        value={totalAmount}
-        onChange={onChange}
-        readOnly={true}
-        className="bg-gray-50 ltr-input"
-        dir="ltr"
-      />
+      <HoursField hours={hours} onChange={onChange} />
+      <HourlyRateField hourlyRate={hourlyRate} onChange={onChange} />
+      <TotalAmountField totalAmount={totalAmount} onChange={onChange} />
     </div>
   );
 }

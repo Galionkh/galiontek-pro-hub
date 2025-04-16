@@ -10,6 +10,7 @@ interface DatePickerFieldProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   required?: boolean;
+  error?: string;
 }
 
 export function DatePickerField({
@@ -19,6 +20,7 @@ export function DatePickerField({
   value,
   onChange,
   required = false,
+  error,
 }: DatePickerFieldProps) {
   return (
     <div className="space-y-2">
@@ -32,7 +34,9 @@ export function DatePickerField({
         value={value}
         onChange={onChange}
         required={required}
+        className={error ? "border-red-500" : ""}
       />
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );
 }

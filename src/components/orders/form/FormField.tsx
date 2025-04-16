@@ -17,6 +17,7 @@ interface FormFieldProps {
   step?: string;
   className?: string;
   dir?: "rtl" | "ltr";
+  error?: string;
 }
 
 export function FormField({
@@ -33,6 +34,7 @@ export function FormField({
   step,
   className = "",
   dir,
+  error,
 }: FormFieldProps) {
   return (
     <div className="space-y-2">
@@ -50,9 +52,10 @@ export function FormField({
         readOnly={readOnly}
         min={min}
         step={step}
-        className={className}
+        className={`${className} ${error ? "border-red-500" : ""}`}
         dir={dir}
       />
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );
 }

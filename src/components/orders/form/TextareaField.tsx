@@ -13,6 +13,7 @@ interface TextareaFieldProps {
   placeholder?: string;
   className?: string;
   rows?: number;
+  error?: string;
 }
 
 export function TextareaField({
@@ -25,6 +26,7 @@ export function TextareaField({
   placeholder,
   className = "",
   rows = 4,
+  error,
 }: TextareaFieldProps) {
   return (
     <div className="space-y-2">
@@ -38,9 +40,10 @@ export function TextareaField({
         onChange={onChange}
         required={required}
         placeholder={placeholder}
-        className={className}
+        className={`${className} ${error ? "border-red-500" : ""}`}
         rows={rows}
       />
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );
 }

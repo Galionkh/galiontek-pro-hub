@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormField } from "./form/FormField";
 import { ClientSelector } from "./form/ClientSelector";
@@ -21,6 +20,7 @@ export function OrderForm({ onClose, onSubmit, initialData, isEdit = false }: Or
     formData, 
     clients, 
     isLoading, 
+    validationErrors,
     handleChange, 
     handleSelectChange,
     handleSubmit 
@@ -35,6 +35,7 @@ export function OrderForm({ onClose, onSubmit, initialData, isEdit = false }: Or
         value={formData.title}
         onChange={handleChange}
         required={true}
+        error={validationErrors.title}
       />
 
       <ClientSelector 
@@ -42,6 +43,7 @@ export function OrderForm({ onClose, onSubmit, initialData, isEdit = false }: Or
         clients={clients} 
         onClientSelect={(value) => handleSelectChange("client_id", value)}
         isRequired={true}
+        error={validationErrors.client_id}
       />
 
       <DatePickerField 
