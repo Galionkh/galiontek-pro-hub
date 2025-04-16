@@ -29,14 +29,21 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from("clients").insert({
+      // Create the client data object without email if it's empty
+      const clientData: any = {
         name,
         contact,
-        email,
         status,
         notes,
         user_id: user.id,
-      });
+      };
+      
+      // Only include email if it's not empty
+      if (email) {
+        clientData.email = email;
+      }
+
+      const { error } = await supabase.from("clients").insert(clientData);
 
       if (error) throw error;
 
