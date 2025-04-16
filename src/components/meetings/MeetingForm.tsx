@@ -2,45 +2,26 @@
 import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { format, parse } from "date-fns";
-import { CalendarIcon, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import type { Meeting } from "@/hooks/useMeetings";
+import { Form } from "@/components/ui/form";
 
-// Define form schema
-const formSchema = z.object({
-  date: z.date({
-    required_error: "יש לבחור תאריך למפגש",
-  }),
-  start_time: z.string({
-    required_error: "יש להזין שעת התחלה",
-  }),
-  end_time: z.string({
-    required_error: "יש להזין שעת סיום",
-  }),
-  topic: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { 
+  DateField, 
+  TimeField, 
+  TopicField, 
+  DurationDisplay 
+} from "./form/MeetingFormFields";
+import { 
+  meetingFormSchema, 
+  type MeetingFormValues 
+} from "./form/MeetingFormSchema";
+import { 
+  calculateDurationMinutes, 
+  calculateTeachingUnits 
+} from "./form/MeetingTimeUtils";
+import type { Meeting } from "@/features/meetings/types";
 
 interface MeetingFormProps {
   orderId: number;
@@ -60,7 +41,7 @@ export const MeetingForm: React.FC<MeetingFormProps> = ({
   use45MinuteUnits = true,
 }) => {
   // Initialize form with existing data if editing
-  const defaultValues: Partial<FormValues> = initialData
+  const defaultValues: Partial<MeetingFormValues> = initialData
     ? {
         date: parse(initialData.date, 'yyyy-MM-dd', new Date()),
         start_time: initialData.start_time,
@@ -74,8 +55,8 @@ export const MeetingForm: React.FC<MeetingFormProps> = ({
         topic: '',
       };
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<MeetingFormValues>({
+    resolver: zodResolver(meetingFormSchema),
     defaultValues,
   });
 
@@ -88,31 +69,14 @@ export const MeetingForm: React.FC<MeetingFormProps> = ({
     const startTime = form.watch("start_time");
     const endTime = form.watch("end_time");
 
-    if (startTime && endTime) {
-      // Convert time strings to minutes since midnight
-      const getMinutes = (timeStr: string) => {
-        const [hours, minutes] = timeStr.split(":").map(Number);
-        return hours * 60 + minutes;
-      };
-
-      const startMinutes = getMinutes(startTime);
-      const endMinutes = getMinutes(endTime);
-
-      if (endMinutes > startMinutes) {
-        const duration = endMinutes - startMinutes;
-        setDurationMinutes(duration);
-        
-        // Calculate teaching units based on the setting (45 or 60 minute units)
-        const unitDuration = use45MinuteUnits ? 45 : 60;
-        setTeachingUnits(parseFloat((duration / unitDuration).toFixed(2)));
-      } else {
-        setDurationMinutes(null);
-        setTeachingUnits(null);
-      }
-    }
+    const calculatedDuration = calculateDurationMinutes(startTime, endTime);
+    setDurationMinutes(calculatedDuration);
+    
+    const calculatedUnits = calculateTeachingUnits(calculatedDuration, use45MinuteUnits);
+    setTeachingUnits(calculatedUnits);
   }, [form.watch("start_time"), form.watch("end_time"), use45MinuteUnits]);
 
-  const handleSubmit = async (values: FormValues) => {
+  const handleSubmit = async (values: MeetingFormValues) => {
     if (!durationMinutes || !teachingUnits) {
       form.setError("end_time", {
         type: "manual",
@@ -135,123 +99,31 @@ export const MeetingForm: React.FC<MeetingFormProps> = ({
     await onSubmit(meetingData);
   };
 
-  const unitType = use45MinuteUnits ? 'יחידות הוראה' : 'שעות אקדמיות';
-  const unitDuration = use45MinuteUnits ? 45 : 60;
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" dir="rtl">
-        <FormField
-          control={form.control}
-          name="date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>תאריך</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-right font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "dd/MM/yyyy")
-                      ) : (
-                        <span>בחר תאריך</span>
-                      )}
-                      <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <DateField control={form.control} />
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="start_time"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>שעת התחלה</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input
-                      type="time"
-                      placeholder="שעת התחלה"
-                      {...field}
-                      className="pl-10"
-                    />
-                    <Clock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+          <TimeField 
+            control={form.control} 
+            name="start_time" 
+            label="שעת התחלה" 
           />
-
-          <FormField
-            control={form.control}
-            name="end_time"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>שעת סיום</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input
-                      type="time"
-                      placeholder="שעת סיום"
-                      {...field}
-                      className="pl-10"
-                    />
-                    <Clock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+          <TimeField 
+            control={form.control} 
+            name="end_time" 
+            label="שעת סיום" 
           />
         </div>
 
-        {durationMinutes !== null && teachingUnits !== null && (
-          <div className="p-3 bg-muted rounded-md text-sm">
-            <p>משך המפגש: {(durationMinutes / 60).toFixed(2)} שעות ({durationMinutes} דקות)</p>
-            <p>{unitType}: {teachingUnits.toFixed(2)} יחידות של {unitDuration} דקות</p>
-          </div>
-        )}
-
-        <FormField
-          control={form.control}
-          name="topic"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>נושא המפגש</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="הזן את נושא המפגש"
-                  className="min-h-[80px]"
-                  {...field}
-                  value={field.value || ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        <DurationDisplay 
+          durationMinutes={durationMinutes} 
+          teachingUnits={teachingUnits}
+          use45MinuteUnits={use45MinuteUnits} 
         />
+
+        <TopicField control={form.control} />
 
         <div className="flex justify-end space-x-2">
           <Button
