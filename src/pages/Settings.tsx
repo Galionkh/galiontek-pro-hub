@@ -10,7 +10,7 @@ export default function Settings() {
       <h1 className="text-3xl font-bold">הגדרות</h1>
       
       <Tabs defaultValue="profile">
-        <TabsList className="w-full md:w-auto grid grid-cols-2 md:grid-cols-3">
+        <TabsList className="w-full md:w-auto grid grid-cols-3">
           <TabsTrigger value="profile">פרופיל</TabsTrigger>
           <TabsTrigger value="sync">סנכרון</TabsTrigger>
           <TabsTrigger value="appearance">עיצוב</TabsTrigger>

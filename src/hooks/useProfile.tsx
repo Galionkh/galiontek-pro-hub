@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -12,7 +12,7 @@ export function useProfile() {
   const { user } = useAuth();
 
   // פונקציה לטעינת נתוני הפרופיל מהדאטאבייס
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -56,7 +56,7 @@ export function useProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   // פונקציה לשמירת נתוני הפרופיל בדאטאבייס
   const saveProfile = async (data: ProfileFormValues) => {
@@ -101,9 +101,6 @@ export function useProfile() {
         title: "הפרופיל נשמר בהצלחה",
         description: "הפרטים האישיים שלך עודכנו במערכת",
       });
-      
-      // טעינה מחדש של הנתונים
-      fetchProfile();
     } catch (error: any) {
       console.error("Error saving profile:", error);
       toast({
@@ -123,7 +120,7 @@ export function useProfile() {
     } else {
       setProfile(null);
     }
-  }, [user]);
+  }, [user, fetchProfile]);
 
   return { profile, loading, saveProfile, fetchProfile };
 }

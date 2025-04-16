@@ -38,10 +38,16 @@ export function SyncTab() {
       }));
       setSyncing(null);
       
-      // Show toast notification
+      // Show toast notification with email information where relevant
+      const serviceDisplayName = getServiceName(service);
+      const isConnecting = !syncStatus[service as keyof typeof syncStatus];
+      const emailInfo = service === "gmail" && profile?.email ? ` (${profile.email})` : "";
+      
       toast({
-        title: syncStatus[service as keyof typeof syncStatus] ? "שירות מנותק" : "שירות מחובר",
-        description: `${getServiceName(service)} ${syncStatus[service as keyof typeof syncStatus] ? "נותק בהצלחה" : "חובר בהצלחה"}${service === "gmail" ? ` (${profile?.email})` : ""}`,
+        title: isConnecting ? `${serviceDisplayName} חובר בהצלחה` : `${serviceDisplayName} נותק בהצלחה`,
+        description: isConnecting 
+          ? `השירות חובר בהצלחה${emailInfo}` 
+          : `השירות נותק בהצלחה${emailInfo}`,
       });
     }, 1000);
   };
@@ -56,8 +62,16 @@ export function SyncTab() {
     return names[serviceId] || serviceId;
   };
 
+  // For demonstration, show the current connected email in the Gmail card
+  const getEmailDisplay = () => {
+    if (syncStatus.gmail && profile?.email) {
+      return ` (${profile.email})`;
+    }
+    return "";
+  };
+
   return (
-    <Card dir="rtl">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <RefreshCw className="h-5 w-5" />
@@ -86,8 +100,11 @@ export function SyncTab() {
         
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="font-medium">Gmail</p>
-            <p className="text-sm text-muted-foreground">שליחת אימיילים אוטומטית דרך החשבון שלך{profile?.email ? ` (${profile.email})` : ""}</p>
+            <p className="font-medium">Gmail{getEmailDisplay()}</p>
+            <p className="text-sm text-muted-foreground">
+              שליחת אימיילים אוטומטית דרך החשבון שלך
+              {profile?.email && !syncStatus.gmail ? ` (${profile.email})` : ""}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {syncing === "gmail" && (

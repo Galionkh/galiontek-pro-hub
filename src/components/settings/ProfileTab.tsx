@@ -18,6 +18,7 @@ export type ProfileFormValues = {
 
 export function ProfileTab() {
   const { profile, loading, saveProfile, fetchProfile } = useProfile();
+  const [formSubmitted, setFormSubmitted] = useState(false);
   
   // Recreate form when profile changes
   const form = useForm<ProfileFormValues>({
@@ -31,22 +32,26 @@ export function ProfileTab() {
   
   // Update form values when profile changes
   useEffect(() => {
-    form.reset({
-      name: profile?.name || "",
-      email: profile?.email || "",
-      tel: profile?.tel || "",
-      orgname: profile?.orgname || "",
-    });
+    if (profile) {
+      form.reset({
+        name: profile.name || "",
+        email: profile.email || "",
+        tel: profile.tel || "",
+        orgname: profile.orgname || "",
+      });
+    }
   }, [profile, form]);
   
   const handleSubmit = async (data: ProfileFormValues) => {
+    setFormSubmitted(true);
     await saveProfile(data);
     // Immediately fetch the updated profile after saving
-    fetchProfile();
+    await fetchProfile();
+    setFormSubmitted(false);
   };
 
   return (
-    <Card dir="rtl">
+    <Card>
       <CardHeader>
         <CardTitle>פרטים אישיים</CardTitle>
         <CardDescription>עדכן את הפרטים האישיים שלך</CardDescription>
@@ -106,8 +111,8 @@ export function ProfileTab() {
               )}
             />
             
-            <Button type="submit" disabled={loading} className="flex items-center gap-2">
-              {loading ? (
+            <Button type="submit" disabled={loading || formSubmitted} className="flex items-center gap-2">
+              {(loading || formSubmitted) ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Save className="h-4 w-4" />
