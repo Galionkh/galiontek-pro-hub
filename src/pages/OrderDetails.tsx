@@ -19,6 +19,7 @@ export default function OrderDetails() {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const orderId = id ? parseInt(id, 10) : 0;
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -29,7 +30,7 @@ export default function OrderDetails() {
         const { data, error } = await supabase
           .from("orders")
           .select("*")
-          .eq("id", id)
+          .eq("id", orderId)
           .single();
 
         if (error) throw error;
@@ -48,7 +49,7 @@ export default function OrderDetails() {
     };
 
     fetchOrder();
-  }, [id, navigate, toast]);
+  }, [id, navigate, toast, orderId]);
 
   const handleEdit = () => {
     setIsEditDialogOpen(true);
@@ -59,7 +60,7 @@ export default function OrderDetails() {
       const { error } = await supabase
         .from("orders")
         .update(formData)
-        .eq("id", id);
+        .eq("id", orderId);
 
       if (error) throw error;
       
@@ -89,7 +90,7 @@ export default function OrderDetails() {
       const { error } = await supabase
         .from("orders")
         .delete()
-        .eq("id", id);
+        .eq("id", orderId);
 
       if (error) throw error;
       
@@ -115,7 +116,7 @@ export default function OrderDetails() {
       const { error } = await supabase
         .from("orders")
         .update({ status: "sent" })
-        .eq("id", id);
+        .eq("id", orderId);
 
       if (error) throw error;
       

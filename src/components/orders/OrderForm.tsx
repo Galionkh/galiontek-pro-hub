@@ -40,7 +40,14 @@ export function OrderForm({ onClose, onSubmit, initialData, isEdit = false }: Or
           .order("name", { ascending: true });
 
         if (error) throw error;
-        setClients(data || []);
+        
+        // Convert data to match the Client type by ensuring status is of the right type
+        const typedClients = data?.map(client => ({
+          ...client,
+          status: (client.status as "active" | "pending" | "closed") || "active"
+        })) as Client[];
+        
+        setClients(typedClients || []);
       } catch (error: any) {
         console.error("Error fetching clients:", error.message);
         toast({
