@@ -13,6 +13,8 @@ export interface Transaction {
   date: string;
 }
 
+export type TransactionInput = Omit<Transaction, 'id'>;
+
 export function useTransactions() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -42,7 +44,7 @@ export function useTransactions() {
   });
 
   const addTransaction = useMutation({
-    mutationFn: async (transaction: Omit<Transaction, 'id'>) => {
+    mutationFn: async (transaction: TransactionInput) => {
       if (!user) throw new Error("User not authenticated");
       
       const { data, error } = await supabase

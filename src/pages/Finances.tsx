@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,8 +37,21 @@ export default function Finances() {
   });
 
   const onSubmit = async (data: TransactionFormValues) => {
-    await addTransaction.mutateAsync(data);
-    form.reset();
+    // Ensure all required properties are explicitly set
+    const transaction = {
+      type: data.type,
+      amount: data.amount,
+      description: data.description,
+      date: data.date,
+    };
+    
+    await addTransaction.mutateAsync(transaction);
+    form.reset({
+      type: 'income',
+      amount: 0,
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+    });
     setOpen(false);
   };
 
