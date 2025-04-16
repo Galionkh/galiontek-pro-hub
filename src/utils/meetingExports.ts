@@ -1,9 +1,10 @@
+
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { format, parseISO } from 'date-fns';
 import { he } from 'date-fns/locale';
 import type { Order } from '@/features/clients/types';
-import type { Meeting } from '@/hooks/useMeetings';
+import type { Meeting } from '@/features/meetings/types';
 import { supabase } from '@/integrations/supabase/client';
 
 // Helper function to get day of week in Hebrew

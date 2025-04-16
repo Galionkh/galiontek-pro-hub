@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState, useRef } from "react";
-import { Plus, FileDown, Mail, FileSpreadsheet, Share, Edit } from "lucide-react";
+import { Plus, FileDown, Mail, FileSpreadsheet, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
@@ -9,10 +8,9 @@ import { Label } from "@/components/ui/label";
 import { MeetingForm } from "./MeetingForm";
 import { MeetingsList } from "./MeetingsList";
 import { MeetingsSummary } from "./MeetingsSummary";
-import { useMeetings } from "@/hooks/useMeetings";
+import { useMeetings, type Meeting } from "@/hooks/useMeetings";
 import { useToast } from "@/hooks/use-toast";
 import type { Order } from "@/features/clients/types";
-import type { Meeting } from "@/hooks/useMeetings";
 import { exportToPDF, shareViaWhatsApp, sendEmail } from "@/utils/meetingExports";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -66,7 +64,6 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
           description: "המפגש עודכן בהצלחה",
         });
       } else {
-        // Remove use45MinuteUnits from meetingData to avoid database errors
         const { use45MinuteUnits: _, ...meetingDataToSave } = meetingData;
         
         await createMeeting({
@@ -149,19 +146,16 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
   const handleSendEmail = async () => {
     try {
       if (order.client_id) {
-        // Convert client_id to number if it's a string
         const clientId = typeof order.client_id === 'string' ? parseInt(order.client_id, 10) : order.client_id;
         
-        // Use non-typed query to avoid TypeScript issues with column detection
         const { data, error } = await supabase
           .from("clients")
-          .select("*")  // Select all columns instead of just email
+          .select("*")
           .eq("id", clientId)
           .single();
           
         if (error) throw error;
         
-        // Type guard to ensure data exists
         if (!data) {
           toast({
             title: "לקוח לא נמצא",
@@ -171,10 +165,8 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
           return;
         }
         
-        // Safely check if the email property exists on the data object
         const clientEmail = data && typeof data === 'object' && 'email' in data ? data.email : null;
         
-        // Check if email exists and has a value
         if (!clientEmail) {
           toast({
             title: "חסר דואר אלקטרוני",
