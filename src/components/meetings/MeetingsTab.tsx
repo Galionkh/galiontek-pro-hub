@@ -162,7 +162,17 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
         if (error) throw error;
         
         // Type guard to ensure data exists and has email property
-        if (!data || !data.email) {
+        if (!data) {
+          toast({
+            title: "לקוח לא נמצא",
+            description: "לא נמצאו פרטי לקוח. ערוך את פרטי הלקוח כדי להמשיך.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Check if data has email property and if it has a value
+        if (!data.email) {
           toast({
             title: "חסר דואר אלקטרוני",
             description: "לא נמצא דואר אלקטרוני ללקוח. ערוך את פרטי הלקוח כדי להוסיף דואר אלקטרוני.",

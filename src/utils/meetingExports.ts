@@ -45,8 +45,8 @@ const getClientEmail = async (clientId: number | string | undefined): Promise<st
     }
     
     // Type guard to ensure data exists and has an email property
-    if (data && 'email' in data) {
-      return data.email || null;
+    if (data) {
+      return data.email as string || null;
     }
     
     return null;
