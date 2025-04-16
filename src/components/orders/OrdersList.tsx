@@ -40,7 +40,7 @@ export const OrdersList = ({
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4" dir="rtl">
       {orders.map((order) => (
         <OrderCard 
           key={order.id} 
@@ -51,4 +51,4 @@ export const OrdersList = ({
       ))}
     </div>
   );
-};
+}

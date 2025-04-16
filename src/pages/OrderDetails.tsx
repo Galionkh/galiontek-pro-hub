@@ -102,7 +102,7 @@ export default function OrderDetails() {
       )}
       
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle>האם אתה בטוח שברצונך למחוק?</AlertDialogTitle>
             <AlertDialogDescription>

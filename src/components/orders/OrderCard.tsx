@@ -36,19 +36,27 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
   // Format date if available
   const formattedDate = order.date ? new Date(order.date).toLocaleDateString('he-IL') : "לא צוין";
   
-  // Handle view click
-  const handleViewClick = () => {
+  // Handle view click - directly navigate to order details
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     navigate(`/orders/${order.id}`);
   };
   
-  // Handle edit click
-  const handleEditClick = () => {
+  // Handle edit click - navigate to order details
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     navigate(`/orders/${order.id}`);
   };
   
   // Handle send to client
-  const handleSendToClient = async () => {
+  const handleSendToClient = async (e: React.MouseEvent) => {
+    e.preventDefault();
     await onSendToClient(order.id);
+  };
+
+  // Handle delete click
+  const handleDeleteClick = async () => {
+    await onDelete(order.id);
   };
 
   return (
@@ -108,7 +116,7 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
               <AlertDialogFooter>
                 <AlertDialogCancel>ביטול</AlertDialogCancel>
                 <AlertDialogAction 
-                  onClick={() => onDelete(order.id)} 
+                  onClick={handleDeleteClick} 
                   className="bg-destructive text-destructive-foreground"
                 >
                   מחק
