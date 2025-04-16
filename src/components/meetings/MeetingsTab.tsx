@@ -155,13 +155,13 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
         // Use non-typed query to avoid TypeScript issues with column detection
         const { data, error } = await supabase
           .from("clients")
-          .select("email")
+          .select("*")  // Select all columns instead of just email
           .eq("id", clientId)
           .single();
           
         if (error) throw error;
         
-        // Type guard to ensure data exists and has email property
+        // Type guard to ensure data exists
         if (!data) {
           toast({
             title: "לקוח לא נמצא",
@@ -171,8 +171,11 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
           return;
         }
         
-        // Check if data has email property and if it has a value
-        if (!data.email) {
+        // Safely check if the email property exists on the data object
+        const clientEmail = data && typeof data === 'object' && 'email' in data ? data.email : null;
+        
+        // Check if email exists and has a value
+        if (!clientEmail) {
           toast({
             title: "חסר דואר אלקטרוני",
             description: "לא נמצא דואר אלקטרוני ללקוח. ערוך את פרטי הלקוח כדי להוסיף דואר אלקטרוני.",

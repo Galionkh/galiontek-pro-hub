@@ -1,4 +1,3 @@
-
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { format, parseISO } from 'date-fns';
@@ -35,7 +34,7 @@ const getClientEmail = async (clientId: number | string | undefined): Promise<st
     // Use a more generic approach to avoid TypeScript issues with column detection
     const { data, error } = await supabase
       .from('clients')
-      .select('email')
+      .select('*')  // Select all columns instead of just email
       .eq('id', id)
       .single();
       
@@ -44,12 +43,10 @@ const getClientEmail = async (clientId: number | string | undefined): Promise<st
       return null;
     }
     
-    // Type guard to ensure data exists and has an email property
-    if (data) {
-      return data.email as string || null;
-    }
+    // Safely check if the email property exists on the data object
+    const clientEmail = data && typeof data === 'object' && 'email' in data ? data.email as string : null;
     
-    return null;
+    return clientEmail;
   } catch (err) {
     console.error('Exception fetching client email:', err);
     return null;
