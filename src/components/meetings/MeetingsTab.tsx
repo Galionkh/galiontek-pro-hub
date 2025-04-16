@@ -66,9 +66,11 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
           description: "המפגש עודכן בהצלחה",
         });
       } else {
+        // Remove the use45MinuteUnits property from our form data
+        const { use45MinuteUnits: _, ...meetingDataToSave } = meetingData;
+        
         await createMeeting({
-          ...meetingData,
-          use45MinuteUnits,
+          ...meetingDataToSave,
         });
         toast({
           title: "מפגש נוסף",

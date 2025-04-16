@@ -53,9 +53,12 @@ export const useMeetings = (orderId: number) => {
     try {
       setIsCreating(true);
       
+      // Remove the use45MinuteUnits property if it exists
+      const { use45MinuteUnits, ...validMeetingData } = meetingData as any;
+      
       const { data, error } = await supabase
         .from("meetings")
-        .insert([meetingData])
+        .insert([validMeetingData])
         .select();
 
       if (error) throw error;
