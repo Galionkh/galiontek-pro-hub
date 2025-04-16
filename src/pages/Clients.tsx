@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,7 @@ import { DeleteClientDialog } from "@/features/clients/components/DeleteClientDi
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClientsSearch } from "@/features/clients/components/ClientsSearch";
 import { ClientsList } from "@/features/clients/components/ClientsList";
+import { useClientManagement } from "@/features/clients/hooks/useClientManagement";
 
 export default function Clients() {
   const { toast } = useToast();
@@ -15,10 +17,18 @@ export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
-  const [clientHasOrders, setClientHasOrders] = useState(false);
   const [activeTab, setActiveTab] = useState<"active" | "archive">("active");
+
+  const {
+    showDeleteDialog,
+    setShowDeleteDialog,
+    clientToDelete,
+    clientHasOrders,
+    handleDeleteClient,
+    confirmDeleteClient,
+    archiveClient,
+    restoreClient
+  } = useClientManagement(fetchClients);
 
   const fetchClients = async () => {
     try {
@@ -46,124 +56,6 @@ export default function Clients() {
       });
     } finally {
       setIsLoadingClients(false);
-    }
-  };
-
-  const checkClientOrders = async (clientId: number) => {
-    try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("client_name", clientId.toString())
-        .eq("user_id", user?.id);
-
-      if (error) throw error;
-      return data?.length > 0;
-    } catch (error: any) {
-      console.error("Error checking client orders:", error.message);
-      toast({
-        title: "שגיאה בבדיקת הזמנות",
-        description: error.message,
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  const handleDeleteClient = async (client: Client) => {
-    setClientToDelete(client);
-    const hasOrders = await checkClientOrders(client.id);
-    setClientHasOrders(hasOrders);
-    setShowDeleteDialog(true);
-  };
-
-  const confirmDeleteClient = async (deleteOrders: boolean = false) => {
-    if (!clientToDelete) return;
-
-    try {
-      if (deleteOrders && clientHasOrders) {
-        const { error: ordersError } = await supabase
-          .from("orders")
-          .delete()
-          .eq("client_name", clientToDelete.id.toString())
-          .eq("user_id", user?.id);
-
-        if (ordersError) throw ordersError;
-      }
-
-      const { error } = await supabase
-        .from("clients")
-        .delete()
-        .eq("id", clientToDelete.id)
-        .eq("user_id", user?.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "הלקוח נמחק בהצלחה",
-      });
-
-      fetchClients();
-    } catch (error: any) {
-      console.error("Error deleting client:", error.message);
-      toast({
-        title: "שגיאה במחיקת לקוח",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setShowDeleteDialog(false);
-      setClientToDelete(null);
-    }
-  };
-
-  const archiveClient = async (client: Client) => {
-    try {
-      const { error } = await supabase
-        .from("clients")
-        .update({ status: "closed" })
-        .eq("id", client.id)
-        .eq("user_id", user?.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "הלקוח הועבר לארכיון",
-      });
-
-      fetchClients();
-    } catch (error: any) {
-      console.error("Error archiving client:", error.message);
-      toast({
-        title: "שגיאה בהעברה לארכיון",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const restoreClient = async (client: Client) => {
-    try {
-      const { error } = await supabase
-        .from("clients")
-        .update({ status: "active" })
-        .eq("id", client.id)
-        .eq("user_id", user?.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "הלקוח שוחזר בהצלחה",
-      });
-
-      fetchClients();
-    } catch (error: any) {
-      console.error("Error restoring client:", error.message);
-      toast({
-        title: "שגיאה בשחזור הלקוח",
-        description: error.message,
-        variant: "destructive",
-      });
     }
   };
 
