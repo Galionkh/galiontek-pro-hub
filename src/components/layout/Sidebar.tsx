@@ -17,50 +17,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
+import { useSidebarPreferences } from "@/hooks/useSidebarPreferences";
+import { Loader2 } from "lucide-react";
 
-type NavItem = {
-  title: string;
-  href: string;
-  icon: React.ElementType;
+const iconMap: Record<string, React.ElementType> = {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  FileText,
+  ClipboardList,
+  CheckSquare,
+  Settings,
 };
-
-const navItems: NavItem[] = [
-  {
-    title: "דשבורד",
-    href: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "יומן",
-    href: "/calendar",
-    icon: Calendar,
-  },
-  {
-    title: "לקוחות",
-    href: "/clients",
-    icon: Users,
-  },
-  {
-    title: "כספים",
-    href: "/finances",
-    icon: FileText,
-  },
-  {
-    title: "הזמנות",
-    href: "/orders",
-    icon: ClipboardList,
-  },
-  {
-    title: "משימות",
-    href: "/tasks",
-    icon: CheckSquare,
-  },
-  {
-    title: "הגדרות",
-    href: "/settings",
-    icon: Settings,
-  },
-];
 
 export default function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -68,6 +36,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { toast } = useToast();
+  const { sidebarItems, loading } = useSidebarPreferences();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -88,6 +57,36 @@ export default function Sidebar() {
         variant: "destructive",
       });
     }
+  };
+
+  // Filter only visible items
+  const visibleItems = sidebarItems.filter(item => item.visible);
+
+  // Render navigation items
+  const renderNavItems = (items: typeof visibleItems) => {
+    return items.map((item) => {
+      const isActive = location.pathname === item.href;
+      const Icon = iconMap[item.icon] || LayoutDashboard;
+      const displayTitle = item.customTitle || item.title;
+      
+      return (
+        <li key={item.href}>
+          <Link
+            to={item.href}
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 transition-colors",
+              isActive
+                ? "bg-sidebar-accent text-white"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+            )}
+            onClick={isMobileMenuOpen ? toggleMobileMenu : undefined}
+          >
+            <Icon className="h-5 w-5" />
+            <span>{displayTitle}</span>
+          </Link>
+        </li>
+      );
+    });
   };
 
   return (
@@ -115,27 +114,15 @@ export default function Sidebar() {
           <h1 className="text-2xl font-bold text-white mb-6">GalionTek</h1>
         </div>
         <nav className="px-3 flex flex-col justify-between h-[calc(100%-5rem)]">
-          <ul className="space-y-2">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <li key={item.href}>
-                  <Link
-                    to={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 transition-colors",
-                      isActive
-                        ? "bg-sidebar-accent text-white"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.title}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-sidebar-foreground" />
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {renderNavItems(visibleItems)}
+            </ul>
+          )}
           
           <div className="px-3 pb-5 mt-auto">
             <Button 
@@ -167,28 +154,15 @@ export default function Sidebar() {
                 </Button>
               </div>
               <nav className="flex flex-col justify-between h-[calc(100%-4rem)]">
-                <ul className="space-y-3">
-                  {navItems.map((item) => {
-                    const isActive = location.pathname === item.href;
-                    return (
-                      <li key={item.href}>
-                        <Link
-                          to={item.href}
-                          onClick={toggleMobileMenu}
-                          className={cn(
-                            "flex items-center gap-3 rounded-md px-3 py-2 transition-colors",
-                            isActive
-                              ? "bg-sidebar-accent text-white"
-                              : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                          )}
-                        >
-                          <item.icon className="h-5 w-5" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-sidebar-foreground" />
+                  </div>
+                ) : (
+                  <ul className="space-y-3">
+                    {renderNavItems(visibleItems)}
+                  </ul>
+                )}
                 <div className="mt-auto pt-4">
                   <Button 
                     variant="ghost" 
