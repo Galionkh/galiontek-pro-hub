@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Calendar as CalendarIcon, 
@@ -9,7 +10,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
-  Search
+  Search,
+  Download,
+  Upload,
+  Repeat,
+  Bell,
+  Share2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -40,11 +46,23 @@ import {
   TabsList, 
   TabsTrigger 
 } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { format, parseISO, isToday, isThisWeek, isThisMonth, addMonths } from "date-fns";
 import { he } from "date-fns/locale";
+import { 
+  exportEventsToICS, 
+  importEventsFromICS
+} from "@/features/meetings/utils/calendarUtils";
 
 type Event = {
   id: number;
@@ -54,6 +72,10 @@ type Event = {
   description?: string;
   created_at: string;
   user_id?: string;
+  is_recurring?: boolean;
+  recurrence_pattern?: string;
+  reminder?: boolean;
+  reminder_time?: string;
 };
 
 // יצירת סכמת אימות עבור האירוע
@@ -62,6 +84,10 @@ const eventSchema = z.object({
   date: z.string().min(1, { message: "יש לבחור תאריך" }),
   location: z.string().min(1, { message: "יש להזין מיקום" }),
   description: z.string().optional(),
+  is_recurring: z.boolean().optional().default(false),
+  recurrence_pattern: z.string().optional(),
+  reminder: z.boolean().optional().default(false),
+  reminder_time: z.string().optional(),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -79,6 +105,8 @@ export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterMode, setFilterMode] = useState<"all" | "today" | "week" | "month">("all");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -87,6 +115,10 @@ export default function CalendarPage() {
       date: new Date().toISOString().split("T")[0],
       location: "",
       description: "",
+      is_recurring: false,
+      recurrence_pattern: "weekly",
+      reminder: false,
+      reminder_time: "30",
     },
   });
 
@@ -97,6 +129,10 @@ export default function CalendarPage() {
       date: "",
       location: "",
       description: "",
+      is_recurring: false,
+      recurrence_pattern: "weekly",
+      reminder: false,
+      reminder_time: "30",
     },
   });
 
@@ -116,6 +152,10 @@ export default function CalendarPage() {
         date: currentEvent.date,
         location: currentEvent.location,
         description: currentEvent.description || "",
+        is_recurring: currentEvent.is_recurring || false,
+        recurrence_pattern: currentEvent.recurrence_pattern || "weekly",
+        reminder: currentEvent.reminder || false,
+        reminder_time: currentEvent.reminder_time || "30",
       });
     }
   }, [currentEvent, editForm]);
@@ -163,7 +203,11 @@ export default function CalendarPage() {
             date: values.date,
             location: values.location,
             description: values.description,
-            user_id: user.id
+            user_id: user.id,
+            is_recurring: values.is_recurring,
+            recurrence_pattern: values.is_recurring ? values.recurrence_pattern : null,
+            reminder: values.reminder,
+            reminder_time: values.reminder ? values.reminder_time : null,
           },
         ])
         .select();
@@ -203,6 +247,10 @@ export default function CalendarPage() {
           date: values.date,
           location: values.location,
           description: values.description,
+          is_recurring: values.is_recurring,
+          recurrence_pattern: values.is_recurring ? values.recurrence_pattern : null,
+          reminder: values.reminder,
+          reminder_time: values.reminder ? values.reminder_time : null,
         })
         .eq("id", currentEvent.id);
 
@@ -272,6 +320,99 @@ export default function CalendarPage() {
     setCurrentMonth(prevMonth => addMonths(prevMonth, -1));
   };
 
+  const handleExportEvents = async () => {
+    try {
+      setIsLoading(true);
+      const icsContent = await exportEventsToICS(events);
+      
+      // Create blob and download link
+      const blob = new Blob([icsContent], { type: 'text/calendar' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'my_events.ics';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "יצוא הושלם בהצלחה",
+        description: "האירועים יוצאו לקובץ ICS",
+      });
+    } catch (error: any) {
+      console.error("Error exporting events:", error);
+      toast({
+        title: "שגיאה ביצוא אירועים",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImportEvents = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setIsLoading(true);
+      
+      if (event.target.files && event.target.files[0]) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = async (e) => {
+          try {
+            if (e.target && typeof e.target.result === 'string') {
+              const icsContent = e.target.result;
+              const importedEvents = await importEventsFromICS(icsContent);
+              
+              // ייבוא האירועים לבסיס הנתונים
+              for (const event of importedEvents) {
+                await supabase.from("events").insert([
+                  {
+                    title: event.title,
+                    date: event.date,
+                    location: event.location || "",
+                    description: event.description || "",
+                    user_id: user?.id,
+                  },
+                ]);
+              }
+              
+              toast({
+                title: "ייבוא הושלם בהצלחה",
+                description: `יובאו ${importedEvents.length} אירועים`,
+              });
+              
+              fetchEvents();
+            }
+          } catch (error: any) {
+            console.error("Error processing imported file:", error);
+            toast({
+              title: "שגיאה בעיבוד הקובץ",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+        };
+        
+        reader.readAsText(file);
+      }
+    } catch (error: any) {
+      console.error("Error importing events:", error);
+      toast({
+        title: "שגיאה בייבוא אירועים",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      // נקה את הקובץ שנבחר כדי לאפשר בחירה חוזרת של אותו קובץ
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   // סינון אירועים על פי חיפוש
   const filteredEvents = events.filter(event => {
     if (!searchTerm) return true;
@@ -334,6 +475,49 @@ export default function CalendarPage() {
               className="pl-4 pr-10 w-full"
             />
           </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                <Filter className="h-4 w-4 mr-2" />
+                סינון
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56">
+              <div className="space-y-2">
+                <h4 className="font-medium">הצג אירועים</h4>
+                <div className="space-y-1">
+                  <Button 
+                    variant={filterMode === "all" ? "default" : "outline"} 
+                    className="w-full justify-start"
+                    onClick={() => setFilterMode("all")}
+                  >
+                    כל האירועים
+                  </Button>
+                  <Button 
+                    variant={filterMode === "today" ? "default" : "outline"} 
+                    className="w-full justify-start"
+                    onClick={() => setFilterMode("today")}
+                  >
+                    היום
+                  </Button>
+                  <Button 
+                    variant={filterMode === "week" ? "default" : "outline"} 
+                    className="w-full justify-start"
+                    onClick={() => setFilterMode("week")}
+                  >
+                    השבוע
+                  </Button>
+                  <Button 
+                    variant={filterMode === "month" ? "default" : "outline"} 
+                    className="w-full justify-start"
+                    onClick={() => setFilterMode("month")}
+                  >
+                    החודש
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button 
             variant="outline"
             onClick={() => setViewMode(viewMode === "calendar" ? "list" : "calendar")}
@@ -353,6 +537,60 @@ export default function CalendarPage() {
             <span>אירוע חדש</span>
           </Button>
         </div>
+      </div>
+      
+      <div className="flex gap-2 flex-wrap">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              <span>ייצוא</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48">
+            <div className="space-y-2">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start" 
+                onClick={handleExportEvents}
+                disabled={isLoading}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                ייצוא לקובץ ICS
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+        
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              <span>ייבוא</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48">
+            <div className="space-y-2">
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept=".ics"
+                onChange={handleImportEvents}
+                className="hidden"
+                id="import-file"
+              />
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                ייבוא מקובץ ICS
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
       
       <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
@@ -421,6 +659,103 @@ export default function CalendarPage() {
                   </FormItem>
                 )}
               />
+              
+              <div className="space-y-4 border rounded-md p-4">
+                <h3 className="font-medium">הגדרות מתקדמות</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="is_recurring"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between space-x-2 space-y-0 rtl:space-x-reverse">
+                      <FormLabel>אירוע חוזר</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                {form.watch("is_recurring") && (
+                  <FormField
+                    control={form.control}
+                    name="recurrence_pattern"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>תדירות</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="בחר תדירות" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="daily">יומי</SelectItem>
+                            <SelectItem value="weekly">שבועי</SelectItem>
+                            <SelectItem value="monthly">חודשי</SelectItem>
+                            <SelectItem value="yearly">שנתי</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                
+                <FormField
+                  control={form.control}
+                  name="reminder"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between space-x-2 space-y-0 rtl:space-x-reverse">
+                      <FormLabel>תזכורת</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                {form.watch("reminder") && (
+                  <FormField
+                    control={form.control}
+                    name="reminder_time"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>זמן תזכורת (דקות לפני האירוע)</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="בחר זמן" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="5">5 דקות לפני</SelectItem>
+                            <SelectItem value="10">10 דקות לפני</SelectItem>
+                            <SelectItem value="15">15 דקות לפני</SelectItem>
+                            <SelectItem value="30">30 דקות לפני</SelectItem>
+                            <SelectItem value="60">שעה לפני</SelectItem>
+                            <SelectItem value="120">שעתיים לפני</SelectItem>
+                            <SelectItem value="1440">יום לפני</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
               
               <DialogFooter className="mt-6">
                 <Button 
@@ -504,6 +839,103 @@ export default function CalendarPage() {
                 )}
               />
               
+              <div className="space-y-4 border rounded-md p-4">
+                <h3 className="font-medium">הגדרות מתקדמות</h3>
+                
+                <FormField
+                  control={editForm.control}
+                  name="is_recurring"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between space-x-2 space-y-0 rtl:space-x-reverse">
+                      <FormLabel>אירוע חוזר</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                {editForm.watch("is_recurring") && (
+                  <FormField
+                    control={editForm.control}
+                    name="recurrence_pattern"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>תדירות</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="בחר תדירות" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="daily">יומי</SelectItem>
+                            <SelectItem value="weekly">שבועי</SelectItem>
+                            <SelectItem value="monthly">חודשי</SelectItem>
+                            <SelectItem value="yearly">שנתי</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                
+                <FormField
+                  control={editForm.control}
+                  name="reminder"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between space-x-2 space-y-0 rtl:space-x-reverse">
+                      <FormLabel>תזכורת</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                {editForm.watch("reminder") && (
+                  <FormField
+                    control={editForm.control}
+                    name="reminder_time"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>זמן תזכורת (דקות לפני האירוע)</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="בחר זמן" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="5">5 דקות לפני</SelectItem>
+                            <SelectItem value="10">10 דקות לפני</SelectItem>
+                            <SelectItem value="15">15 דקות לפני</SelectItem>
+                            <SelectItem value="30">30 דקות לפני</SelectItem>
+                            <SelectItem value="60">שעה לפני</SelectItem>
+                            <SelectItem value="120">שעתיים לפני</SelectItem>
+                            <SelectItem value="1440">יום לפני</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
+              
               <DialogFooter className="mt-6">
                 <Button 
                   type="submit" 
@@ -548,7 +980,7 @@ export default function CalendarPage() {
                     onSelect={(date) => date && setSelectedDate(date)}
                     month={currentMonth}
                     onMonthChange={setCurrentMonth}
-                    className="rounded-md border pointer-events-auto"
+                    className="rounded-md border"
                     locale={he}
                     modifiersClassNames={{
                       selected: 'bg-primary text-primary-foreground',
@@ -590,7 +1022,21 @@ export default function CalendarPage() {
                         <div key={event.id} className="bg-accent/50 p-4 rounded-md">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="font-medium text-lg">{event.title}</h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium text-lg">{event.title}</h3>
+                                {event.is_recurring && (
+                                  <Badge variant="secondary" className="flex items-center gap-1">
+                                    <Repeat className="h-3 w-3" />
+                                    חוזר
+                                  </Badge>
+                                )}
+                                {event.reminder && (
+                                  <Badge variant="outline" className="flex items-center gap-1">
+                                    <Bell className="h-3 w-3" />
+                                    תזכורת
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="mt-1">{event.location}</p>
                               {event.description && (
                                 <p className="mt-2 text-sm">{event.description}</p>
@@ -654,7 +1100,15 @@ export default function CalendarPage() {
                           <div key={event.id} className="bg-accent/50 p-4 rounded-md">
                             <div className="flex justify-between items-start">
                               <div>
-                                <h3 className="font-medium text-lg">{event.title}</h3>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium text-lg">{event.title}</h3>
+                                  {event.is_recurring && (
+                                    <Badge variant="secondary" className="flex items-center gap-1">
+                                      <Repeat className="h-3 w-3" />
+                                      חוזר
+                                    </Badge>
+                                  )}
+                                </div>
                                 <p className="mt-1">{event.location}</p>
                               </div>
                               <div className="flex gap-2">
@@ -684,7 +1138,15 @@ export default function CalendarPage() {
                           <div key={event.id} className="bg-accent/50 p-4 rounded-md">
                             <div className="flex justify-between items-start">
                               <div>
-                                <h3 className="font-medium text-lg">{event.title}</h3>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium text-lg">{event.title}</h3>
+                                  {event.is_recurring && (
+                                    <Badge variant="secondary" className="flex items-center gap-1">
+                                      <Repeat className="h-3 w-3" />
+                                      חוזר
+                                    </Badge>
+                                  )}
+                                </div>
                                 <p className="text-muted-foreground text-sm">
                                   {new Date(event.date).toLocaleDateString('he-IL', { 
                                     weekday: 'long',
@@ -721,7 +1183,15 @@ export default function CalendarPage() {
                           <div key={event.id} className="bg-accent/50 p-4 rounded-md">
                             <div className="flex justify-between items-start">
                               <div>
-                                <h3 className="font-medium text-lg">{event.title}</h3>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium text-lg">{event.title}</h3>
+                                  {event.is_recurring && (
+                                    <Badge variant="secondary" className="flex items-center gap-1">
+                                      <Repeat className="h-3 w-3" />
+                                      חוזר
+                                    </Badge>
+                                  )}
+                                </div>
                                 <p className="text-muted-foreground text-sm">
                                   {new Date(event.date).toLocaleDateString('he-IL', { 
                                     weekday: 'long',
@@ -764,7 +1234,21 @@ export default function CalendarPage() {
                       <div key={event.id} className="bg-accent/50 p-4 rounded-md">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-medium text-lg">{event.title}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-lg">{event.title}</h3>
+                              {event.is_recurring && (
+                                <Badge variant="secondary" className="flex items-center gap-1">
+                                  <Repeat className="h-3 w-3" />
+                                  חוזר
+                                </Badge>
+                              )}
+                              {event.reminder && (
+                                <Badge variant="outline" className="flex items-center gap-1">
+                                  <Bell className="h-3 w-3" />
+                                  תזכורת
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-muted-foreground text-sm">
                               {new Date(event.date).toLocaleDateString('he-IL', { 
                                 weekday: 'long', 
