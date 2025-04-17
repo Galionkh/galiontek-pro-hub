@@ -1,11 +1,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/hooks/useProfile";
-import { useTasks } from "@/hooks/useTasks";
+import { useQueryTasks } from "@/hooks/tasks";
 
 export default function WelcomeCard() {
   const { profile } = useProfile();
-  const { tasks, groupedTasks } = useTasks();
+  const { tasks, groupedTasks } = useQueryTasks();
   
   // Calculate open tasks (urgent + later)
   const openTasksCount = groupedTasks.urgent.length + groupedTasks.later.length;
