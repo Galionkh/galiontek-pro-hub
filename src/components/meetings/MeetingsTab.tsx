@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { MeetingsList } from "./MeetingsList";
 import { MeetingsSummary } from "./MeetingsSummary";
 import { MeetingsHeader } from "./MeetingsHeader";
@@ -9,13 +10,16 @@ import { MeetingsDialog } from "./MeetingsDialog";
 import { FileImportInput, useFileInput } from "./FileImportInput";
 import { useMeetings, type Meeting } from "@/hooks/useMeetings";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { Calendar } from "lucide-react";
 import type { Order } from "@/features/clients/types";
 
 interface MeetingsTabProps {
   order: Order;
+  isCompact?: boolean;
 }
 
-export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
+export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order, isCompact = false }) => {
   const {
     meetings,
     isLoading,
@@ -32,6 +36,7 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
   } = useMeetings(order.id);
 
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [use45MinuteUnits, setUse45MinuteUnits] = useState(true);
   const { fileInputRef, triggerFileInput } = useFileInput();
@@ -61,7 +66,7 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
           description: "המפגש עודכן בהצלחה",
         });
       } else {
-        const { use45MinuteUnits: _, ...meetingDataToSave } = meetingData;
+        const { use45MinuteUnits: _, ...meetingDataToSave } = meetingData as any;
         
         await createMeeting({
           ...meetingDataToSave,
@@ -105,6 +110,58 @@ export const MeetingsTab: React.FC<MeetingsTabProps> = ({ order }) => {
       }
     }
   };
+
+  // רינדור מותאם לתצוגה מקוצרת בכרטיס
+  if (isCompact) {
+    return (
+      <div className="space-y-2">
+        <MeetingsSummary
+          totalMeetings={totalMeetings}
+          totalHours={totalHours}
+          totalTeachingUnits={totalTeachingUnits}
+          agreedHours={order.hours || null}
+          use45MinuteUnits={use45MinuteUnits}
+          isCompact={true}
+        />
+
+        <MeetingsList
+          meetings={meetings}
+          isLoading={isLoading}
+          onDelete={deleteMeeting}
+          onEdit={handleEditMeeting}
+          use45MinuteUnits={use45MinuteUnits}
+          isCompact={true}
+          limit={3}
+        />
+
+        {meetings.length > 0 && (
+          <div className="text-center mt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate(`/orders/${order.id}`)}
+              className="w-full"
+            >
+              <Calendar className="h-4 w-4 ml-1" />
+              צפייה בכל המפגשים
+            </Button>
+          </div>
+        )}
+
+        <MeetingsDialog
+          isOpen={isMeetingFormOpen}
+          onClose={handleCloseForm}
+          onSubmit={handleFormSubmit}
+          isSubmitting={isCreating}
+          initialData={selectedMeeting}
+          orderId={order.id}
+          use45MinuteUnits={use45MinuteUnits}
+        />
+
+        <FileImportInput onFileChange={handleFileChange} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

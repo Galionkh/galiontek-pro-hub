@@ -2,10 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Eye, Edit, Trash2, Send } from "lucide-react";
+import { Eye, Edit, Trash2, Send, Calendar } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import type { Order } from "@/hooks/useOrders";
+import { MeetingsTab } from "@/components/meetings/MeetingsTab";
 
 interface OrderCardProps {
   order: Order;
@@ -32,6 +35,7 @@ const getStatusBadge = (status: string) => {
 export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
   const navigate = useNavigate();
   const statusBadge = getStatusBadge(order.status);
+  const [activeTab, setActiveTab] = useState<string>("info");
   
   // Format date if available
   const formattedDate = order.date ? new Date(order.date).toLocaleDateString('he-IL') : "לא צוין";
@@ -70,19 +74,38 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
           <Badge className={statusBadge.className}>{statusBadge.text}</Badge>
         </div>
         
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-sm">
-          <div>
-            <span className="text-muted-foreground">תאריך:</span> {formattedDate}
-          </div>
-          <div>
-            <span className="text-muted-foreground">סכום:</span> {order.total_amount ? `₪${order.total_amount}` : "לא צוין"}
-          </div>
-          {order.service_topic && (
-            <div className="col-span-2">
-              <span className="text-muted-foreground">נושא:</span> {order.service_topic}
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab} 
+          className="mt-4"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="info">מידע</TabsTrigger>
+            <TabsTrigger value="meetings">מפגשים</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="info" className="pt-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">תאריך:</span> {formattedDate}
+              </div>
+              <div>
+                <span className="text-muted-foreground">סכום:</span> {order.total_amount ? `₪${order.total_amount}` : "לא צוין"}
+              </div>
+              {order.service_topic && (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">נושא:</span> {order.service_topic}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="meetings" className="pt-2">
+            <div className="max-h-[250px] overflow-y-auto">
+              <MeetingsTab order={order} />
+            </div>
+          </TabsContent>
+        </Tabs>
         
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="ghost" size="sm" onClick={handleViewClick}>

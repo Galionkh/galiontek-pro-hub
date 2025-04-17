@@ -1,9 +1,8 @@
 
 import React from "react";
-import { TableCell, TableRow } from "@/components/ui/table";
 import type { Meeting } from "@/hooks/useMeetings";
-import { formatDate, formatTime, getDayOfWeek } from "../utils/DateFormatters";
-import { calculateTeachingUnits } from "../utils/TeachingUnitCalculator";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { formatDate } from "../utils/DateFormatters";
 import { MeetingActionButtons } from "./MeetingActionButtons";
 
 interface MeetingRowProps {
@@ -11,37 +10,49 @@ interface MeetingRowProps {
   onEdit: (meeting: Meeting) => void;
   onDelete: (id: string) => Promise<void>;
   use45MinuteUnits: boolean;
+  isCompact?: boolean;
 }
 
 export const MeetingRow: React.FC<MeetingRowProps> = ({
   meeting,
   onEdit,
   onDelete,
-  use45MinuteUnits
+  use45MinuteUnits,
+  isCompact = false
 }) => {
+  if (isCompact) {
+    return (
+      <TableRow>
+        <TableCell>{formatDate(meeting.date)}</TableCell>
+        <TableCell>
+          {meeting.start_time.slice(0, 5)} - {meeting.end_time.slice(0, 5)}
+        </TableCell>
+        <TableCell>{meeting.topic || "-"}</TableCell>
+        <TableCell>
+          <MeetingActionButtons
+            meeting={meeting}
+            onEdit={() => onEdit(meeting)}
+            onDelete={() => onDelete(meeting.id)}
+            isCompact={true}
+          />
+        </TableCell>
+      </TableRow>
+    );
+  }
+
   return (
-    <TableRow key={meeting.id}>
+    <TableRow>
       <TableCell>{formatDate(meeting.date)}</TableCell>
-      <TableCell className="font-medium">
-        {getDayOfWeek(meeting.date)}
-      </TableCell>
+      <TableCell>{meeting.start_time}</TableCell>
+      <TableCell>{meeting.end_time}</TableCell>
+      <TableCell>{meeting.duration_minutes}</TableCell>
+      <TableCell>{meeting.teaching_units.toFixed(1)}</TableCell>
+      <TableCell>{meeting.topic || "-"}</TableCell>
       <TableCell>
-        {formatTime(meeting.start_time)} - {formatTime(meeting.end_time)}
-      </TableCell>
-      <TableCell>
-        {(meeting.duration_minutes / 60).toFixed(2)} שעות
-      </TableCell>
-      <TableCell>
-        {calculateTeachingUnits(meeting.duration_minutes, use45MinuteUnits).toFixed(2)}
-      </TableCell>
-      <TableCell className="max-w-[200px] truncate">
-        {meeting.topic || "-"}
-      </TableCell>
-      <TableCell>
-        <MeetingActionButtons 
+        <MeetingActionButtons
           meeting={meeting}
-          onEdit={onEdit}
-          onDelete={onDelete}
+          onEdit={() => onEdit(meeting)}
+          onDelete={() => onDelete(meeting.id)}
         />
       </TableCell>
     </TableRow>

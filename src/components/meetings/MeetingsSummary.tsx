@@ -1,15 +1,16 @@
 
 import React from "react";
-import { CheckCircle, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
+import { CalculatorIcon, ClockIcon, GraduationCapIcon } from "lucide-react";
 
 interface MeetingsSummaryProps {
   totalMeetings: number;
   totalHours: number;
   totalTeachingUnits: number;
-  agreedHours?: number | null;
-  use45MinuteUnits?: boolean;
+  agreedHours: number | null;
+  use45MinuteUnits: boolean;
+  isCompact?: boolean;
 }
 
 export const MeetingsSummary: React.FC<MeetingsSummaryProps> = ({
@@ -17,61 +18,72 @@ export const MeetingsSummary: React.FC<MeetingsSummaryProps> = ({
   totalHours,
   totalTeachingUnits,
   agreedHours,
-  use45MinuteUnits = true,
+  use45MinuteUnits,
+  isCompact = false
 }) => {
-  // Check if we have agreed hours and if we've reached them
-  const showCompletion = 
-    agreedHours !== undefined && 
-    agreedHours !== null && 
-    totalTeachingUnits > 0;
+  // חישוב אחוז ההתקדמות
+  const progressPercentage = agreedHours ? Math.min(100, (totalHours / agreedHours) * 100) : 0;
   
-  const isCompleted = 
-    showCompletion && 
-    totalTeachingUnits >= agreedHours;
-  
-  const remainingHours = 
-    showCompletion && !isCompleted
-      ? (agreedHours - totalTeachingUnits).toFixed(2)
-      : 0;
-
-  const unitType = use45MinuteUnits ? 'יחידות הוראה' : 'שעות אקדמיות';
+  if (isCompact) {
+    return (
+      <div className="text-sm">
+        <div className="flex justify-between mb-1">
+          <span className="font-medium">התקדמות:</span>
+          <span>{totalHours.toFixed(1)} / {agreedHours || '?'} שעות</span>
+        </div>
+        <Progress value={progressPercentage} className="h-2 mb-2" />
+        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+          <div>מפגשים: {totalMeetings}</div>
+          <div>יחידות הוראה: {totalTeachingUnits.toFixed(1)}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Card className="mb-6">
-      <CardContent className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-          <div className="flex flex-col items-center p-3 bg-muted rounded-md">
-            <span className="text-sm text-muted-foreground">סך מפגשים</span>
-            <span className="text-2xl font-bold">{totalMeetings}</span>
+    <Card>
+      <CardContent className="pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-full">
+              <CalculatorIcon className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">מספר מפגשים</p>
+              <p className="text-2xl font-bold">{totalMeetings}</p>
+            </div>
           </div>
           
-          <div className="flex flex-col items-center p-3 bg-muted rounded-md">
-            <span className="text-sm text-muted-foreground">סך שעות בפועל</span>
-            <span className="text-2xl font-bold">{totalHours}</span>
+          <div className="flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-full">
+              <ClockIcon className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">סה"כ שעות</p>
+              <p className="text-2xl font-bold">{totalHours.toFixed(1)}</p>
+            </div>
           </div>
           
-          <div className="flex flex-col items-center p-3 bg-muted rounded-md">
-            <span className="text-sm text-muted-foreground">סך {unitType}</span>
-            <span className="text-2xl font-bold">{totalTeachingUnits.toFixed(2)}</span>
+          <div className="flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-full">
+              <GraduationCapIcon className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">
+                יחידות הוראה {use45MinuteUnits ? "(45 דקות)" : "(60 דקות)"}
+              </p>
+              <p className="text-2xl font-bold">{totalTeachingUnits.toFixed(1)}</p>
+            </div>
           </div>
         </div>
         
-        {showCompletion && (
-          <div className={cn(
-            "flex items-center justify-center p-3 rounded-md",
-            isCompleted ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
-          )}>
-            {isCompleted ? (
-              <>
-                <CheckCircle className="h-5 w-5 ml-2" />
-                <span className="font-medium">השירות הושלם בפועל</span>
-              </>
-            ) : (
-              <>
-                <AlertTriangle className="h-5 w-5 ml-2" />
-                <span className="font-medium">נותרו {remainingHours} {unitType} לסיום השירות</span>
-              </>
-            )}
+        {agreedHours && (
+          <div className="mt-6">
+            <div className="flex justify-between mb-2">
+              <span className="text-sm text-muted-foreground">התקדמות ({totalHours.toFixed(1)} / {agreedHours} שעות)</span>
+              <span className="text-sm font-medium">{progressPercentage.toFixed(0)}%</span>
+            </div>
+            <Progress value={progressPercentage} className="h-2" />
           </div>
         )}
       </CardContent>
