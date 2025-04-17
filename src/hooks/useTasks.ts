@@ -62,8 +62,8 @@ export function useTasks(): TasksQueryResult {
         description: task.description,
         dueDate: task.due_date,
         category: task.category,
-        priority: task.priority || "medium", // תמיכה בנתונים קיימים ללא שדה priority
-        tags: task.tags,
+        priority: task.priority || "medium", // Default to medium if priority is missing
+        tags: task.tags || [], // Default to empty array if tags are missing
       })) as Task[];
     },
     enabled: !!user,
