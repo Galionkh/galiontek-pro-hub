@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -81,7 +80,6 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
   const [searchTerm, setSearchTerm] = useState("");
   
-  // יצירת טופס עם ערכי ברירת מחדל
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
@@ -92,7 +90,6 @@ export default function CalendarPage() {
     },
   });
 
-  // יצירת טופס עבור עריכת אירוע
   const editForm = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
@@ -112,7 +109,6 @@ export default function CalendarPage() {
     }
   }, [user]);
 
-  // עדכון ערכי הטופס כשבוחרים אירוע לעריכה
   useEffect(() => {
     if (currentEvent) {
       editForm.reset({
@@ -268,7 +264,6 @@ export default function CalendarPage() {
     setOpenEditDialog(true);
   };
 
-  // פונקציות העזר לתצוגת הלוח שנה
   const nextMonth = () => {
     setCurrentMonth(prevMonth => addMonths(prevMonth, 1));
   };
@@ -277,7 +272,6 @@ export default function CalendarPage() {
     setCurrentMonth(prevMonth => addMonths(prevMonth, -1));
   };
 
-  // סינון אירועים על פי חיפוש
   const filteredEvents = events.filter(event => {
     if (!searchTerm) return true;
     return event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -285,18 +279,15 @@ export default function CalendarPage() {
            (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase()));
   });
 
-  // קבלת אירועים לפי תאריך ספציפי
   const getEventsForDate = (date: Date) => {
     const dateString = format(date, 'yyyy-MM-dd');
     return events.filter(event => event.date === dateString);
   };
 
-  // סידור האירועים לפי קבוצות - היום, השבוע, החודש, הכל
   const todayEvents = filteredEvents.filter(event => isToday(new Date(event.date)));
   const thisWeekEvents = filteredEvents.filter(event => isThisWeek(new Date(event.date)));
   const thisMonthEvents = filteredEvents.filter(event => isThisMonth(new Date(event.date)));
 
-  // יצירת הרשימה הקבוצתית
   const groupedEvents = filteredEvents.reduce((groups, event) => {
     const date = new Date(event.date);
     const month = format(date, 'MMMM yyyy', { locale: he });
@@ -309,7 +300,6 @@ export default function CalendarPage() {
     return groups;
   }, {} as Record<string, Event[]>);
 
-  // יצירת פונקציה שתמפה ימים עם אירועים לשימוש ב-DayPicker
   const eventsDateMap = events.reduce((acc, event) => {
     const date = event.date;
     if (!acc[date]) {
@@ -319,7 +309,6 @@ export default function CalendarPage() {
     return acc;
   }, {} as Record<string, Event[]>);
 
-  // CSS מותאם להדגשת תאריכים עם אירועים
   const customDayClass = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return eventsDateMap[dateStr] ? 'bg-primary/20 font-bold rounded-full' : '';
@@ -360,7 +349,6 @@ export default function CalendarPage() {
         </div>
       </div>
       
-      {/* דיאלוג יצירת אירוע חדש */}
       <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -443,7 +431,6 @@ export default function CalendarPage() {
         </DialogContent>
       </Dialog>
       
-      {/* דיאלוג עריכת אירוע */}
       <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -526,7 +513,6 @@ export default function CalendarPage() {
         </DialogContent>
       </Dialog>
       
-      {/* תצוגת היומן */}
       <Card className="p-6">
         {isLoadingEvents ? (
           <div className="flex flex-col items-center justify-center h-[500px]">
@@ -536,7 +522,6 @@ export default function CalendarPage() {
         ) : events.length > 0 ? (
           viewMode === "calendar" ? (
             <div className="space-y-6">
-              {/* כותרת לוח שנה עם ניווט */}
               <div className="flex items-center justify-between mb-4">
                 <Button variant="outline" size="icon" onClick={prevMonth}>
                   <ChevronRight className="h-4 w-4" />
@@ -549,7 +534,6 @@ export default function CalendarPage() {
                 </Button>
               </div>
               
-              {/* לוח שנה */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <CalendarComponent
@@ -575,7 +559,7 @@ export default function CalendarPage() {
                         const hasEvents = eventsDateMap[eventDate]?.length > 0;
                         
                         return (
-                          <div className={`relative ${props.className} ${customDayClass(date)}`}>
+                          <div className={`relative ${String(props.className || '')} ${customDayClass(date)}`}>
                             <div {...props}>
                               {date.getDate()}
                             </div>
@@ -650,7 +634,6 @@ export default function CalendarPage() {
                 </div>
               </div>
               
-              {/* סיכום אירועים קרובים */}
               <div className="mt-8">
                 <Tabs defaultValue="today">
                   <TabsList className="w-full justify-start">
