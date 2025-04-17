@@ -55,7 +55,7 @@ export default function Orders() {
               הזמנה חדשה
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl overflow-y-auto" dir="rtl">
+          <DialogContent className="w-[95%] max-w-2xl overflow-y-auto" dir="rtl">
             <DialogHeader>
               <DialogTitle>הזמנה חדשה</DialogTitle>
             </DialogHeader>
@@ -102,3 +102,4 @@ export default function Orders() {
     </div>
   );
 }
+
