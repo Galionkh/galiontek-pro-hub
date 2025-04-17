@@ -1,9 +1,11 @@
 
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Clock, Check } from "lucide-react";
+import { AlertCircle, Clock, Check, ArrowUp, ArrowRight, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Task, TaskCategory } from "@/hooks/useTasks";
+import type { Task, TaskCategory, TaskPriority } from "@/hooks/useTasks";
+import { format } from "date-fns";
+import { he } from "date-fns/locale";
 
 interface TaskListProps {
   tasks: Task[];
@@ -43,6 +45,32 @@ const getCategoryTitle = (category: TaskCategory) => {
   }
 };
 
+const getPriorityBadge = (priority: TaskPriority) => {
+  switch (priority) {
+    case "high":
+      return (
+        <Badge variant="outline" className="bg-red-50 text-red-500 border-red-200 flex items-center gap-1">
+          <ArrowUp className="h-3 w-3" />
+          גבוה
+        </Badge>
+      );
+    case "medium":
+      return (
+        <Badge variant="outline" className="bg-amber-50 text-amber-500 border-amber-200 flex items-center gap-1">
+          <ArrowRight className="h-3 w-3" />
+          בינוני
+        </Badge>
+      );
+    case "low":
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-500 border-green-200 flex items-center gap-1">
+          <ArrowDown className="h-3 w-3" />
+          נמוך
+        </Badge>
+      );
+  }
+};
+
 export function TaskList({ tasks, category }: TaskListProps) {
   return (
     <Card>
@@ -64,12 +92,16 @@ export function TaskList({ tasks, category }: TaskListProps) {
                 "p-3 rounded-md border bg-card hover:bg-accent/5 transition-colors",
               )}
             >
-              <div className={cn(
-                "font-medium mb-1",
-                category === "completed" && "line-through text-muted-foreground"
-              )}>
-                {task.title}
+              <div className="flex justify-between items-start mb-2">
+                <div className={cn(
+                  "font-medium",
+                  category === "completed" && "line-through text-muted-foreground"
+                )}>
+                  {task.title}
+                </div>
+                {getPriorityBadge(task.priority)}
               </div>
+              
               {task.description && (
                 <p className={cn(
                   "text-sm text-muted-foreground mb-2",
@@ -78,9 +110,10 @@ export function TaskList({ tasks, category }: TaskListProps) {
                   {task.description}
                 </p>
               )}
+              
               <p className="text-xs text-muted-foreground">
                 {category === "completed" ? "הושלם ב: " : "תאריך יעד: "}
-                {new Date(task.dueDate).toLocaleDateString('he-IL')}
+                {format(new Date(task.dueDate), "EEEE, d בMMMM yyyy", { locale: he })}
               </p>
             </li>
           ))}
