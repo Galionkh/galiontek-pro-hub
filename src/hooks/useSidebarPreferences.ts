@@ -36,8 +36,21 @@ export function useSidebarPreferences() {
 
         if (error) throw error;
 
-        if (data && data.sidebar_items && Array.isArray(data.sidebar_items)) {
-          setSidebarItems(data.sidebar_items);
+        if (data && data.sidebar_items) {
+          // Type assertion to ensure we have a SidebarItem array
+          // Make sure all properties of SidebarItem are present
+          const typedItems = Array.isArray(data.sidebar_items) 
+            ? data.sidebar_items.map((item: any) => ({
+                id: String(item.id || ''),
+                title: String(item.title || ''),
+                href: String(item.href || ''),
+                icon: String(item.icon || ''),
+                visible: Boolean(item.visible),
+                customTitle: item.customTitle ? String(item.customTitle) : undefined
+              })) as SidebarItem[]
+            : [...defaultSidebarItems];
+            
+          setSidebarItems(typedItems);
         } else {
           setSidebarItems([...defaultSidebarItems]);
         }

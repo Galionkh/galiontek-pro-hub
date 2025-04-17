@@ -63,7 +63,20 @@ export function SidebarCustomizationTab() {
         
         if (data) {
           setPreferenceId(data.id);
-          setSidebarItems(data.sidebar_items);
+          
+          // Ensure proper typing of the data from the database
+          const typedItems = Array.isArray(data.sidebar_items) 
+            ? data.sidebar_items.map((item: any) => ({
+                id: String(item.id || ''),
+                title: String(item.title || ''),
+                href: String(item.href || ''),
+                icon: String(item.icon || ''),
+                visible: Boolean(item.visible),
+                customTitle: item.customTitle ? String(item.customTitle) : undefined
+              })) as SidebarItem[]
+            : [...defaultItems];
+            
+          setSidebarItems(typedItems);
         }
       } catch (error) {
         console.error('Error fetching sidebar preferences:', error);
