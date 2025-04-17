@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { 
   Popover,
@@ -67,7 +67,7 @@ const eventSchema = z.object({
 
 type EventFormValues = z.infer<typeof eventSchema>;
 
-export default function Calendar() {
+export default function CalendarPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -552,13 +552,13 @@ export default function Calendar() {
               {/* לוח שנה */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <Calendar
+                  <CalendarComponent
                     mode="single"
                     selected={selectedDate}
                     onSelect={(date) => date && setSelectedDate(date)}
                     month={currentMonth}
                     onMonthChange={setCurrentMonth}
-                    className="rounded-md border"
+                    className="rounded-md border pointer-events-auto"
                     locale={he}
                     modifiersClassNames={{
                       selected: 'bg-primary text-primary-foreground',
