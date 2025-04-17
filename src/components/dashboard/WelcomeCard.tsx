@@ -1,9 +1,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/hooks/useProfile";
+import { useTasks } from "@/hooks/useTasks";
 
 export default function WelcomeCard() {
   const { profile } = useProfile();
+  const { tasks, groupedTasks } = useTasks();
+  
+  // Calculate open tasks (urgent + later)
+  const openTasksCount = groupedTasks.urgent.length + groupedTasks.later.length;
   
   // Get current date in Hebrew
   const currentDate = new Date();
@@ -24,7 +29,7 @@ export default function WelcomeCard() {
       </CardHeader>
       <CardContent>
         <p className="text-muted-foreground mb-2">{hebrewDate}</p>
-        <p>יש לך 3 משימות פתוחות ו-2 פגישות היום</p>
+        <p>יש לך {openTasksCount} משימות פתוחות</p>
       </CardContent>
     </Card>
   );
