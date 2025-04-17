@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar as CalendarIcon, ListIcon } from "lucide-react";
 import { TaskList } from "@/components/tasks/TaskList";
-import { useTasks } from "@/hooks/useTasks";
+import { useQueryTasks } from "@/hooks/tasks";
 import { 
   Dialog, 
   DialogContent, 
@@ -16,7 +16,7 @@ import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Tasks() {
-  const { groupedTasks, tasks } = useTasks();
+  const { groupedTasks, tasks } = useQueryTasks();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 

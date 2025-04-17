@@ -3,7 +3,7 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Clock, Check, ArrowUp, ArrowRight, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Task, TaskCategory, TaskPriority } from "@/hooks/useTasks";
+import type { Task, TaskCategory, TaskPriority } from "@/hooks/tasks";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 

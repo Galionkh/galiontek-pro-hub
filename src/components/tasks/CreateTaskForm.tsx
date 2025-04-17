@@ -26,7 +26,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useCreateTask } from "@/hooks/useTasks";
+import { useCreateTask } from "@/hooks/tasks";
 import { useState } from "react";
 
 const taskSchema = z.object({

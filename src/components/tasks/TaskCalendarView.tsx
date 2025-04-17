@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { Task } from "@/hooks/useTasks";
+import { Task } from "@/hooks/tasks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";

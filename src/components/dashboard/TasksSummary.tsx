@@ -2,10 +2,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useTasks } from "@/hooks/useTasks";
+import { useQueryTasks } from "@/hooks/tasks";
 
 export default function TasksSummary() {
-  const { tasks, groupedTasks } = useTasks();
+  const { tasks, groupedTasks } = useQueryTasks();
   
   // Filter tasks to only include non-completed ones (urgent and later)
   const activeTasks = [...groupedTasks.urgent, ...groupedTasks.later];
