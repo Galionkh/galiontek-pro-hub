@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { SidebarItem } from "@/components/settings/sidebar/types";
+import { SidebarItem } from "@/components/settings/SidebarCustomizationTab";
 
 export const defaultSidebarItems: SidebarItem[] = [
   { id: "dashboard", title: "דשבורד", href: "/", icon: "LayoutDashboard", visible: true },
@@ -25,64 +25,38 @@ export function useSidebarPreferences() {
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session) {
-          console.log("No session found, using default sidebar items");
           setSidebarItems([...defaultSidebarItems]);
-          setLoading(false);
           return;
         }
 
-        console.log("Fetching sidebar preferences for user:", session.user.id);
-        
         const { data, error } = await supabase
           .from('user_preferences')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
+          .select('sidebar_items')
+          .maybeSingle();
 
-        if (error) {
-          console.error("Error fetching sidebar preferences:", error);
-          throw error;
-        }
-        
-        console.log("Fetched user preferences data:", data);
+        if (error) throw error;
 
-        // Check if we have valid data with sidebar_items
-        if (data && data.length > 0 && data[0].sidebar_items) {
-          const userPreferences = data[0];
-          
-          console.log("User preferences found:", userPreferences);
-          console.log("Sidebar items from DB:", userPreferences.sidebar_items);
-          
-          // First check if sidebar_items is an array before trying to map it
-          const sidebarItemsData = userPreferences.sidebar_items;
-          
-          if (Array.isArray(sidebarItemsData) && sidebarItemsData.length > 0) {
-            // Map the items to ensure proper typing
-            const typedItems = sidebarItemsData.map((item: any) => ({
-              id: String(item.id || ''),
-              title: String(item.title || ''),
-              href: String(item.href || ''),
-              icon: String(item.icon || ''),
-              visible: Boolean(item.visible),
-              customTitle: item.customTitle ? String(item.customTitle) : undefined
-            })) as SidebarItem[];
-                
-            console.log("Processed sidebar items:", typedItems);
-            setSidebarItems(typedItems);
-          } else {
-            console.log("sidebar_items is not a valid array, using defaults");
-            setSidebarItems([...defaultSidebarItems]);
-          }
+        if (data && data.sidebar_items) {
+          // Type assertion to ensure we have a SidebarItem array
+          // Make sure all properties of SidebarItem are present
+          const typedItems = Array.isArray(data.sidebar_items) 
+            ? data.sidebar_items.map((item: any) => ({
+                id: String(item.id || ''),
+                title: String(item.title || ''),
+                href: String(item.href || ''),
+                icon: String(item.icon || ''),
+                visible: Boolean(item.visible),
+                customTitle: item.customTitle ? String(item.customTitle) : undefined
+              })) as SidebarItem[]
+            : [...defaultSidebarItems];
+            
+          setSidebarItems(typedItems);
         } else {
-          // If no data, empty array, or invalid format, use default values
-          console.log("No valid sidebar items found, using defaults");
           setSidebarItems([...defaultSidebarItems]);
         }
       } catch (err) {
         console.error("Error loading sidebar preferences:", err);
         setError(err instanceof Error ? err : new Error("Unknown error"));
-        // Always fall back to default items on error
         setSidebarItems([...defaultSidebarItems]);
       } finally {
         setLoading(false);
@@ -91,7 +65,7 @@ export function useSidebarPreferences() {
 
     fetchSidebarPreferences();
 
-    // Set up listener for auth state changes
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       fetchSidebarPreferences();
     });
