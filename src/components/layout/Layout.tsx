@@ -11,10 +11,32 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
+  const [systemName, setSystemName] = useState("GalionTek");
 
-  // Prevent hydration mismatch
+  // Prevent hydration mismatch and load system name
   useEffect(() => {
     setMounted(true);
+    
+    // עדכון שם המערכת מ-localStorage
+    const savedName = localStorage.getItem("system_name");
+    if (savedName) {
+      setSystemName(savedName);
+      document.title = savedName + " - ניהול מרצים ומנחי סדנאות";
+    }
+    
+    // האזנה לשינויים ב-localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "system_name" && e.newValue) {
+        setSystemName(e.newValue);
+        document.title = e.newValue + " - ניהול מרצים ומנחי סדנאות";
+      }
+    };
+    
+    window.addEventListener("storage", handleStorageChange);
+    
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   if (!mounted) {
@@ -23,7 +45,7 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Sidebar />
+      <Sidebar systemName={systemName} />
       <main
         className={cn(
           "flex-1 transition-all",

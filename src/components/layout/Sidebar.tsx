@@ -30,7 +30,11 @@ const iconMap: Record<string, React.ElementType> = {
   Settings,
 };
 
-export default function Sidebar() {
+interface SidebarProps {
+  systemName?: string;
+}
+
+export default function Sidebar({ systemName = "GalionTek" }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -93,7 +97,7 @@ export default function Sidebar() {
     <>
       {/* Mobile menu button */}
       <div className="flex items-center justify-between p-4 lg:hidden bg-primary">
-        <h1 className="text-xl font-bold text-white">GalionTek</h1>
+        <h1 className="text-xl font-bold text-white">{systemName}</h1>
         <Button variant="ghost" size="icon" onClick={toggleMobileMenu} className="text-white hover:bg-primary/90">
           {isMobileMenuOpen ? (
             <X className="h-6 w-6" />
@@ -111,7 +115,7 @@ export default function Sidebar() {
         )}
       >
         <div className="p-5">
-          <h1 className="text-2xl font-bold text-white mb-6">GalionTek</h1>
+          <h1 className="text-2xl font-bold text-white mb-6">{systemName}</h1>
         </div>
         <nav className="px-3 flex flex-col justify-between h-[calc(100%-5rem)]">
           {loading ? (
@@ -143,7 +147,7 @@ export default function Sidebar() {
           <div className="fixed inset-0 z-40">
             <div className="fixed inset-y-0 right-0 w-full max-w-xs bg-sidebar overflow-y-auto p-4">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">GalionTek</h2>
+                <h2 className="text-xl font-bold text-white">{systemName}</h2>
                 <Button
                   variant="ghost"
                   size="icon"

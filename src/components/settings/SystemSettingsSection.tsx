@@ -22,6 +22,9 @@ export function SystemSettingsSection() {
     setSystemName(newName);
     localStorage.setItem("system_name", newName);
     
+    // עדכון הכותרת בדפדפן
+    document.title = newName + " - ניהול מרצים ומנחי סדנאות";
+    
     toast({
       title: "שם המערכת עודכן",
       description: `שם המערכת שונה ל-${newName}`,

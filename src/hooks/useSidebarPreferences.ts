@@ -29,29 +29,38 @@ export function useSidebarPreferences() {
           return;
         }
 
+        // בקשה מעודכנת שלוקחת את כל הפריטים ובודקת עבור היוזר הנוכחי
         const { data, error } = await supabase
           .from('user_preferences')
-          .select('sidebar_items')
-          .maybeSingle();
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
 
         if (error) throw error;
 
-        if (data && data.sidebar_items) {
-          // Type assertion to ensure we have a SidebarItem array
-          // Make sure all properties of SidebarItem are present
-          const typedItems = Array.isArray(data.sidebar_items) 
-            ? data.sidebar_items.map((item: any) => ({
-                id: String(item.id || ''),
-                title: String(item.title || ''),
-                href: String(item.href || ''),
-                icon: String(item.icon || ''),
-                visible: Boolean(item.visible),
-                customTitle: item.customTitle ? String(item.customTitle) : undefined
-              })) as SidebarItem[]
-            : [...defaultSidebarItems];
-            
-          setSidebarItems(typedItems);
+        // בדיקה אם יש נתונים ואם הם תקינים
+        if (data && data.length > 0 && data[0].sidebar_items) {
+          const userPreferences = data[0];
+          
+          if (Array.isArray(userPreferences.sidebar_items)) {
+            // מטיפוס הנתונים לפורמט המתאים של SidebarItem
+            const typedItems = userPreferences.sidebar_items.map((item: any) => ({
+              id: String(item.id || ''),
+              title: String(item.title || ''),
+              href: String(item.href || ''),
+              icon: String(item.icon || ''),
+              visible: Boolean(item.visible),
+              customTitle: item.customTitle ? String(item.customTitle) : undefined
+            })) as SidebarItem[];
+              
+            setSidebarItems(typedItems);
+          } else {
+            // במקרה שה-sidebar_items אינו מערך חוקי
+            setSidebarItems([...defaultSidebarItems]);
+          }
         } else {
+          // אם אין נתונים או שהפורמט לא נכון, נשתמש בערכי ברירת המחדל
           setSidebarItems([...defaultSidebarItems]);
         }
       } catch (err) {
@@ -65,7 +74,7 @@ export function useSidebarPreferences() {
 
     fetchSidebarPreferences();
 
-    // Set up auth state change listener
+    // הגדרת מאזין לשינויים במצב האימות
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       fetchSidebarPreferences();
     });
