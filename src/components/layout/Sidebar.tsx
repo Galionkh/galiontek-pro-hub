@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useSidebarPreferences } from "@/hooks/useSidebarPreferences";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,7 +56,7 @@ export default function Sidebar() {
           return;
         }
 
-        if (data && data.system_name) {
+        if (data && typeof data === 'object' && 'system_name' in data) {
           setSystemName(data.system_name);
         }
       } catch (error) {

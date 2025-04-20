@@ -315,6 +315,8 @@ export type Database = {
           created_at: string
           id: string
           sidebar_items: Json
+          system_icon: string | null
+          system_name: string | null
           updated_at: string
           user_id: string
         }
@@ -322,6 +324,8 @@ export type Database = {
           created_at?: string
           id?: string
           sidebar_items?: Json
+          system_icon?: string | null
+          system_name?: string | null
           updated_at?: string
           user_id: string
         }
@@ -329,6 +333,8 @@ export type Database = {
           created_at?: string
           id?: string
           sidebar_items?: Json
+          system_icon?: string | null
+          system_name?: string | null
           updated_at?: string
           user_id?: string
         }

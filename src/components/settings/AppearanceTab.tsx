@@ -56,9 +56,14 @@ export function AppearanceTab() {
           return;
         }
 
-        if (data) {
-          if (data.system_name) setSystemName(data.system_name);
-          if (data.system_icon) setSystemIcon(data.system_icon);
+        if (data && typeof data === 'object') {
+          if ('system_name' in data && data.system_name) {
+            setSystemName(data.system_name);
+          }
+          
+          if ('system_icon' in data && data.system_icon) {
+            setSystemIcon(data.system_icon);
+          }
         }
       } catch (error) {
         console.error("Error loading preferences:", error);
