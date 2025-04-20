@@ -49,6 +49,7 @@ export default function Sidebar() {
         const { data, error } = await supabase
           .from('user_preferences')
           .select('system_name, logo_url')
+          .eq('user_id', session.user.id)
           .maybeSingle();
 
         if (error) {
@@ -57,10 +58,10 @@ export default function Sidebar() {
         }
 
         if (data && typeof data === 'object') {
-          if ('system_name' in data) {
+          if ('system_name' in data && data.system_name) {
             setSystemName(data.system_name);
           }
-          if ('logo_url' in data) {
+          if ('logo_url' in data && data.logo_url) {
             setLogoUrl(data.logo_url);
           }
         }

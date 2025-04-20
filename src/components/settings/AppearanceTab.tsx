@@ -7,7 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
-import { SystemCustomizationSection } from "./SystemCustomizationSection";
+import { Input } from "@/components/ui/input";
+import { Upload } from "lucide-react";
 
 export function AppearanceTab() {
   const { toast } = useToast();
@@ -15,6 +16,10 @@ export function AppearanceTab() {
   const [theme, setTheme] = useState<string>("default");
   const [fontSize, setFontSize] = useState<string>("medium");
   const [darkMode, setDarkMode] = useState(false);
+  const [systemName, setSystemName] = useState("GalionTek");
+  const [logo, setLogo] = useState<File | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [previewChanges, setPreviewChanges] = useState(false);
 
   // Load saved preferences
   useEffect(() => {
@@ -25,7 +30,7 @@ export function AppearanceTab() {
 
         const { data, error } = await supabase
           .from('user_preferences')
-          .select('theme, font_size, dark_mode')
+          .select('theme, font_size, dark_mode, system_name, logo_url')
           .eq('user_id', session.user.id)
           .maybeSingle();
 
@@ -38,6 +43,11 @@ export function AppearanceTab() {
           if (data.theme) setTheme(data.theme);
           if (data.font_size) setFontSize(data.font_size);
           if (data.dark_mode !== null) setDarkMode(data.dark_mode);
+          if (data.system_name) setSystemName(data.system_name);
+          if (data.logo_url) setLogoUrl(data.logo_url);
+          
+          // Apply settings immediately on load
+          applyAppearanceSettings(data.theme, data.font_size, data.dark_mode);
         }
       } catch (error) {
         console.error("Error loading appearance settings:", error);
@@ -46,6 +56,44 @@ export function AppearanceTab() {
 
     loadAppearanceSettings();
   }, []);
+
+  // Apply changes in real-time if preview is enabled
+  useEffect(() => {
+    if (previewChanges) {
+      applyAppearanceSettings(theme, fontSize, darkMode);
+    }
+  }, [theme, fontSize, darkMode, previewChanges]);
+
+  const applyAppearanceSettings = (theme: string | null, fontSize: string | null, darkMode: boolean | null) => {
+    // Apply theme changes
+    document.documentElement.className = '';
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    }
+    if (theme && theme !== 'default') {
+      document.documentElement.classList.add(`theme-${theme}`);
+    }
+
+    // Apply font size changes
+    if (fontSize) {
+      switch (fontSize) {
+        case 'small':
+          document.documentElement.style.fontSize = '14px';
+          break;
+        case 'medium':
+          document.documentElement.style.fontSize = '16px';
+          break;
+        case 'large':
+          document.documentElement.style.fontSize = '18px';
+          break;
+      }
+    }
+  };
+
+  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) setLogo(file);
+  };
 
   const saveAppearanceSettings = async () => {
     try {
@@ -61,10 +109,32 @@ export function AppearanceTab() {
         return;
       }
 
+      let newLogoUrl = logoUrl;
+
+      // Upload new logo if selected
+      if (logo) {
+        const fileExt = logo.name.split('.').pop();
+        const filePath = `${session.user.id}/logo.${fileExt}`;
+
+        const { error: uploadError, data } = await supabase.storage
+          .from('system-assets')
+          .upload(filePath, logo, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('system-assets')
+          .getPublicUrl(filePath);
+
+        newLogoUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from('user_preferences')
         .upsert({
           user_id: session.user.id,
+          system_name: systemName,
+          logo_url: newLogoUrl,
           theme,
           font_size: fontSize,
           dark_mode: darkMode
@@ -72,38 +142,39 @@ export function AppearanceTab() {
 
       if (error) throw error;
 
-      // Apply theme changes
-      document.documentElement.className = '';
-      if (darkMode) {
-        document.documentElement.classList.add('dark');
-      }
-      if (theme !== 'default') {
-        document.documentElement.classList.add(`theme-${theme}`);
+      // Apply appearance settings
+      applyAppearanceSettings(theme, fontSize, darkMode);
+
+      // Update favicon if logo was changed
+      if (newLogoUrl) {
+        // Fix the favicon update logic
+        const linkElements = document.querySelectorAll("link[rel*='icon']");
+        let linkElement: HTMLLinkElement;
+        
+        if (linkElements.length > 0) {
+          linkElement = linkElements[0] as HTMLLinkElement;
+        } else {
+          linkElement = document.createElement('link');
+          linkElement.rel = 'shortcut icon';
+          document.head.appendChild(linkElement);
+        }
+        
+        linkElement.type = 'image/x-icon';
+        linkElement.href = newLogoUrl;
       }
 
-      // Apply font size changes
-      switch (fontSize) {
-        case 'small':
-          document.documentElement.style.fontSize = '14px';
-          break;
-        case 'medium':
-          document.documentElement.style.fontSize = '16px';
-          break;
-        case 'large':
-          document.documentElement.style.fontSize = '18px';
-          break;
-      }
+      setLogoUrl(newLogoUrl);
 
       toast({
         title: "העדפות נשמרו",
-        description: "הגדרות העיצוב עודכנו בהצלחה",
+        description: "הגדרות המערכת והעיצוב עודכנו בהצלחה",
       });
     } catch (error) {
       console.error("Error saving appearance settings:", error);
       toast({
         variant: "destructive",
         title: "שגיאה בשמירה",
-        description: "אירעה שגיאה בעת שמירת העדפות העיצוב",
+        description: "אירעה שגיאה בעת שמירת ההעדפות",
       });
     } finally {
       setLoading(false);
@@ -112,7 +183,41 @@ export function AppearanceTab() {
 
   return (
     <div className="space-y-6">
-      <SystemCustomizationSection />
+      <Card>
+        <CardHeader>
+          <CardTitle>התאמת המערכת</CardTitle>
+          <CardDescription>
+            התאם את שם המערכת והלוגו המוצגים במערכת
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="systemName">שם המערכת</Label>
+            <Input
+              id="systemName"
+              value={systemName}
+              onChange={(e) => setSystemName(e.target.value)}
+              placeholder="הזן שם למערכת"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="logo">לוגו המערכת</Label>
+            <div className="flex items-center gap-4">
+              {logoUrl && (
+                <img src={logoUrl} alt="לוגו המערכת" className="h-10 w-10 object-contain" />
+              )}
+              <Input
+                id="logo"
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                className="flex-1"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       <Card>
         <CardHeader>
@@ -122,6 +227,15 @@ export function AppearanceTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="preview-changes">תצוגה מקדימה של שינויים</Label>
+            <Switch
+              id="preview-changes"
+              checked={previewChanges}
+              onCheckedChange={setPreviewChanges}
+            />
+          </div>
+
           <div className="space-y-3">
             <Label htmlFor="theme">ערכת צבעים</Label>
             <RadioGroup 
