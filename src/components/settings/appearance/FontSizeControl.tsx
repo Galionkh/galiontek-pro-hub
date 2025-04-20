@@ -2,7 +2,6 @@
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle } from "lucide-react";
 
 interface FontSizeControlProps {
   currentSize: number;
@@ -22,22 +21,13 @@ export function FontSizeControl({ currentSize, onSizeChange }: FontSizeControlPr
   };
 
   const handleFontSizeChange = (value: number[]) => {
-    try {
-      const newSize = value[0];
-      onSizeChange(newSize);
-      
-      toast({
-        title: "גודל הטקסט עודכן",
-        description: `גודל הטקסט השתנה ל${getFontSizeName(newSize)}`,
-      });
-    } catch (error) {
-      console.error("Error updating font size:", error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בעדכון גודל הטקסט",
-        description: "נתקלנו בבעיה בעת עדכון גודל הטקסט. יתכן והחיבור לשרת נכשל.",
-      });
-    }
+    const newSize = value[0];
+    onSizeChange(newSize);
+    
+    toast({
+      title: "גודל הטקסט עודכן",
+      description: `גודל הטקסט השתנה ל${getFontSizeName(newSize)}`,
+    });
   };
 
   return (
