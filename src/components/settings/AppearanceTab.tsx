@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Users, Settings, FileText, Calendar } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -23,6 +24,15 @@ const systemIcons = [
   { value: "Calendar", label: "יומן" },
 ];
 
+// Map of icon components
+const iconComponents: Record<string, React.ReactNode> = {
+  LayoutDashboard: <LayoutDashboard className="h-4 w-4" />,
+  Users: <Users className="h-4 w-4" />,
+  Settings: <Settings className="h-4 w-4" />,
+  FileText: <FileText className="h-4 w-4" />,
+  Calendar: <Calendar className="h-4 w-4" />,
+};
+
 export function AppearanceTab() {
   const [systemName, setSystemName] = useState("GalionTek");
   const [systemIcon, setSystemIcon] = useState("LayoutDashboard");
@@ -39,7 +49,7 @@ export function AppearanceTab() {
         const { data, error } = await supabase
           .from('user_preferences')
           .select('system_name, system_icon')
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
@@ -125,7 +135,7 @@ export function AppearanceTab() {
                 {systemIcons.map((icon) => (
                   <SelectItem key={icon.value} value={icon.value}>
                     <div className="flex items-center gap-2">
-                      <LayoutDashboard className="h-4 w-4" />
+                      {iconComponents[icon.value]}
                       <span>{icon.label}</span>
                     </div>
                   </SelectItem>
