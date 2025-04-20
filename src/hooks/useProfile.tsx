@@ -1,9 +1,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { ProfileFormValues } from "@/components/settings/ProfileTab";
+import { ProfileFormValues } from "@/types/profile";
 
 export function useProfile() {
   const [loading, setLoading] = useState(false);

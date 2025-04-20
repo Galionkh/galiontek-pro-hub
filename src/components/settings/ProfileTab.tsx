@@ -1,8 +1,14 @@
-import { Card } from "@/components/ui/card";
+
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Loader2, Save } from "lucide-react";
 import { SystemCustomizationSection } from "./SystemCustomizationSection";
-import { Form } from "@/components/ui/form";
 import { useProfile } from "@/hooks/useProfile";
-import { ProfileFormValues } from "@/components/settings/ProfileTab";
+import { ProfileFormValues } from "@/types/profile";
 
 export function ProfileTab() {
   const { profile, loading, saveProfile, fetchProfile } = useProfile();

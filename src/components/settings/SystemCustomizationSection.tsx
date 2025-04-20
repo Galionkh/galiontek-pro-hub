@@ -100,11 +100,20 @@ export function SystemCustomizationSection() {
 
       // Update favicon if logo was changed
       if (newLogoUrl) {
-        const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-        link.type = 'image/x-icon';
-        link.rel = 'shortcut icon';
-        link.href = newLogoUrl;
-        document.getElementsByTagName('head')[0].appendChild(link);
+        // Fix the favicon update logic
+        const linkElements = document.querySelectorAll("link[rel*='icon']");
+        let linkElement: HTMLLinkElement;
+        
+        if (linkElements.length > 0) {
+          linkElement = linkElements[0] as HTMLLinkElement;
+        } else {
+          linkElement = document.createElement('link');
+          linkElement.rel = 'shortcut icon';
+          document.head.appendChild(linkElement);
+        }
+        
+        linkElement.type = 'image/x-icon';
+        linkElement.href = newLogoUrl;
       }
     } catch (error) {
       console.error("Error saving preferences:", error);
