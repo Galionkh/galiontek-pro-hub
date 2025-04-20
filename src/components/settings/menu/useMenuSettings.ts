@@ -27,14 +27,26 @@ export function useMenuSettings() {
 
         const { data, error } = await supabase
           .from('user_preferences')
-          .select('menu_items')
+          .select('sidebar_items')
           .eq('user_id', session.user.id)
           .single();
 
         if (error) throw error;
 
-        if (data?.menu_items) {
-          setMenuItems(data.menu_items);
+        if (data?.sidebar_items) {
+          // Check if sidebar_items contains menu customizations
+          const sidebarItems = data.sidebar_items;
+          
+          if (Array.isArray(sidebarItems) && sidebarItems.length > 0) {
+            // Try to find menu customizations in the sidebar_items
+            const menuCustomizations = sidebarItems.filter(item => 
+              item.id && item.defaultTitle && item.href !== undefined
+            );
+            
+            if (menuCustomizations.length > 0) {
+              setMenuItems(menuCustomizations);
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching menu settings:', error);
@@ -60,7 +72,7 @@ export function useMenuSettings() {
         .from('user_preferences')
         .upsert({
           user_id: session.user.id,
-          menu_items: menuItems,
+          sidebar_items: menuItems,
         });
 
       if (error) throw error;
