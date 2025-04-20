@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,14 +83,14 @@ export default function Layout({ children }: LayoutProps) {
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("system-name-updated", handleCustomEvent as EventListener);
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const authSubscription = supabase.auth.onAuthStateChange(() => {
       fetchUserPreferences();
     });
     
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("system-name-updated", handleCustomEvent as EventListener);
-      subscription.unsubscribe();
+      authSubscription.data.subscription.unsubscribe();
     };
   }, []);
 

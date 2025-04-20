@@ -34,7 +34,10 @@ export function SystemSettingsSection() {
             .eq('user_id', user.id)
             .limit(1);
 
-          if (error) throw error;
+          if (error) {
+            console.error("Error fetching system name:", error);
+            throw error;
+          }
 
           if (data && data.length > 0 && data[0].system_name) {
             setSystemName(data[0].system_name);
@@ -83,7 +86,7 @@ export function SystemSettingsSection() {
 
       // Save to Supabase if user is authenticated
       if (user) {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('user_preferences')
           .upsert({
             user_id: user.id,
@@ -92,7 +95,10 @@ export function SystemSettingsSection() {
             onConflict: 'user_id'
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error saving to Supabase:", error);
+          throw error;
+        }
       }
       
       toast({
