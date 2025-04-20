@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,18 +54,19 @@ export function SidebarCustomizationTab() {
         const { data, error } = await supabase
           .from('user_preferences')
           .select('*')
-          .maybeSingle();
+          .eq('user_id', session.user.id)
+          .limit(1);
         
         if (error) {
           throw error;
         }
         
-        if (data) {
-          setPreferenceId(data.id);
+        if (data && data.length > 0) {
+          setPreferenceId(data[0].id);
           
           // Ensure proper typing of the data from the database
-          const typedItems = Array.isArray(data.sidebar_items) 
-            ? data.sidebar_items.map((item: any) => ({
+          const typedItems = Array.isArray(data[0].sidebar_items) 
+            ? data[0].sidebar_items.map((item: any) => ({
                 id: String(item.id || ''),
                 title: String(item.title || ''),
                 href: String(item.href || ''),

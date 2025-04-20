@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -53,14 +54,15 @@ export default function Sidebar({
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
+        // Fixed: Changed .single() to .limit(1) to prevent multiple rows error
         const { data, error } = await supabase
           .from('user_preferences')
           .select('logo_url')
           .eq('user_id', session.user.id)
-          .single();
+          .limit(1);
 
         if (error) throw error;
-        setLogo(data?.logo_url ?? null);
+        setLogo(data && data.length > 0 ? data[0].logo_url : null);
       } catch (error) {
         console.error("Error fetching logo:", error);
       }

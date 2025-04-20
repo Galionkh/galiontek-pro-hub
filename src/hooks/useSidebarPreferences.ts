@@ -29,7 +29,7 @@ export function useSidebarPreferences() {
           return;
         }
 
-        // בקשה מעודכנת שלוקחת את כל הפריטים ובודקת עבור היוזר הנוכחי
+        // Fixed: Changed to use limit(1) instead of relying on maybeSingle or single
         const { data, error } = await supabase
           .from('user_preferences')
           .select('*')

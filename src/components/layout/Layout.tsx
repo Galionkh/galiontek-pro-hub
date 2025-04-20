@@ -31,17 +31,18 @@ export default function Layout({ children }: LayoutProps) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
+        // Fixed: Changed .single() to .limit(1) to prevent multiple rows error
         const { data, error } = await supabase
           .from('user_preferences')
           .select('system_name, logo_url')
           .eq('user_id', session.user.id)
-          .single();
+          .limit(1);
 
         if (error) throw error;
         
-        if (data) {
-          if (data.system_name) setSystemName(data.system_name);
-          if (data.logo_url) setSystemLogo(data.logo_url);
+        if (data && data.length > 0) {
+          if (data[0].system_name) setSystemName(data[0].system_name);
+          if (data[0].logo_url) setSystemLogo(data[0].logo_url);
         }
       } catch (error) {
         console.error("Error fetching user preferences:", error);
