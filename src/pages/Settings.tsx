@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileTab } from "@/components/settings/ProfileTab";
 import { SyncTab } from "@/components/settings/SyncTab";
 import { AppearanceTab } from "@/components/settings/AppearanceTab";
-import { SidebarCustomizationTab } from "@/components/settings/sidebar/SidebarCustomizationTab";
+import { SidebarCustomizationTab } from "@/components/settings/SidebarCustomizationTab";
 import { SystemSettingsSection } from "@/components/settings/SystemSettingsSection";
 
 export default function Settings() {
