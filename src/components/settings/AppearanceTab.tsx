@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -6,13 +7,16 @@ import { ThemeToggle } from "./appearance/ThemeToggle";
 import { ColorSchemeSelector } from "./appearance/ColorSchemeSelector";
 import { FontSizeControl } from "./appearance/FontSizeControl";
 import { SystemIdentity } from "./appearance/SystemIdentity";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function AppearanceTab() {
   const [darkMode, setDarkMode] = useState(false);
   const [colorScheme, setColorScheme] = useState("purple");
   const [fontSize, setFontSize] = useState(2);
-  const [systemName, setSystemName] = useState("");
+  const [systemName, setSystemName] = useState("GalionTek");
   const [logoUrl, setLogoUrl] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,6 +52,7 @@ export function AppearanceTab() {
   }, []);
 
   const loadSystemPreferences = async () => {
+    setError(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -56,22 +61,17 @@ export function AppearanceTab() {
         .from('user_preferences')
         .select('system_name, logo_url')
         .eq('user_id', session.user.id)
-        .order('updated_at', { ascending: false })
-        .limit(1);
+        .maybeSingle();
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        setSystemName(data[0].system_name || "");
-        setLogoUrl(data[0].logo_url || "");
+      if (data) {
+        if (data.system_name) setSystemName(data.system_name);
+        if (data.logo_url) setLogoUrl(data.logo_url);
       }
     } catch (error) {
       console.error("Error loading system preferences:", error);
-      toast({
-        title: "שגיאה בטעינת העדפות המערכת",
-        description: "אירעה שגיאה בטעינת שם המערכת והלוגו",
-        variant: "destructive",
-      });
+      setError("אירעה שגיאה בטעינת העדפות המערכת. אנא נסה שנית מאוחר יותר.");
     }
   };
 
@@ -143,53 +143,12 @@ export function AppearanceTab() {
     applyFontSize(newSize);
   };
 
-  const saveSystemPreferences = async (newLogoUrl?: string) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-      
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: session.user.id,
-          system_name: systemName,
-          logo_url: newLogoUrl || logoUrl,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "נשמר בהצלחה",
-        description: "העדפות המערכת נשמרו בהצלחה",
-      });
-    } catch (error) {
-      console.error("Error saving system preferences:", error);
-      toast({
-        title: "שגיאה בשמירה",
-        description: "אירעה שגיאה בשמירת העדפות המערכת",
-        variant: "destructive",
-      });
-    }
+  const handleSystemNameChange = (name: string) => {
+    setSystemName(name);
   };
 
-  const getColorSchemeName = (scheme: string) => {
-    const names: Record<string, string> = {
-      'purple': 'סגול',
-      'blue': 'כחול',
-      'green': 'ירוק',
-      'orange': 'כתום'
-    };
-    return names[scheme] || scheme;
-  };
-
-  const getFontSizeName = (size: number) => {
-    const names: Record<number, string> = {
-      1: 'קטן',
-      2: 'בינוני',
-      3: 'גדול'
-    };
-    return names[size] || 'בינוני';
+  const handleLogoChange = (url: string) => {
+    setLogoUrl(url);
   };
 
   const getFontSizeClass = (size: number) => {
@@ -208,11 +167,18 @@ export function AppearanceTab() {
         <CardDescription>התאם את התצוגה לפי העדפותיך</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         <SystemIdentity
           systemName={systemName}
           logoUrl={logoUrl}
-          onSystemNameChange={setSystemName}
-          onLogoChange={setLogoUrl}
+          onSystemNameChange={handleSystemNameChange}
+          onLogoChange={handleLogoChange}
         />
         
         <ThemeToggle initialDarkMode={darkMode} />

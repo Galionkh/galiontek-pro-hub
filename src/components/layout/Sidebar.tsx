@@ -40,39 +40,74 @@ export default function Sidebar() {
   const { sidebarItems, loading } = useSidebarPreferences();
   const [systemName, setSystemName] = useState("GalionTek");
   const [logoUrl, setLogoUrl] = useState("");
+  const [loadingPreferences, setLoadingPreferences] = useState(true);
 
   useEffect(() => {
     const loadSystemPreferences = async () => {
       try {
+        setLoadingPreferences(true);
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
+        if (!session) {
+          setLoadingPreferences(false);
+          return;
+        }
         
         const { data, error } = await supabase
           .from('user_preferences')
           .select('system_name, logo_url')
           .eq('user_id', session.user.id)
-          .order('updated_at', { ascending: false })
-          .limit(1);
+          .maybeSingle();
         
         if (error) {
           console.error("Error loading system preferences:", error);
+          setLoadingPreferences(false);
           return;
         }
           
-        if (data && data.length > 0) {
-          if (data[0].system_name) {
-            setSystemName(data[0].system_name);
+        if (data) {
+          if (data.system_name) {
+            setSystemName(data.system_name);
+            document.title = data.system_name;
           }
-          if (data[0].logo_url) {
-            setLogoUrl(data[0].logo_url);
+          if (data.logo_url) {
+            setLogoUrl(data.logo_url);
+            const link = document.querySelector("link[rel~='icon']");
+            if (link) {
+              link.setAttribute('href', data.logo_url);
+            }
           }
         }
+        setLoadingPreferences(false);
       } catch (err) {
         console.error("Error in loadSystemPreferences:", err);
+        setLoadingPreferences(false);
       }
     };
     
     loadSystemPreferences();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      loadSystemPreferences();
+    });
+
+    const prefsChannel = supabase
+      .channel('user_preferences_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'user_preferences' 
+        }, 
+        () => {
+          loadSystemPreferences();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+      supabase.removeChannel(prefsChannel);
+    };
   }, []);
 
   const toggleMobileMenu = () => {
@@ -102,11 +137,20 @@ export default function Sidebar() {
     <>
       <div className="flex items-center justify-between p-4 lg:hidden bg-primary">
         <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={logoUrl} alt="System Logo" />
-            <AvatarFallback>{systemName.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <h1 className="text-xl font-bold text-white">{systemName}</h1>
+          {loadingPreferences ? (
+            <div className="h-8 w-8 rounded-full bg-primary-foreground/20 animate-pulse"></div>
+          ) : (
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={logoUrl} alt="System Logo" />
+              <AvatarFallback>{systemName.charAt(0)}</AvatarFallback>
+            </Avatar>
+          )}
+          <h1 className="text-xl font-bold text-white">
+            {loadingPreferences ? 
+              <div className="h-6 w-24 bg-primary-foreground/20 animate-pulse rounded"></div> : 
+              systemName
+            }
+          </h1>
         </div>
         <Button variant="ghost" size="icon" onClick={toggleMobileMenu} className="text-white hover:bg-primary/90">
           {isMobileMenuOpen ? (
@@ -125,11 +169,20 @@ export default function Sidebar() {
       >
         <div className="p-5">
           <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={logoUrl} alt="System Logo" />
-              <AvatarFallback>{systemName.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <h1 className="text-2xl font-bold text-white">{systemName}</h1>
+            {loadingPreferences ? (
+              <div className="h-10 w-10 rounded-full bg-sidebar-foreground/20 animate-pulse"></div>
+            ) : (
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={logoUrl} alt="System Logo" />
+                <AvatarFallback>{systemName.charAt(0)}</AvatarFallback>
+              </Avatar>
+            )}
+            <h1 className="text-2xl font-bold text-white">
+              {loadingPreferences ? 
+                <div className="h-7 w-32 bg-sidebar-foreground/20 animate-pulse rounded"></div> : 
+                systemName
+              }
+            </h1>
           </div>
         </div>
         <nav className="px-3 flex flex-col justify-between h-[calc(100%-5rem)]">
@@ -184,11 +237,20 @@ export default function Sidebar() {
             <div className="fixed inset-y-0 right-0 w-full max-w-xs bg-sidebar overflow-y-auto p-4">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={logoUrl} alt="System Logo" />
-                    <AvatarFallback>{systemName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <h2 className="text-xl font-bold text-white">{systemName}</h2>
+                  {loadingPreferences ? (
+                    <div className="h-8 w-8 rounded-full bg-sidebar-foreground/20 animate-pulse"></div>
+                  ) : (
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={logoUrl} alt="System Logo" />
+                      <AvatarFallback>{systemName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <h2 className="text-xl font-bold text-white">
+                    {loadingPreferences ? 
+                      <div className="h-6 w-24 bg-sidebar-foreground/20 animate-pulse rounded"></div> : 
+                      systemName
+                    }
+                  </h2>
                 </div>
                 <Button
                   variant="ghost"

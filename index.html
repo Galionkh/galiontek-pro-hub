@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
   <head>
@@ -18,21 +19,45 @@
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
     <script>
-      // Load system preferences and set favicon
+      // Load system preferences from Supabase
       document.addEventListener('DOMContentLoaded', async () => {
         try {
-          const response = await fetch('/api/system-preferences');
+          // Try to get user preferences from local storage first
+          const storedSystemName = localStorage.getItem('systemName');
+          const storedLogoUrl = localStorage.getItem('logoUrl');
+          
+          if (storedSystemName) {
+            document.title = storedSystemName;
+          }
+          
+          if (storedLogoUrl) {
+            const link = document.querySelector("link[rel~='icon']");
+            if (link) {
+              link.href = storedLogoUrl;
+            }
+          }
+          
+          // Then try to get from Supabase Edge Function
+          const apiUrl = 'https://vlgfagipxxpvnrcghyya.supabase.co/functions/v1/system-preferences';
+          const response = await fetch(apiUrl);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
           const data = await response.json();
+          
+          if (data.system_name) {
+            document.title = data.system_name;
+            localStorage.setItem('systemName', data.system_name);
+          }
           
           if (data.logo_url) {
             const link = document.querySelector("link[rel~='icon']");
             if (link) {
               link.href = data.logo_url;
             }
-          }
-          
-          if (data.system_name) {
-            document.title = data.system_name;
+            localStorage.setItem('logoUrl', data.logo_url);
           }
         } catch (error) {
           console.error('Error loading system preferences:', error);
