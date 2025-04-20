@@ -51,11 +51,14 @@ export function AppearanceTab() {
           .select('system_name, system_icon')
           .maybeSingle();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error loading preferences:", error);
+          return;
+        }
 
         if (data) {
-          setSystemName(data.system_name || "GalionTek");
-          setSystemIcon(data.system_icon || "LayoutDashboard");
+          if (data.system_name) setSystemName(data.system_name);
+          if (data.system_icon) setSystemIcon(data.system_icon);
         }
       } catch (error) {
         console.error("Error loading preferences:", error);

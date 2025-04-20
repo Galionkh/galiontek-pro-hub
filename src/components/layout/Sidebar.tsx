@@ -42,16 +42,25 @@ export default function Sidebar() {
 
   useEffect(() => {
     const loadSystemPreferences = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
 
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('system_name')
-        .single();
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('system_name')
+          .maybeSingle();
 
-      if (data?.system_name) {
-        setSystemName(data.system_name);
+        if (error) {
+          console.error("Error loading system name:", error);
+          return;
+        }
+
+        if (data && data.system_name) {
+          setSystemName(data.system_name);
+        }
+      } catch (error) {
+        console.error("Failed to load system preferences:", error);
       }
     };
 
