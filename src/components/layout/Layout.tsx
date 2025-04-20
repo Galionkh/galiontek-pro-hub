@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-import Sidebar from "./Sidebar";
+import Sidebar from "./sidebar/Sidebar";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
@@ -15,11 +14,9 @@ export default function Layout({ children }: LayoutProps) {
   const [systemName, setSystemName] = useState("GalionTek");
   const [systemLogo, setSystemLogo] = useState<string | null>(null);
 
-  // Prevent hydration mismatch and load system name
   useEffect(() => {
     setMounted(true);
     
-    // עדכון שם המערכת מ-localStorage
     const savedName = localStorage.getItem("system_name");
     if (savedName) {
       setSystemName(savedName);
@@ -31,7 +28,6 @@ export default function Layout({ children }: LayoutProps) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        // Fixed: Changed .single() to .limit(1) to prevent multiple rows error
         const { data, error } = await supabase
           .from('user_preferences')
           .select('system_name, logo_url')
@@ -51,7 +47,6 @@ export default function Layout({ children }: LayoutProps) {
 
     fetchUserPreferences();
     
-    // האזנה לשינויים ב-localStorage
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "system_name" && e.newValue) {
         setSystemName(e.newValue);
