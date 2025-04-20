@@ -19,6 +19,7 @@ export function AppearanceTab() {
   const [logo, setLogo] = useState<File | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [previewChanges, setPreviewChanges] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   // Load saved preferences
   useEffect(() => {
@@ -90,8 +91,24 @@ export function AppearanceTab() {
   };
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError(null);
     const file = event.target.files?.[0];
-    if (file) setLogo(file);
+    
+    if (file) {
+      // Check file size (limit to 500KB)
+      if (file.size > 500 * 1024) {
+        setFileError("הקובץ גדול מדי. יש להעלות קובץ עד 500KB");
+        return;
+      }
+      
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        setFileError("הקובץ אינו תמונה. יש להעלות תמונה בלבד");
+        return;
+      }
+      
+      setLogo(file);
+    }
   };
 
   const saveAppearanceSettings = async () => {
@@ -113,13 +130,17 @@ export function AppearanceTab() {
       // Upload new logo if selected
       if (logo) {
         const fileExt = logo.name.split('.').pop();
-        const filePath = `${session.user.id}/logo.${fileExt}`;
+        const fileName = `logo-${Date.now()}.${fileExt}`;
+        const filePath = `${session.user.id}/${fileName}`;
 
-        const { error: uploadError, data } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('system-assets')
           .upload(filePath, logo, { upsert: true });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          throw uploadError;
+        }
 
         const { data: { publicUrl } } = supabase.storage
           .from('system-assets')
@@ -127,6 +148,15 @@ export function AppearanceTab() {
 
         newLogoUrl = publicUrl;
       }
+
+      console.log("Saving preferences:", {
+        user_id: session.user.id,
+        system_name: systemName,
+        logo_url: newLogoUrl,
+        theme,
+        font_size: fontSize,
+        dark_mode: darkMode
+      });
 
       const { error } = await supabase
         .from('user_preferences')
@@ -139,7 +169,10 @@ export function AppearanceTab() {
           dark_mode: darkMode
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Upsert error:", error);
+        throw error;
+      }
 
       // Apply appearance settings
       applyAppearanceSettings(theme, fontSize, darkMode);
@@ -167,6 +200,9 @@ export function AppearanceTab() {
         title: "העדפות נשמרו",
         description: "הגדרות המערכת והעיצוב עודכנו בהצלחה",
       });
+      
+      // Force reload sidebar to show changes
+      window.dispatchEvent(new Event('storage'));
     } catch (error) {
       console.error("Error saving appearance settings:", error);
       toast({
@@ -205,13 +241,17 @@ export function AppearanceTab() {
               {logoUrl && (
                 <img src={logoUrl} alt="לוגו המערכת" className="h-10 w-10 object-contain" />
               )}
-              <Input
-                id="logo"
-                type="file"
-                accept="image/*"
-                onChange={handleLogoChange}
-                className="flex-1"
-              />
+              <div className="flex-1 flex flex-col">
+                <Input
+                  id="logo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="flex-1"
+                />
+                {fileError && <p className="text-destructive text-sm mt-1">{fileError}</p>}
+                <p className="text-sm text-muted-foreground mt-1">מקסימום 500KB, פורמט תמונה בלבד</p>
+              </div>
             </div>
           </div>
         </CardContent>

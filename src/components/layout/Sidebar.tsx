@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -18,7 +19,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useSidebarPreferences } from "@/hooks/useSidebarPreferences";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -36,41 +36,18 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { toast } = useToast();
-  const { sidebarItems, loading } = useSidebarPreferences();
-  const [systemName, setSystemName] = useState("GalionTek");
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const { sidebarItems, systemName, logoUrl, loading } = useSidebarPreferences();
 
+  // Listen for changes to preferences (from AppearanceTab)
   useEffect(() => {
-    const loadSystemPreferences = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const { data, error } = await supabase
-          .from('user_preferences')
-          .select('system_name, logo_url')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error("Error loading system name:", error);
-          return;
-        }
-
-        if (data && typeof data === 'object') {
-          if ('system_name' in data && data.system_name) {
-            setSystemName(data.system_name);
-          }
-          if ('logo_url' in data && data.logo_url) {
-            setLogoUrl(data.logo_url);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load system preferences:", error);
-      }
+    const handleStorageChange = () => {
+      // This will force the useSidebarPreferences hook to refetch data
+      console.log("Storage changed, refreshing sidebar preferences");
+      window.location.reload();
     };
 
-    loadSystemPreferences();
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const toggleMobileMenu = () => {
@@ -129,7 +106,7 @@ export default function Sidebar() {
           {logoUrl && (
             <img src={logoUrl} alt="לוגו" className="h-8 w-8 object-contain" />
           )}
-          <h1 className="text-xl font-bold text-white">{systemName}</h1>
+          <h1 className="text-xl font-bold text-white">{systemName || "GalionTek"}</h1>
         </div>
         <Button variant="ghost" size="icon" onClick={toggleMobileMenu} className="text-white hover:bg-primary/90">
           {isMobileMenuOpen ? (
@@ -149,7 +126,7 @@ export default function Sidebar() {
             {logoUrl && (
               <img src={logoUrl} alt="לוגו" className="h-8 w-8 object-contain" />
             )}
-            <h1 className="text-2xl font-bold text-white">{systemName}</h1>
+            <h1 className="text-2xl font-bold text-white">{systemName || "GalionTek"}</h1>
           </div>
         </div>
         <nav className="px-3 flex flex-col justify-between h-[calc(100%-5rem)]">
@@ -181,7 +158,12 @@ export default function Sidebar() {
           <div className="fixed inset-0 z-40">
             <div className="fixed inset-y-0 right-0 w-full max-w-xs bg-sidebar overflow-y-auto p-4">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">{systemName}</h2>
+                <div className="flex items-center gap-2">
+                  {logoUrl && (
+                    <img src={logoUrl} alt="לוגו" className="h-8 w-8 object-contain" />
+                  )}
+                  <h2 className="text-xl font-bold text-white">{systemName || "GalionTek"}</h2>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
