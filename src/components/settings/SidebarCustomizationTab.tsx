@@ -31,7 +31,6 @@ export function SidebarCustomizationTab() {
   const [saving, setSaving] = useState(false);
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
 
-  // Fetch user's sidebar preferences
   useEffect(() => {
     const fetchPreferences = async () => {
       try {
@@ -61,7 +60,6 @@ export function SidebarCustomizationTab() {
         if (data && data.length > 0) {
           setPreferenceId(data[0].id);
           
-          // Ensure proper typing of the data from the database
           if (Array.isArray(data[0].sidebar_items)) {
             console.log("Found sidebar_items:", data[0].sidebar_items);
             
@@ -100,7 +98,6 @@ export function SidebarCustomizationTab() {
     fetchPreferences();
   }, []);
 
-  // Handle saving preferences
   const savePreferences = async () => {
     try {
       setSaving(true);
@@ -120,7 +117,6 @@ export function SidebarCustomizationTab() {
       console.log("Items to save:", sidebarItems);
       
       if (preferenceId) {
-        // Update existing preferences
         console.log("Updating existing preferences with ID:", preferenceId);
         const { error } = await supabase
           .from('user_preferences')
@@ -135,7 +131,6 @@ export function SidebarCustomizationTab() {
           throw error;
         }
       } else {
-        // Create new preferences
         console.log("Creating new preferences for user:", userId);
         const { data, error } = await supabase
           .from('user_preferences')
@@ -172,16 +167,15 @@ export function SidebarCustomizationTab() {
     }
   };
 
-  // Reset to default sidebar items
   const resetToDefault = () => {
-    setSidebarItems([...defaultSidebarItems]);
+    const defaultItems = JSON.parse(JSON.stringify(defaultSidebarItems));
+    setSidebarItems(defaultItems);
     toast({
       title: "אופס לברירת מחדל",
-        description: "תפריט הניווט אופס להגדרות ברירת המחדל. לחץ על שמור כדי לשמור את השינויים.",
+      description: "תפריט הניווט אופס להגדרות ברירת המחדל. לחץ על שמור כדי לשמור את השינויים.",
     });
   };
 
-  // Handle drag and drop
   const onDragEnd = (result: DropResult) => {
     const { destination, source } = result;
     
@@ -195,14 +189,12 @@ export function SidebarCustomizationTab() {
     setSidebarItems(items);
   };
 
-  // Update item title
   const updateItemTitle = (index: number, customTitle: string) => {
     const newItems = [...sidebarItems];
     newItems[index] = { ...newItems[index], customTitle };
     setSidebarItems(newItems);
   };
 
-  // Toggle item visibility
   const toggleItemVisibility = (index: number) => {
     const newItems = [...sidebarItems];
     newItems[index] = { ...newItems[index], visible: !newItems[index].visible };

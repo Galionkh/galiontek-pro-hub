@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
-import { useSidebarPreferences } from "@/hooks/useSidebarPreferences";
+import { useSidebarPreferences, defaultSidebarItems } from "@/hooks/useSidebarPreferences";
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarMobileHeader } from "./SidebarMobileHeader";
 import { SidebarNavigation } from "./SidebarNavigation";
@@ -86,7 +86,9 @@ export default function Sidebar({
     }
   };
 
-  console.log("Final items to be rendered:", sidebarItems);
+  // Make sure we have items to display, use defaults as fallback
+  const itemsToDisplay = sidebarItems && sidebarItems.length > 0 ? sidebarItems : defaultSidebarItems;
+  console.log("Final items to be rendered:", itemsToDisplay);
 
   return (
     <>
@@ -105,7 +107,7 @@ export default function Sidebar({
       >
         <SidebarHeader systemName={systemName} logo={logo} />
         <nav className="px-3 flex flex-col justify-between h-[calc(100%-5rem)]">
-          <SidebarNavigation items={sidebarItems} loading={loading} />
+          <SidebarNavigation items={itemsToDisplay} loading={loading} />
           <LogoutButton onLogout={handleLogout} isLoading={isLoggingOut} />
         </nav>
       </div>
@@ -127,7 +129,7 @@ export default function Sidebar({
               </div>
               <nav className="flex flex-col justify-between h-[calc(100%-4rem)]">
                 <SidebarNavigation 
-                  items={sidebarItems} 
+                  items={itemsToDisplay} 
                   loading={loading} 
                   onItemClick={toggleMobileMenu}
                 />

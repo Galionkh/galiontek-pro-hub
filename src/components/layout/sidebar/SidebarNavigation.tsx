@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { iconMap } from "./iconMap";
 import { SidebarItem } from "@/components/settings/SidebarCustomizationTab";
 import { Loader2 } from "lucide-react";
+import { defaultSidebarItems } from "@/hooks/useSidebarPreferences";
 
 interface SidebarNavigationProps {
   items: SidebarItem[];
@@ -22,11 +23,15 @@ export function SidebarNavigation({ items, loading, onItemClick }: SidebarNaviga
     );
   }
 
-  // Make sure we have items and they're properly filtered
-  const visibleItems = items?.filter(item => item.visible) || [];
+  // Use the provided items, but fall back to default items if they're empty
+  const itemsToRender = items && items.length > 0 ? items : defaultSidebarItems;
+  
+  // Filter for visible items
+  const visibleItems = itemsToRender.filter(item => item.visible);
 
   // Debug the items to see what's happening
   console.log("Sidebar navigation items:", items);
+  console.log("Items to render:", itemsToRender);
   console.log("Visible items:", visibleItems);
 
   return (
