@@ -26,6 +26,7 @@ export function AppearanceTab() {
         const { data, error } = await supabase
           .from('user_preferences')
           .select('theme, font_size, dark_mode')
+          .eq('user_id', session.user.id)
           .maybeSingle();
 
         if (error) {
