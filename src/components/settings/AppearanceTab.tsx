@@ -1,15 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Sun, Moon, Palette, Image, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "./appearance/ThemeToggle";
+import { ColorSchemeSelector } from "./appearance/ColorSchemeSelector";
+import { FontSizeControl } from "./appearance/FontSizeControl";
+import { SystemIdentity } from "./appearance/SystemIdentity";
 
 export function AppearanceTab() {
   const [darkMode, setDarkMode] = useState(false);
@@ -17,7 +13,6 @@ export function AppearanceTab() {
   const [fontSize, setFontSize] = useState(2);
   const [systemName, setSystemName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -44,10 +39,8 @@ export function AppearanceTab() {
       document.documentElement.classList.remove('dark');
     }
 
-    // Apply color scheme
+    // Apply color scheme and font size
     applyColorScheme(savedColorScheme || 'purple');
-    
-    // Apply font size
     applyFontSize(savedFontSize ? parseInt(savedFontSize) : 2);
 
     // Load system preferences
@@ -82,119 +75,6 @@ export function AppearanceTab() {
     }
   };
 
-  const handleSystemNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSystemName(e.target.value);
-  };
-
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setIsSaving(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      console.log("Starting logo upload process...");
-
-      // Check if storage bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const logosBucketExists = buckets?.some(bucket => bucket.name === 'logos');
-
-      if (!logosBucketExists) {
-        console.log("Logos bucket doesn't exist, attempting to create...");
-        // Try to create the bucket if it doesn't exist
-        const { error: createBucketError } = await supabase.storage.createBucket('logos', {
-          public: true
-        });
-        
-        if (createBucketError) {
-          console.error("Error creating bucket:", createBucketError);
-          throw new Error("Failed to create storage bucket");
-        }
-      }
-
-      // Upload file to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
-      console.log(`Uploading file ${fileName} to logos bucket...`);
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('logos')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw uploadError;
-      }
-
-      console.log("File uploaded successfully:", uploadData);
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('logos')
-        .getPublicUrl(fileName);
-
-      console.log("Got public URL:", publicUrl);
-      
-      setLogoUrl(publicUrl);
-      await saveSystemPreferences(publicUrl);
-      
-      toast({
-        title: "הלוגו הועלה בהצלחה",
-        description: "הלוגו הועלה ונשמר בהצלחה",
-      });
-    } catch (error) {
-      console.error("Error uploading logo:", error);
-      toast({
-        title: "שגיאה בהעלאת הלוגו",
-        description: "אירעה שגיאה בעת העלאת הלוגו. אנא נסה שנית.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const saveSystemPreferences = async (newLogoUrl?: string) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      console.log("Saving system preferences...");
-      
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: session.user.id,
-          system_name: systemName,
-          logo_url: newLogoUrl || logoUrl,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error("Error saving to user_preferences:", error);
-        throw error;
-      }
-
-      toast({
-        title: "נשמר בהצלחה",
-        description: "העדפות המערכת נשמרו בהצלחה",
-      });
-    } catch (error) {
-      console.error("Error saving system preferences:", error);
-      toast({
-        title: "שגיאה בשמירה",
-        description: "אירעה שגיאה בשמירת העדפות המערכת",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Function to apply color scheme to document
   const applyColorScheme = (scheme: string) => {
     // Remove any existing color scheme classes
     document.documentElement.classList.remove('theme-purple', 'theme-blue', 'theme-green', 'theme-orange');
@@ -231,7 +111,6 @@ export function AppearanceTab() {
     root.style.setProperty('--secondary', secondary);
   };
 
-  // Function to apply font size
   const applyFontSize = (size: number) => {
     document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
     document.documentElement.classList.add(getFontSizeClass(size));
@@ -252,48 +131,46 @@ export function AppearanceTab() {
     }
   };
 
-  const toggleTheme = () => {
-    setDarkMode(!darkMode);
-    
-    if (!darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-    
-    toast({
-      title: "ערכת הנושא השתנתה",
-      description: `עברת למצב ${!darkMode ? 'כהה' : 'בהיר'}`,
-    });
-  };
-
   const handleColorSchemeChange = (scheme: string) => {
     setColorScheme(scheme);
     localStorage.setItem('colorScheme', scheme);
-    
-    // Apply color scheme
     applyColorScheme(scheme);
-    
-    toast({
-      title: "ערכת צבעים עודכנה",
-      description: `ערכת הצבעים השתנתה ל${getColorSchemeName(scheme)}`,
-    });
   };
 
-  const handleFontSizeChange = (value: number[]) => {
-    const newSize = value[0];
+  const handleFontSizeChange = (newSize: number) => {
     setFontSize(newSize);
     localStorage.setItem('fontSize', newSize.toString());
-    
-    // Apply font size
     applyFontSize(newSize);
-    
-    toast({
-      title: "גודל הטקסט עודכן",
-      description: `גודל הטקסט השתנה ל${getFontSizeName(newSize)}`,
-    });
+  };
+
+  const saveSystemPreferences = async (newLogoUrl?: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: session.user.id,
+          system_name: systemName,
+          logo_url: newLogoUrl || logoUrl,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "נשמר בהצלחה",
+        description: "העדפות המערכת נשמרו בהצלחה",
+      });
+    } catch (error) {
+      console.error("Error saving system preferences:", error);
+      toast({
+        title: "שגיאה בשמירה",
+        description: "אירעה שגיאה בשמירת העדפות המערכת",
+        variant: "destructive",
+      });
+    }
   };
 
   const getColorSchemeName = (scheme: string) => {
@@ -331,119 +208,24 @@ export function AppearanceTab() {
         <CardDescription>התאם את התצוגה לפי העדפותיך</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* System Name Section */}
-        <div className="space-y-2">
-          <Label htmlFor="system-name">שם המערכת</Label>
-          <div className="flex gap-2">
-            <Input
-              id="system-name"
-              value={systemName}
-              onChange={handleSystemNameChange}
-              placeholder="הזן שם למערכת"
-              className="flex-1"
-            />
-            <Button onClick={() => saveSystemPreferences()}>
-              <Save className="h-4 w-4 mr-2" />
-              שמור
-            </Button>
-          </div>
-        </div>
-
-        {/* Logo Upload Section */}
-        <div className="space-y-2">
-          <Label>לוגו המערכת</Label>
-          <div className="flex items-center gap-4">
-            {logoUrl && (
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={logoUrl} alt="System Logo" />
-                <AvatarFallback>{systemName.charAt(0) || "G"}</AvatarFallback>
-              </Avatar>
-            )}
-            <div className="flex-1">
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
-                id="logo-upload"
-              />
-              <Label
-                htmlFor="logo-upload"
-                className="flex items-center gap-2 cursor-pointer border rounded-md p-2 hover:bg-accent"
-              >
-                <Image className="h-4 w-4" />
-                {isSaving ? "מעלה..." : "העלה לוגו חדש"}
-              </Label>
-              {!logoUrl && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  טרם הועלה לוגו למערכת
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              {darkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              <p className="font-medium">מצב בהיר / כהה</p>
-            </div>
-            <p className="text-sm text-muted-foreground">החלף בין מצב בהיר למצב כהה</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Sun className="h-4 w-4 text-muted-foreground" />
-            <Switch id="theme-mode" checked={darkMode} onCheckedChange={toggleTheme} />
-            <Moon className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
+        <SystemIdentity
+          systemName={systemName}
+          logoUrl={logoUrl}
+          onSystemNameChange={setSystemName}
+          onLogoChange={setLogoUrl}
+        />
         
-        <div className="space-y-2">
-          <Label htmlFor="color-scheme">ערכת צבעים</Label>
-          <div className="flex flex-row gap-2 mt-2">
-            <button 
-              onClick={() => handleColorSchemeChange('purple')}
-              className={`w-16 h-10 rounded-md bg-purple-500 text-white ${colorScheme === 'purple' ? 'ring-2 ring-primary' : ''}`}
-            >
-              סגול
-            </button>
-            <button 
-              onClick={() => handleColorSchemeChange('blue')}
-              className={`w-16 h-10 rounded-md bg-blue-500 text-white ${colorScheme === 'blue' ? 'ring-2 ring-primary' : ''}`}
-            >
-              כחול
-            </button>
-            <button 
-              onClick={() => handleColorSchemeChange('green')}
-              className={`w-16 h-10 rounded-md bg-green-500 text-white ${colorScheme === 'green' ? 'ring-2 ring-primary' : ''}`}
-            >
-              ירוק
-            </button>
-            <button 
-              onClick={() => handleColorSchemeChange('orange')}
-              className={`w-16 h-10 rounded-md bg-orange-500 text-white ${colorScheme === 'orange' ? 'ring-2 ring-primary' : ''}`}
-            >
-              כתום
-            </button>
-          </div>
-        </div>
+        <ThemeToggle initialDarkMode={darkMode} />
         
-        <div className="space-y-2">
-          <Label htmlFor="font-size">גודל טקסט</Label>
-          <div className="flex items-center gap-4">
-            <span className="text-sm">קטן</span>
-            <Slider
-              id="font-size"
-              min={1}
-              max={3}
-              step={1}
-              value={[fontSize]}
-              onValueChange={handleFontSizeChange}
-              className="flex-1"
-            />
-            <span className="text-sm">גדול</span>
-          </div>
-        </div>
+        <ColorSchemeSelector
+          currentScheme={colorScheme}
+          onSchemeChange={handleColorSchemeChange}
+        />
+        
+        <FontSizeControl
+          currentSize={fontSize}
+          onSizeChange={handleFontSizeChange}
+        />
       </CardContent>
     </Card>
   );
