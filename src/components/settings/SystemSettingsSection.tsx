@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { LogoUploadSection } from "./LogoUploadSection";
 
 export function SystemSettingsSection() {
   const [systemName, setSystemName] = useState("GalionTek");
@@ -58,6 +59,7 @@ export function SystemSettingsSection() {
             </Button>
           </div>
         </div>
+        <LogoUploadSection />
       </CardContent>
     </Card>
   );

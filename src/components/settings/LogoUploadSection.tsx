@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, Image as LucideImage } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 export function LogoUploadSection() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -108,57 +108,54 @@ export function LogoUploadSection() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>העלאת לוגו</CardTitle>
-        <CardDescription>בחר לוגו חדש למערכת</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="w-24 h-24 border rounded-md flex items-center justify-center">
-            {logoUrl ? (
-              <img 
-                src={logoUrl} 
-                alt="לוגו המערכת" 
-                className="max-w-full max-h-full object-contain" 
-              />
-            ) : (
-              <LucideImage className="h-12 w-12 text-muted-foreground" />
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <Input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              id="logo-upload"
-              onChange={handleFileUpload}
-              disabled={isUploading}
+    <div className="space-y-2">
+      <Label>לוגו המערכת</Label>
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 border rounded-md flex items-center justify-center bg-gray-50">
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt="לוגו המערכת" 
+              className="max-w-full max-h-full object-contain" 
             />
-            <label htmlFor="logo-upload">
-              <Button 
-                variant="outline" 
-                className="cursor-pointer" 
-                disabled={isUploading}
-                asChild
-              >
-                <span>
-                  <Upload className="mr-2 h-4 w-4" />
-                  {isUploading ? 'מעלה...' : 'העלה לוגו'}
-                </span>
-              </Button>
-            </label>
-            {logoUrl && (
-              <Button 
-                variant="destructive" 
-                onClick={handleRemoveLogo}
-              >
-                הסר לוגו
-              </Button>
-            )}
-          </div>
+          ) : (
+            <LucideImage className="h-8 w-8 text-muted-foreground" />
+          )}
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex gap-2">
+          <Input 
+            type="file" 
+            accept="image/*" 
+            className="hidden" 
+            id="logo-upload"
+            onChange={handleFileUpload}
+            disabled={isUploading}
+          />
+          <label htmlFor="logo-upload">
+            <Button 
+              variant="outline" 
+              className="cursor-pointer" 
+              disabled={isUploading}
+              size="sm"
+              asChild
+            >
+              <span>
+                <Upload className="mr-2 h-4 w-4" />
+                {isUploading ? 'מעלה...' : 'העלה לוגו'}
+              </span>
+            </Button>
+          </label>
+          {logoUrl && (
+            <Button 
+              variant="destructive"
+              size="sm"
+              onClick={handleRemoveLogo}
+            >
+              הסר לוגו
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

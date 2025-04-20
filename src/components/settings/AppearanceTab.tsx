@@ -163,7 +163,6 @@ export function AppearanceTab() {
   return (
     <div className="space-y-6">
       <SystemSettingsSection />
-      <LogoUploadSection />
       
       <Card>
         <CardHeader>
