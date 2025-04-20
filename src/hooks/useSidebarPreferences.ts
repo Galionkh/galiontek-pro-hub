@@ -48,24 +48,32 @@ export function useSidebarPreferences() {
         console.log("Fetched user preferences data:", data);
 
         // Check if we have valid data with sidebar_items
-        if (data && data.length > 0 && data[0].sidebar_items && Array.isArray(data[0].sidebar_items) && data[0].sidebar_items.length > 0) {
+        if (data && data.length > 0 && data[0].sidebar_items) {
           const userPreferences = data[0];
           
           console.log("User preferences found:", userPreferences);
           console.log("Sidebar items from DB:", userPreferences.sidebar_items);
           
-          // Map the items to ensure proper typing
-          const typedItems = userPreferences.sidebar_items.map((item: any) => ({
-            id: String(item.id || ''),
-            title: String(item.title || ''),
-            href: String(item.href || ''),
-            icon: String(item.icon || ''),
-            visible: Boolean(item.visible),
-            customTitle: item.customTitle ? String(item.customTitle) : undefined
-          })) as SidebarItem[];
-              
-          console.log("Processed sidebar items:", typedItems);
-          setSidebarItems(typedItems);
+          // First check if sidebar_items is an array before trying to map it
+          const sidebarItemsData = userPreferences.sidebar_items;
+          
+          if (Array.isArray(sidebarItemsData) && sidebarItemsData.length > 0) {
+            // Map the items to ensure proper typing
+            const typedItems = sidebarItemsData.map((item: any) => ({
+              id: String(item.id || ''),
+              title: String(item.title || ''),
+              href: String(item.href || ''),
+              icon: String(item.icon || ''),
+              visible: Boolean(item.visible),
+              customTitle: item.customTitle ? String(item.customTitle) : undefined
+            })) as SidebarItem[];
+                
+            console.log("Processed sidebar items:", typedItems);
+            setSidebarItems(typedItems);
+          } else {
+            console.log("sidebar_items is not a valid array, using defaults");
+            setSidebarItems([...defaultSidebarItems]);
+          }
         } else {
           // If no data, empty array, or invalid format, use default values
           console.log("No valid sidebar items found, using defaults");
