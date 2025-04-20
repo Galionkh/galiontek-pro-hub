@@ -1,351 +1,248 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Sun, Moon, Palette } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export function AppearanceTab() {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [theme, setTheme] = useState<string>("default");
-  const [fontSize, setFontSize] = useState<string>("medium");
   const [darkMode, setDarkMode] = useState(false);
-  const [systemName, setSystemName] = useState("GalionTek");
-  const [logo, setLogo] = useState<File | null>(null);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [previewChanges, setPreviewChanges] = useState(false);
-  const [fileError, setFileError] = useState<string | null>(null);
+  const [colorScheme, setColorScheme] = useState("purple");
+  const [fontSize, setFontSize] = useState(2);
+  const { toast } = useToast();
 
-  // Load saved preferences
   useEffect(() => {
-    const loadAppearanceSettings = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
+    // Check for saved theme preference or system preference
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    setDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
+    
+    // Get saved color scheme
+    const savedColorScheme = localStorage.getItem('colorScheme') || 'purple';
+    setColorScheme(savedColorScheme);
+    
+    // Get saved font size
+    const savedFontSize = localStorage.getItem('fontSize');
+    if (savedFontSize) {
+      setFontSize(parseInt(savedFontSize));
+    }
+    
+    // Apply the theme on initial load
+    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
 
-        const { data, error } = await supabase
-          .from('user_preferences')
-          .select('theme, font_size, dark_mode, system_name, logo_url')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error("Error loading appearance settings:", error);
-          return;
-        }
-
-        if (data) {
-          if (data.theme) setTheme(data.theme);
-          if (data.font_size) setFontSize(data.font_size);
-          if (data.dark_mode !== null) setDarkMode(data.dark_mode);
-          if (data.system_name) setSystemName(data.system_name);
-          if (data.logo_url) setLogoUrl(data.logo_url);
-          
-          // Apply settings immediately on load
-          applyAppearanceSettings(data.theme, data.font_size, data.dark_mode);
-        }
-      } catch (error) {
-        console.error("Error loading appearance settings:", error);
-      }
-    };
-
-    loadAppearanceSettings();
+    // Apply color scheme
+    applyColorScheme(savedColorScheme || 'purple');
+    
+    // Apply font size
+    applyFontSize(savedFontSize ? parseInt(savedFontSize) : 2);
   }, []);
 
-  // Apply changes in real-time if preview is enabled
-  useEffect(() => {
-    if (previewChanges) {
-      applyAppearanceSettings(theme, fontSize, darkMode);
-    }
-  }, [theme, fontSize, darkMode, previewChanges]);
-
-  const applyAppearanceSettings = (theme: string | null, fontSize: string | null, darkMode: boolean | null) => {
-    // Apply theme changes
-    document.documentElement.className = '';
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    }
-    if (theme && theme !== 'default') {
-      document.documentElement.classList.add(`theme-${theme}`);
-    }
-
-    // Apply font size changes
-    if (fontSize) {
-      switch (fontSize) {
-        case 'small':
-          document.documentElement.style.fontSize = '14px';
-          break;
-        case 'medium':
-          document.documentElement.style.fontSize = '16px';
-          break;
-        case 'large':
-          document.documentElement.style.fontSize = '18px';
-          break;
-      }
-    }
-  };
-
-  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFileError(null);
-    const file = event.target.files?.[0];
+  // Function to apply color scheme to document
+  const applyColorScheme = (scheme: string) => {
+    // Remove any existing color scheme classes
+    document.documentElement.classList.remove('theme-purple', 'theme-blue', 'theme-green', 'theme-orange');
+    // Add new color scheme class
+    document.documentElement.classList.add(`theme-${scheme}`);
     
-    if (file) {
-      // Check file size (limit to 500KB)
-      if (file.size > 500 * 1024) {
-        setFileError("הקובץ גדול מדי. יש להעלות קובץ עד 500KB");
-        return;
-      }
-      
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        setFileError("הקובץ אינו תמונה. יש להעלות תמונה בלבד");
-        return;
-      }
-      
-      setLogo(file);
+    // Update CSS variables based on the color scheme
+    let primary, secondary;
+    switch(scheme) {
+      case 'purple':
+        primary = '262 30% 50%';
+        secondary = '260 100% 97%';
+        break;
+      case 'blue':
+        primary = '210 100% 50%';
+        secondary = '210 100% 97%';
+        break;
+      case 'green':
+        primary = '142 76% 36%';
+        secondary = '142 76% 97%';
+        break;
+      case 'orange':
+        primary = '27 96% 61%';
+        secondary = '27 100% 97%';
+        break;
+      default:
+        primary = '262 30% 50%';
+        secondary = '260 100% 97%';
+    }
+
+    // Apply CSS variables for both light and dark mode
+    const root = document.documentElement;
+    root.style.setProperty('--primary', primary);
+    root.style.setProperty('--secondary', secondary);
+  };
+
+  // Function to apply font size
+  const applyFontSize = (size: number) => {
+    document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
+    document.documentElement.classList.add(getFontSizeClass(size));
+    
+    // Update font size on the body
+    switch(size) {
+      case 1:
+        document.body.style.fontSize = '0.875rem'; // text-sm
+        break;
+      case 2:
+        document.body.style.fontSize = '1rem'; // text-base
+        break;
+      case 3:
+        document.body.style.fontSize = '1.125rem'; // text-lg
+        break;
+      default:
+        document.body.style.fontSize = '1rem';
     }
   };
 
-  const saveAppearanceSettings = async () => {
-    try {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "עליך להתחבר כדי לשמור העדפות",
-        });
-        return;
-      }
-
-      let newLogoUrl = logoUrl;
-
-      // Upload new logo if selected
-      if (logo) {
-        const fileExt = logo.name.split('.').pop();
-        const fileName = `logo-${Date.now()}.${fileExt}`;
-        const filePath = `${session.user.id}/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('system-assets')
-          .upload(filePath, logo, { upsert: true });
-
-        if (uploadError) {
-          console.error("Upload error:", uploadError);
-          throw uploadError;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('system-assets')
-          .getPublicUrl(filePath);
-
-        newLogoUrl = publicUrl;
-      }
-
-      console.log("Saving preferences:", {
-        user_id: session.user.id,
-        system_name: systemName,
-        logo_url: newLogoUrl,
-        theme,
-        font_size: fontSize,
-        dark_mode: darkMode
-      });
-
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: session.user.id,
-          system_name: systemName,
-          logo_url: newLogoUrl,
-          theme,
-          font_size: fontSize,
-          dark_mode: darkMode
-        });
-
-      if (error) {
-        console.error("Upsert error:", error);
-        throw error;
-      }
-
-      // Apply appearance settings
-      applyAppearanceSettings(theme, fontSize, darkMode);
-
-      // Update favicon if logo was changed
-      if (newLogoUrl) {
-        const linkElements = document.querySelectorAll("link[rel*='icon']");
-        let linkElement: HTMLLinkElement;
-        
-        if (linkElements.length > 0) {
-          linkElement = linkElements[0] as HTMLLinkElement;
-        } else {
-          linkElement = document.createElement('link');
-          linkElement.rel = 'shortcut icon';
-          document.head.appendChild(linkElement);
-        }
-        
-        linkElement.type = 'image/x-icon';
-        linkElement.href = newLogoUrl;
-      }
-
-      setLogoUrl(newLogoUrl);
-
-      toast({
-        title: "העדפות נשמרו",
-        description: "הגדרות המערכת והעיצוב עודכנו בהצלחה",
-      });
-      
-      // Force reload sidebar to show changes
-      window.dispatchEvent(new Event('storage'));
-    } catch (error) {
-      console.error("Error saving appearance settings:", error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בשמירה",
-        description: "אירעה שגיאה בעת שמירת ההעדפות",
-      });
-    } finally {
-      setLoading(false);
+  const toggleTheme = () => {
+    setDarkMode(!darkMode);
+    
+    if (!darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
+    
+    toast({
+      title: "ערכת הנושא השתנתה",
+      description: `עברת למצב ${!darkMode ? 'כהה' : 'בהיר'}`,
+    });
+  };
+
+  const handleColorSchemeChange = (scheme: string) => {
+    setColorScheme(scheme);
+    localStorage.setItem('colorScheme', scheme);
+    
+    // Apply color scheme
+    applyColorScheme(scheme);
+    
+    toast({
+      title: "ערכת צבעים עודכנה",
+      description: `ערכת הצבעים השתנתה ל${getColorSchemeName(scheme)}`,
+    });
+  };
+
+  const handleFontSizeChange = (value: number[]) => {
+    const newSize = value[0];
+    setFontSize(newSize);
+    localStorage.setItem('fontSize', newSize.toString());
+    
+    // Apply font size
+    applyFontSize(newSize);
+    
+    toast({
+      title: "גודל הטקסט עודכן",
+      description: `גודל הטקסט השתנה ל${getFontSizeName(newSize)}`,
+    });
+  };
+
+  const getColorSchemeName = (scheme: string) => {
+    const names: Record<string, string> = {
+      'purple': 'סגול',
+      'blue': 'כחול',
+      'green': 'ירוק',
+      'orange': 'כתום'
+    };
+    return names[scheme] || scheme;
+  };
+
+  const getFontSizeName = (size: number) => {
+    const names: Record<number, string> = {
+      1: 'קטן',
+      2: 'בינוני',
+      3: 'גדול'
+    };
+    return names[size] || 'בינוני';
+  };
+
+  const getFontSizeClass = (size: number) => {
+    const classes: Record<number, string> = {
+      1: 'text-sm',
+      2: 'text-base',
+      3: 'text-lg'
+    };
+    return classes[size] || 'text-base';
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>התאמת המערכת</CardTitle>
-          <CardDescription>
-            התאם את שם המערכת והלוגו המוצגים במערכת
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="systemName">שם המערכת</Label>
-            <Input
-              id="systemName"
-              value={systemName}
-              onChange={(e) => setSystemName(e.target.value)}
-              placeholder="הזן שם למערכת"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="logo">לוגו המערכת</Label>
-            <div className="flex items-center gap-4">
-              {logoUrl && (
-                <img src={logoUrl} alt="לוגו המערכת" className="h-10 w-10 object-contain" />
-              )}
-              <div className="flex-1 flex flex-col">
-                <Input
-                  id="logo"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="flex-1"
-                />
-                {fileError && <p className="text-destructive text-sm mt-1">{fileError}</p>}
-                <p className="text-sm text-muted-foreground mt-1">מקסימום 500KB, פורמט תמונה בלבד</p>
-              </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>ערכת צבעים</CardTitle>
+        <CardDescription>התאם את התצוגה לפי העדפותיך</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              {darkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              <p className="font-medium">מצב בהיר / כהה</p>
             </div>
+            <p className="text-sm text-muted-foreground">החלף בין מצב בהיר למצב כהה</p>
           </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>עיצוב ומראה</CardTitle>
-          <CardDescription>
-            התאם את צבעי המערכת וגודל הטקסט
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="preview-changes">תצוגה מקדימה של שינויים</Label>
-            <Switch
-              id="preview-changes"
-              checked={previewChanges}
-              onCheckedChange={setPreviewChanges}
-            />
+          <div className="flex items-center gap-2">
+            <Sun className="h-4 w-4 text-muted-foreground" />
+            <Switch id="theme-mode" checked={darkMode} onCheckedChange={toggleTheme} />
+            <Moon className="h-4 w-4 text-muted-foreground" />
           </div>
-
-          <div className="space-y-3">
-            <Label htmlFor="theme">ערכת צבעים</Label>
-            <RadioGroup 
-              id="theme"
-              value={theme} 
-              onValueChange={setTheme}
-              className="flex flex-col space-y-2"
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="color-scheme">ערכת צבעים</Label>
+          <div className="flex flex-row gap-2 mt-2">
+            <button 
+              onClick={() => handleColorSchemeChange('purple')}
+              className={`w-16 h-10 rounded-md bg-purple-500 text-white ${colorScheme === 'purple' ? 'ring-2 ring-primary' : ''}`}
             >
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="default" id="default" />
-                <Label htmlFor="default" className="flex-1">ברירת מחדל (סגול)</Label>
-                <div className="h-6 w-6 rounded-full bg-primary" />
-              </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="blue" id="blue" />
-                <Label htmlFor="blue" className="flex-1">כחול</Label>
-                <div className="h-6 w-6 rounded-full bg-blue-500" />
-              </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="green" id="green" />
-                <Label htmlFor="green" className="flex-1">ירוק</Label>
-                <div className="h-6 w-6 rounded-full bg-green-500" />
-              </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="orange" id="orange" />
-                <Label htmlFor="orange" className="flex-1">כתום</Label>
-                <div className="h-6 w-6 rounded-full bg-orange-500" />
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div className="space-y-3">
-            <Label htmlFor="fontSize">גודל טקסט</Label>
-            <RadioGroup 
-              id="fontSize"
-              value={fontSize} 
-              onValueChange={setFontSize}
-              className="flex flex-col space-y-2"
+              סגול
+            </button>
+            <button 
+              onClick={() => handleColorSchemeChange('blue')}
+              className={`w-16 h-10 rounded-md bg-blue-500 text-white ${colorScheme === 'blue' ? 'ring-2 ring-primary' : ''}`}
             >
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="small" id="small" />
-                <Label htmlFor="small">קטן</Label>
-              </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="medium" id="medium" />
-                <Label htmlFor="medium">בינוני</Label>
-              </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="large" id="large" />
-                <Label htmlFor="large">גדול</Label>
-              </div>
-            </RadioGroup>
+              כחול
+            </button>
+            <button 
+              onClick={() => handleColorSchemeChange('green')}
+              className={`w-16 h-10 rounded-md bg-green-500 text-white ${colorScheme === 'green' ? 'ring-2 ring-primary' : ''}`}
+            >
+              ירוק
+            </button>
+            <button 
+              onClick={() => handleColorSchemeChange('orange')}
+              className={`w-16 h-10 rounded-md bg-orange-500 text-white ${colorScheme === 'orange' ? 'ring-2 ring-primary' : ''}`}
+            >
+              כתום
+            </button>
           </div>
-
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <Switch
-              id="dark-mode"
-              checked={darkMode}
-              onCheckedChange={setDarkMode}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="font-size">גודל טקסט</Label>
+          <div className="flex items-center gap-4">
+            <span className="text-sm">קטן</span>
+            <Slider
+              id="font-size"
+              min={1}
+              max={3}
+              step={1}
+              value={[fontSize]}
+              onValueChange={handleFontSizeChange}
+              className="flex-1"
             />
-            <Label htmlFor="dark-mode">מצב כהה</Label>
+            <span className="text-sm">גדול</span>
           </div>
-
-          <Button 
-            onClick={saveAppearanceSettings} 
-            disabled={loading}
-            className="w-full mt-4"
-          >
-            {loading ? "שומר..." : "שמור שינויים"}
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

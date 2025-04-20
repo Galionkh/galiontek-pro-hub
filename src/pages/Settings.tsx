@@ -14,7 +14,7 @@ export default function Settings() {
         <TabsList className="w-full md:w-auto grid grid-cols-4">
           <TabsTrigger value="profile">פרופיל</TabsTrigger>
           <TabsTrigger value="sync">סנכרון</TabsTrigger>
-          <TabsTrigger value="appearance">התאמת מערכת</TabsTrigger>
+          <TabsTrigger value="appearance">עיצוב</TabsTrigger>
           <TabsTrigger value="sidebar">תפריט ניווט</TabsTrigger>
         </TabsList>
         

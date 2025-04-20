@@ -17,8 +17,6 @@ export function useSidebarPreferences() {
   const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>([...defaultSidebarItems]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [systemName, setSystemName] = useState("GalionTek");
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSidebarPreferences = async () => {
@@ -28,61 +26,38 @@ export function useSidebarPreferences() {
 
         if (!session) {
           setSidebarItems([...defaultSidebarItems]);
-          setSystemName("GalionTek");
-          setLogoUrl(null);
-          setLoading(false);
           return;
         }
 
         const { data, error } = await supabase
           .from('user_preferences')
-          .select('sidebar_items, system_name, logo_url')
-          .eq('user_id', session.user.id)
+          .select('sidebar_items')
           .maybeSingle();
 
         if (error) throw error;
 
-        if (data) {
-          // Set sidebar items if available
-          if (data.sidebar_items) {
-            // Type assertion to ensure we have a SidebarItem array
-            // Make sure all properties of SidebarItem are present
-            const typedItems = Array.isArray(data.sidebar_items) 
-              ? data.sidebar_items.map((item: any) => ({
-                  id: String(item.id || ''),
-                  title: String(item.title || ''),
-                  href: String(item.href || ''),
-                  icon: String(item.icon || ''),
-                  visible: Boolean(item.visible),
-                  customTitle: item.customTitle ? String(item.customTitle) : undefined
-                })) as SidebarItem[]
-              : [...defaultSidebarItems];
-              
-            setSidebarItems(typedItems);
-          } else {
-            setSidebarItems([...defaultSidebarItems]);
-          }
-          
-          // Set system name if available
-          if (data.system_name) {
-            setSystemName(data.system_name);
-          }
-          
-          // Set logo URL if available
-          if (data.logo_url) {
-            setLogoUrl(data.logo_url);
-          }
+        if (data && data.sidebar_items) {
+          // Type assertion to ensure we have a SidebarItem array
+          // Make sure all properties of SidebarItem are present
+          const typedItems = Array.isArray(data.sidebar_items) 
+            ? data.sidebar_items.map((item: any) => ({
+                id: String(item.id || ''),
+                title: String(item.title || ''),
+                href: String(item.href || ''),
+                icon: String(item.icon || ''),
+                visible: Boolean(item.visible),
+                customTitle: item.customTitle ? String(item.customTitle) : undefined
+              })) as SidebarItem[]
+            : [...defaultSidebarItems];
+            
+          setSidebarItems(typedItems);
         } else {
           setSidebarItems([...defaultSidebarItems]);
-          setSystemName("GalionTek");
-          setLogoUrl(null);
         }
       } catch (err) {
         console.error("Error loading sidebar preferences:", err);
         setError(err instanceof Error ? err : new Error("Unknown error"));
         setSidebarItems([...defaultSidebarItems]);
-        setSystemName("GalionTek");
-        setLogoUrl(null);
       } finally {
         setLoading(false);
       }
@@ -102,8 +77,6 @@ export function useSidebarPreferences() {
 
   return {
     sidebarItems,
-    systemName,
-    logoUrl,
     loading,
     error,
   };
