@@ -1,24 +1,11 @@
 
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  AlertCircle, 
-  Clock, 
-  Check, 
-  ArrowUp, 
-  ArrowRight, 
-  ArrowDown,
-  CheckCircle2,
-  ArrowRightCircle,
-  AlertCircle as AlertCircleIcon
-} from "lucide-react";
+import { AlertCircle, Clock, Check, ArrowUp, ArrowRight, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Task, TaskCategory, TaskPriority } from "@/hooks/tasks";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
-import { useUpdateTask } from "@/hooks/useTasks";
-import { useToast } from "@/components/ui/use-toast";
 
 interface TaskListProps {
   tasks: Task[];
@@ -85,98 +72,6 @@ const getPriorityBadge = (priority: TaskPriority) => {
 };
 
 export function TaskList({ tasks, category }: TaskListProps) {
-  const { mutateAsync: updateTask } = useUpdateTask();
-  const { toast } = useToast();
-  
-  const handleChangeStatus = async (task: Task, newCategory: TaskCategory) => {
-    try {
-      await updateTask({
-        ...task,
-        category: newCategory
-      });
-      
-      toast({
-        title: "סטטוס המשימה עודכן",
-        description: `המשימה "${task.title}" הועברה ל${getCategoryTitle(newCategory)}`,
-      });
-    } catch (error) {
-      console.error("Error updating task status:", error);
-      toast({
-        title: "שגיאה בעדכון סטטוס המשימה",
-        description: "אירעה שגיאה בעת עדכון סטטוס המשימה. נסה שוב מאוחר יותר.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const renderActionButtons = (task: Task) => {
-    switch (category) {
-      case "urgent":
-        return (
-          <div className="flex gap-2 mt-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-primary" 
-              onClick={() => handleChangeStatus(task, "completed")}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-1" /> סיים
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-muted-foreground" 
-              onClick={() => handleChangeStatus(task, "later")}
-            >
-              <Clock className="h-4 w-4 mr-1" /> לדחות
-            </Button>
-          </div>
-        );
-      case "later":
-        return (
-          <div className="flex gap-2 mt-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-primary" 
-              onClick={() => handleChangeStatus(task, "completed")}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-1" /> סיים
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-destructive" 
-              onClick={() => handleChangeStatus(task, "urgent")}
-            >
-              <AlertCircleIcon className="h-4 w-4 mr-1" /> דחוף
-            </Button>
-          </div>
-        );
-      case "completed":
-        return (
-          <div className="flex gap-2 mt-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-destructive" 
-              onClick={() => handleChangeStatus(task, "urgent")}
-            >
-              <AlertCircleIcon className="h-4 w-4 mr-1" /> דחוף
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-muted-foreground" 
-              onClick={() => handleChangeStatus(task, "later")}
-            >
-              <ArrowRightCircle className="h-4 w-4 mr-1" /> לבצע בהמשך
-            </Button>
-          </div>
-        );
-    }
-  };
-
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -220,8 +115,6 @@ export function TaskList({ tasks, category }: TaskListProps) {
                 {category === "completed" ? "הושלם ב: " : "תאריך יעד: "}
                 {format(new Date(task.dueDate), "EEEE, d בMMMM yyyy", { locale: he })}
               </p>
-              
-              {renderActionButtons(task)}
             </li>
           ))}
           {tasks.length === 0 && (
