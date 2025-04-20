@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,11 +9,22 @@ export function SystemSettingsSection() {
   const [systemName, setSystemName] = useState("GalionTek");
   const { toast } = useToast();
 
+  // Load saved system name on component mount
+  useEffect(() => {
+    const savedName = localStorage.getItem("system_name");
+    if (savedName) {
+      setSystemName(savedName);
+    }
+  }, []);
+
   const handleSystemNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSystemName(event.target.value);
+    const newName = event.target.value;
+    setSystemName(newName);
+    localStorage.setItem("system_name", newName);
+    
     toast({
       title: "שם המערכת עודכן",
-      description: `שם המערכת שונה ל-${event.target.value}`,
+      description: `שם המערכת שונה ל-${newName}`,
     });
   };
 
