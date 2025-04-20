@@ -6,7 +6,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Save } from "lucide-react";
-import { SystemCustomizationSection } from "./SystemCustomizationSection";
 import { useProfile } from "@/hooks/useProfile";
 import { ProfileFormValues } from "@/types/profile";
 
@@ -115,8 +114,6 @@ export function ProfileTab() {
           </Form>
         </CardContent>
       </Card>
-
-      <SystemCustomizationSection />
     </div>
   );
 }
