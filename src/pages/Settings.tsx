@@ -4,13 +4,14 @@ import { ProfileTab } from "@/components/settings/ProfileTab";
 import { SyncTab } from "@/components/settings/SyncTab";
 import { AppearanceTab } from "@/components/settings/AppearanceTab";
 import { SidebarCustomizationTab } from "@/components/settings/SidebarCustomizationTab";
+import { SystemSettingsSection } from "@/components/settings/SystemSettingsSection";
 
 export default function Settings() {
   return (
     <div className="space-y-6 animate-fade-in" dir="rtl">
       <h1 className="text-3xl font-bold">הגדרות</h1>
       
-      <Tabs defaultValue="appearance">
+      <Tabs defaultValue="sidebar">
         <TabsList className="w-full md:w-auto grid grid-cols-4">
           <TabsTrigger value="profile">פרופיל</TabsTrigger>
           <TabsTrigger value="sync">סנכרון</TabsTrigger>
@@ -31,6 +32,7 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="sidebar" className="mt-6">
+          <SystemSettingsSection />
           <SidebarCustomizationTab />
         </TabsContent>
       </Tabs>

@@ -29,11 +29,6 @@ export function SidebarNavigation({ items, loading, onItemClick }: SidebarNaviga
   // Filter for visible items
   const visibleItems = itemsToRender.filter(item => item.visible);
 
-  // Debug the items to see what's happening
-  console.log("Sidebar navigation items:", items);
-  console.log("Items to render:", itemsToRender);
-  console.log("Visible items:", visibleItems);
-
   return (
     <ul className="space-y-2">
       {visibleItems.map((item) => {
