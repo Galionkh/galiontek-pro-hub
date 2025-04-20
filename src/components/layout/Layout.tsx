@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
 import Sidebar from "./Sidebar";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ export default function Layout({ children }: LayoutProps) {
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
   const [systemName, setSystemName] = useState("GalionTek");
+  const [systemLogo, setSystemLogo] = useState<string | null>(null);
 
   // Prevent hydration mismatch and load system name
   useEffect(() => {
@@ -23,6 +25,30 @@ export default function Layout({ children }: LayoutProps) {
       setSystemName(savedName);
       document.title = savedName + " - ניהול מרצים ומנחי סדנאות";
     }
+    
+    const fetchUserPreferences = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('system_name, logo_url')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (error) throw error;
+        
+        if (data) {
+          if (data.system_name) setSystemName(data.system_name);
+          if (data.logo_url) setSystemLogo(data.logo_url);
+        }
+      } catch (error) {
+        console.error("Error fetching user preferences:", error);
+      }
+    };
+
+    fetchUserPreferences();
     
     // האזנה לשינויים ב-localStorage
     const handleStorageChange = (e: StorageEvent) => {
@@ -45,7 +71,10 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Sidebar systemName={systemName} />
+      <Sidebar 
+        systemName={systemName} 
+        systemLogo={systemLogo} 
+      />
       <main
         className={cn(
           "flex-1 transition-all",

@@ -1,7 +1,7 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar,
   LayoutDashboard,
@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useSidebarPreferences } from "@/hooks/useSidebarPreferences";
 import { Loader2 } from "lucide-react";
 
@@ -32,15 +32,42 @@ const iconMap: Record<string, React.ElementType> = {
 
 interface SidebarProps {
   systemName?: string;
+  systemLogo?: string | null;
 }
 
-export default function Sidebar({ systemName = "GalionTek" }: SidebarProps) {
+export default function Sidebar({ 
+  systemName = "GalionTek", 
+  systemLogo = null 
+}: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { toast } = useToast();
   const { sidebarItems, loading } = useSidebarPreferences();
+  const [logo, setLogo] = useState<string | null>(systemLogo);
+
+  useEffect(() => {
+    const fetchUserLogo = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('logo_url')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (error) throw error;
+        setLogo(data?.logo_url ?? null);
+      } catch (error) {
+        console.error("Error fetching logo:", error);
+      }
+    };
+
+    fetchUserLogo();
+  }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -63,10 +90,8 @@ export default function Sidebar({ systemName = "GalionTek" }: SidebarProps) {
     }
   };
 
-  // Filter only visible items
   const visibleItems = sidebarItems.filter(item => item.visible);
 
-  // Render navigation items
   const renderNavItems = (items: typeof visibleItems) => {
     return items.map((item) => {
       const isActive = location.pathname === item.href;
@@ -95,9 +120,19 @@ export default function Sidebar({ systemName = "GalionTek" }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile menu button */}
       <div className="flex items-center justify-between p-4 lg:hidden bg-primary">
-        <h1 className="text-xl font-bold text-white">{systemName}</h1>
+        <div className="flex items-center gap-2">
+          {logo ? (
+            <img 
+              src={logo} 
+              alt={`${systemName} לוגו`} 
+              className="h-8 w-8 rounded-md object-contain" 
+            />
+          ) : (
+            <LayoutDashboard className="h-6 w-6 text-white" />
+          )}
+          <h1 className="text-xl font-bold text-white">{systemName}</h1>
+        </div>
         <Button variant="ghost" size="icon" onClick={toggleMobileMenu} className="text-white hover:bg-primary/90">
           {isMobileMenuOpen ? (
             <X className="h-6 w-6" />
@@ -107,15 +142,23 @@ export default function Sidebar({ systemName = "GalionTek" }: SidebarProps) {
         </Button>
       </div>
 
-      {/* Sidebar for desktop */}
       <div
         className={cn(
           "bg-sidebar fixed h-full w-64 hidden lg:block shadow-lg z-20",
           "transition-all duration-300 ease-in-out"
         )}
       >
-        <div className="p-5">
-          <h1 className="text-2xl font-bold text-white mb-6">{systemName}</h1>
+        <div className="p-5 flex items-center gap-3">
+          {logo ? (
+            <img 
+              src={logo} 
+              alt={`${systemName} לוגו`} 
+              className="h-10 w-10 rounded-md object-contain" 
+            />
+          ) : (
+            <LayoutDashboard className="h-8 w-8 text-white" />
+          )}
+          <h1 className="text-2xl font-bold text-white">{systemName}</h1>
         </div>
         <nav className="px-3 flex flex-col justify-between h-[calc(100%-5rem)]">
           {loading ? (
@@ -141,7 +184,6 @@ export default function Sidebar({ systemName = "GalionTek" }: SidebarProps) {
         </nav>
       </div>
 
-      {/* Mobile menu */}
       {isMobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-30">
           <div className="fixed inset-0 z-40">
