@@ -12,13 +12,14 @@ interface EducationalClientFormProps {
     principal_email: string;
     contact: string;
     email: string;
+    phone: string;
   };
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function EducationalClientForm({ formData, onChange }: EducationalClientFormProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir="rtl">
       <h3 className="font-semibold mb-2">פרטי מוסד</h3>
       <FormField
         id="name"
@@ -34,6 +35,14 @@ export function EducationalClientForm({ formData, onChange }: EducationalClientF
         label="מספר מוסד"
         value={formData.institution_number}
         onChange={onChange}
+      />
+      <FormField
+        id="phone"
+        name="phone"
+        label="טלפון המוסד"
+        value={formData.phone}
+        onChange={onChange}
+        required
       />
       <FormField
         id="institution_type"

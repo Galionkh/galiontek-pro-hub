@@ -1,3 +1,4 @@
+
 export type Client = {
   id: number;
   name: string;
@@ -5,6 +6,7 @@ export type Client = {
   status: "active" | "pending" | "closed";
   notes?: string;
   email?: string;
+  phone?: string;
   created_at: string;
   user_id?: string;
   client_type?: "educational" | "company" | "individual";

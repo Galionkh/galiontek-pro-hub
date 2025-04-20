@@ -7,13 +7,14 @@ interface IndividualClientFormProps {
     contact: string;
     email: string;
     notes: string;
+    phone: string;
   };
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function IndividualClientForm({ formData, onChange }: IndividualClientFormProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir="rtl">
       <FormField
         id="name"
         name="name"
@@ -23,9 +24,17 @@ export function IndividualClientForm({ formData, onChange }: IndividualClientFor
         required
       />
       <FormField
+        id="phone"
+        name="phone"
+        label="טלפון נייד"
+        value={formData.phone}
+        onChange={onChange}
+        required
+      />
+      <FormField
         id="contact"
         name="contact"
-        label="טלפון"
+        label="איש קשר"
         value={formData.contact}
         onChange={onChange}
       />

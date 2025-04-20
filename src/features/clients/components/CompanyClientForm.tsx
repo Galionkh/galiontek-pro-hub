@@ -7,18 +7,27 @@ interface CompanyClientFormProps {
     contact: string;
     email: string;
     business_field: string;
+    phone: string;
   };
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function CompanyClientForm({ formData, onChange }: CompanyClientFormProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir="rtl">
       <FormField
         id="name"
         name="name"
         label="שם החברה"
         value={formData.name}
+        onChange={onChange}
+        required
+      />
+      <FormField
+        id="phone"
+        name="phone"
+        label="טלפון החברה"
+        value={formData.phone}
         onChange={onChange}
         required
       />
