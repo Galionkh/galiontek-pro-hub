@@ -27,3 +27,15 @@ WHERE NOT EXISTS (
   SELECT 1 FROM storage.policies 
   WHERE bucket_id = 'system-assets' AND policy = 'INSERT'
 );
+
+-- Allow authenticated users to update their own files
+INSERT INTO storage.policies (name, bucket_id, definition, policy)
+SELECT 
+  'Allow update to own system assets',
+  'system-assets',
+  'auth.uid() = (storage.foldername(name))[1]::uuid',
+  'UPDATE'
+WHERE NOT EXISTS (
+  SELECT 1 FROM storage.policies 
+  WHERE bucket_id = 'system-assets' AND policy = 'UPDATE'
+);

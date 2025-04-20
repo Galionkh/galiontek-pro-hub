@@ -8,7 +8,6 @@ import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Upload } from "lucide-react";
 
 export function AppearanceTab() {
   const { toast } = useToast();
@@ -147,7 +146,6 @@ export function AppearanceTab() {
 
       // Update favicon if logo was changed
       if (newLogoUrl) {
-        // Fix the favicon update logic
         const linkElements = document.querySelectorAll("link[rel*='icon']");
         let linkElement: HTMLLinkElement;
         

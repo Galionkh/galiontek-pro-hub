@@ -26,12 +26,14 @@ export function useSidebarPreferences() {
 
         if (!session) {
           setSidebarItems([...defaultSidebarItems]);
+          setLoading(false);
           return;
         }
 
         const { data, error } = await supabase
           .from('user_preferences')
           .select('sidebar_items')
+          .eq('user_id', session.user.id)
           .maybeSingle();
 
         if (error) throw error;
