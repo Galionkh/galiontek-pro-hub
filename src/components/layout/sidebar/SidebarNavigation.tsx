@@ -22,9 +22,16 @@ export function SidebarNavigation({ items, loading, onItemClick }: SidebarNaviga
     );
   }
 
+  // Make sure we have items and they're properly filtered
+  const visibleItems = items?.filter(item => item.visible) || [];
+
+  // Debug the items to see what's happening
+  console.log("Sidebar navigation items:", items);
+  console.log("Visible items:", visibleItems);
+
   return (
     <ul className="space-y-2">
-      {items.filter(item => item.visible).map((item) => {
+      {visibleItems.map((item) => {
         const isActive = location.pathname === item.href;
         const Icon = iconMap[item.icon] || iconMap.LayoutDashboard;
         const displayTitle = item.customTitle || item.title;

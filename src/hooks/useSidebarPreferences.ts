@@ -25,10 +25,14 @@ export function useSidebarPreferences() {
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session) {
+          console.log("No session found, using default sidebar items");
           setSidebarItems([...defaultSidebarItems]);
+          setLoading(false);
           return;
         }
 
+        console.log("Fetching sidebar preferences for user:", session.user.id);
+        
         // Fixed: Changed to use limit(1) instead of relying on maybeSingle or single
         const { data, error } = await supabase
           .from('user_preferences')
@@ -37,11 +41,19 @@ export function useSidebarPreferences() {
           .order('created_at', { ascending: false })
           .limit(1);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching sidebar preferences:", error);
+          throw error;
+        }
+        
+        console.log("Fetched user preferences data:", data);
 
         // בדיקה אם יש נתונים ואם הם תקינים
         if (data && data.length > 0 && data[0].sidebar_items) {
           const userPreferences = data[0];
+          
+          console.log("User preferences found:", userPreferences);
+          console.log("Sidebar items from DB:", userPreferences.sidebar_items);
           
           if (Array.isArray(userPreferences.sidebar_items)) {
             // מטיפוס הנתונים לפורמט המתאים של SidebarItem
@@ -54,13 +66,16 @@ export function useSidebarPreferences() {
               customTitle: item.customTitle ? String(item.customTitle) : undefined
             })) as SidebarItem[];
               
+            console.log("Processed sidebar items:", typedItems);
             setSidebarItems(typedItems);
           } else {
             // במקרה שה-sidebar_items אינו מערך חוקי
+            console.warn("sidebar_items is not a valid array, using defaults");
             setSidebarItems([...defaultSidebarItems]);
           }
         } else {
           // אם אין נתונים או שהפורמט לא נכון, נשתמש בערכי ברירת המחדל
+          console.log("No user preferences found or invalid format, using defaults");
           setSidebarItems([...defaultSidebarItems]);
         }
       } catch (err) {

@@ -30,11 +30,15 @@ export default function Sidebar({
   const [logo, setLogo] = useState<string | null>(systemLogo);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  console.log("Sidebar component rendering with items:", sidebarItems);
+
   useEffect(() => {
     const fetchUserLogo = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
+
+        console.log("Fetching logo for user:", session.user.id);
 
         const { data, error } = await supabase
           .from('user_preferences')
@@ -42,7 +46,12 @@ export default function Sidebar({
           .eq('user_id', session.user.id)
           .limit(1);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching logo:", error);
+          throw error;
+        }
+        
+        console.log("Logo fetch result:", data);
         setLogo(data && data.length > 0 ? data[0].logo_url : null);
       } catch (error) {
         console.error("Error fetching logo:", error);
@@ -66,6 +75,7 @@ export default function Sidebar({
       });
       navigate("/login");
     } catch (error) {
+      console.error("Logout error:", error);
       toast({
         title: "שגיאה בהתנתקות",
         description: "אירעה שגיאה בעת ההתנתקות",
@@ -75,6 +85,8 @@ export default function Sidebar({
       setIsLoggingOut(false);
     }
   };
+
+  console.log("Final items to be rendered:", sidebarItems);
 
   return (
     <>

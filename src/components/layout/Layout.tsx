@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +27,12 @@ export default function Layout({ children }: LayoutProps) {
     const fetchUserPreferences = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
+        if (!session) {
+          console.log("No session found, using default system name");
+          return;
+        }
+
+        console.log("Fetching user preferences for layout");
 
         const { data, error } = await supabase
           .from('user_preferences')
@@ -34,11 +40,22 @@ export default function Layout({ children }: LayoutProps) {
           .eq('user_id', session.user.id)
           .limit(1);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching user preferences:", error);
+          throw error;
+        }
+        
+        console.log("Layout preferences data:", data);
         
         if (data && data.length > 0) {
-          if (data[0].system_name) setSystemName(data[0].system_name);
-          if (data[0].logo_url) setSystemLogo(data[0].logo_url);
+          if (data[0].system_name) {
+            console.log("Setting system name to:", data[0].system_name);
+            setSystemName(data[0].system_name);
+          }
+          if (data[0].logo_url) {
+            console.log("Setting system logo to:", data[0].logo_url);
+            setSystemLogo(data[0].logo_url);
+          }
         }
       } catch (error) {
         console.error("Error fetching user preferences:", error);

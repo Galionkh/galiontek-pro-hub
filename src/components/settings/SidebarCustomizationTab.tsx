@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { Save, Loader2, Undo, GripVertical, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { defaultSidebarItems } from "@/hooks/useSidebarPreferences";
 
 export type SidebarItem = {
   id: string;
@@ -24,18 +25,8 @@ export type SidebarPreferences = {
   updated_at?: string;
 };
 
-const defaultItems: SidebarItem[] = [
-  { id: "dashboard", title: "דשבורד", href: "/", icon: "LayoutDashboard", visible: true },
-  { id: "calendar", title: "יומן", href: "/calendar", icon: "Calendar", visible: true },
-  { id: "clients", title: "לקוחות", href: "/clients", icon: "Users", visible: true },
-  { id: "finances", title: "כספים", href: "/finances", icon: "FileText", visible: true },
-  { id: "orders", title: "הזמנות", href: "/orders", icon: "ClipboardList", visible: true },
-  { id: "tasks", title: "משימות", href: "/tasks", icon: "CheckSquare", visible: true },
-  { id: "settings", title: "הגדרות", href: "/settings", icon: "Settings", visible: true },
-];
-
 export function SidebarCustomizationTab() {
-  const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>([...defaultItems]);
+  const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>([...defaultSidebarItems]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
@@ -48,8 +39,11 @@ export function SidebarCustomizationTab() {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
+          console.log("No session found, using default sidebar items");
           return;
         }
+        
+        console.log("Fetching sidebar preferences for customization tab");
         
         const { data, error } = await supabase
           .from('user_preferences')
@@ -58,25 +52,37 @@ export function SidebarCustomizationTab() {
           .limit(1);
         
         if (error) {
+          console.error("Error fetching sidebar preferences:", error);
           throw error;
         }
+        
+        console.log("Fetched user_preferences data:", data);
         
         if (data && data.length > 0) {
           setPreferenceId(data[0].id);
           
           // Ensure proper typing of the data from the database
-          const typedItems = Array.isArray(data[0].sidebar_items) 
-            ? data[0].sidebar_items.map((item: any) => ({
-                id: String(item.id || ''),
-                title: String(item.title || ''),
-                href: String(item.href || ''),
-                icon: String(item.icon || ''),
-                visible: Boolean(item.visible),
-                customTitle: item.customTitle ? String(item.customTitle) : undefined
-              })) as SidebarItem[]
-            : [...defaultItems];
+          if (Array.isArray(data[0].sidebar_items)) {
+            console.log("Found sidebar_items:", data[0].sidebar_items);
             
-          setSidebarItems(typedItems);
+            const typedItems = data[0].sidebar_items.map((item: any) => ({
+              id: String(item.id || ''),
+              title: String(item.title || ''),
+              href: String(item.href || ''),
+              icon: String(item.icon || ''),
+              visible: Boolean(item.visible),
+              customTitle: item.customTitle ? String(item.customTitle) : undefined
+            })) as SidebarItem[];
+              
+            console.log("Processed items for customization:", typedItems);
+            setSidebarItems(typedItems);
+          } else {
+            console.warn("sidebar_items is not an array, using defaults");
+            setSidebarItems([...defaultSidebarItems]);
+          }
+        } else {
+          console.log("No preferences found, using defaults");
+          setSidebarItems([...defaultSidebarItems]);
         }
       } catch (error) {
         console.error('Error fetching sidebar preferences:', error);
@@ -85,6 +91,7 @@ export function SidebarCustomizationTab() {
           title: "שגיאה בטעינת העדפות",
           description: "אירעה שגיאה בטעינת העדפות תפריט הניווט שלך",
         });
+        setSidebarItems([...defaultSidebarItems]);
       } finally {
         setLoading(false);
       }
@@ -109,9 +116,12 @@ export function SidebarCustomizationTab() {
       }
       
       const userId = session.user.id;
+      console.log("Saving sidebar preferences for user:", userId);
+      console.log("Items to save:", sidebarItems);
       
       if (preferenceId) {
         // Update existing preferences
+        console.log("Updating existing preferences with ID:", preferenceId);
         const { error } = await supabase
           .from('user_preferences')
           .update({
@@ -120,9 +130,13 @@ export function SidebarCustomizationTab() {
           })
           .eq('id', preferenceId);
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error updating preferences:", error);
+          throw error;
+        }
       } else {
         // Create new preferences
+        console.log("Creating new preferences for user:", userId);
         const { data, error } = await supabase
           .from('user_preferences')
           .insert({
@@ -130,10 +144,16 @@ export function SidebarCustomizationTab() {
             sidebar_items: sidebarItems,
           })
           .select()
-          .single();
+          .limit(1);
           
-        if (error) throw error;
-        if (data) setPreferenceId(data.id);
+        if (error) {
+          console.error("Error creating preferences:", error);
+          throw error;
+        }
+        if (data && data.length > 0) {
+          console.log("New preferences created with ID:", data[0].id);
+          setPreferenceId(data[0].id);
+        }
       }
       
       toast({
@@ -154,7 +174,7 @@ export function SidebarCustomizationTab() {
 
   // Reset to default sidebar items
   const resetToDefault = () => {
-    setSidebarItems([...defaultItems]);
+    setSidebarItems([...defaultSidebarItems]);
     toast({
       title: "אופס לברירת מחדל",
         description: "תפריט הניווט אופס להגדרות ברירת המחדל. לחץ על שמור כדי לשמור את השינויים.",
