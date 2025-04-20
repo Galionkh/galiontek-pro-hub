@@ -2,12 +2,15 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Client } from "../types";
+import { ClientTypeSelector } from "./ClientTypeSelector";
+import { EducationalClientForm } from "./EducationalClientForm";
+import { CompanyClientForm } from "./CompanyClientForm";
+import { IndividualClientForm } from "./IndividualClientForm";
 
 interface EditClientFormProps {
   client: Client;
@@ -18,43 +21,63 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
   const { user } = useAuth();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState(client.name);
-  const [contact, setContact] = useState(client.contact);
-  const [email, setEmail] = useState(client.email || "");
-  const [status, setStatus] = useState<"active" | "pending" | "closed">(client.status as any);
-  const [notes, setNotes] = useState(client.notes || "");
+  const [clientType, setClientType] = useState(client.client_type || "");
+  const [formData, setFormData] = useState({
+    name: client.name || "",
+    contact: client.contact || "",
+    email: client.email || "",
+    status: client.status || "active",
+    notes: client.notes || "",
+    institution_number: client.institution_number || "",
+    institution_type: client.institution_type || "",
+    city: client.city || "",
+    address: client.address || "",
+    principal_name: client.principal_name || "",
+    principal_email: client.principal_email || "",
+    business_field: client.business_field || "",
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setName(client.name);
-    setContact(client.contact);
-    setEmail(client.email || "");
-    setStatus(client.status as any);
-    setNotes(client.notes || "");
+    setFormData({
+      name: client.name || "",
+      contact: client.contact || "",
+      email: client.email || "",
+      status: client.status || "active",
+      notes: client.notes || "",
+      institution_number: client.institution_number || "",
+      institution_type: client.institution_type || "",
+      city: client.city || "",
+      address: client.address || "",
+      principal_name: client.principal_name || "",
+      principal_email: client.principal_email || "",
+      business_field: client.business_field || "",
+    });
+    setClientType(client.client_type || "");
   }, [client]);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!user || !clientType) return;
     setLoading(true);
 
     try {
-      console.log("Updating client with email:", email);
       const { error } = await supabase
         .from("clients")
         .update({
-          name,
-          contact,
-          email: email || null, // Using null for empty email strings
-          status,
-          notes,
+          ...formData,
+          client_type: clientType,
         })
         .eq("id", client.id)
         .eq("user_id", user.id);
 
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast({ title: "הלקוח עודכן בהצלחה" });
       setIsOpen(false);
@@ -71,6 +94,19 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
     }
   };
 
+  const renderFormByType = () => {
+    switch (clientType) {
+      case "educational":
+        return <EducationalClientForm formData={formData} onChange={handleChange} />;
+      case "company":
+        return <CompanyClientForm formData={formData} onChange={handleChange} />;
+      case "individual":
+        return <IndividualClientForm formData={formData} onChange={handleChange} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -83,37 +119,9 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
         <DialogHeader>
           <DialogTitle>עריכת לקוח</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <Input
-            placeholder="שם הלקוח"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Input
-            placeholder="פרטי קשר"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-          />
-          <Input
-            placeholder="דואר אלקטרוני"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Input
-            placeholder="הערות"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-          <select
-            className="w-full border rounded p-2"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as any)}
-          >
-            <option value="active">פעיל</option>
-            <option value="pending">ממתין</option>
-            <option value="closed">סגור</option>
-          </select>
+        <div className="space-y-6">
+          <ClientTypeSelector value={clientType} onChange={setClientType} />
+          {renderFormByType()}
         </div>
         <DialogFooter>
           <Button onClick={handleSubmit} disabled={loading}>

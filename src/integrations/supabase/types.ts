@@ -11,32 +11,56 @@ export type Database = {
     Tables: {
       clients: {
         Row: {
+          address: string | null
+          business_field: string | null
+          city: string | null
+          client_type: string | null
           contact: string | null
           created_at: string | null
           email: string | null
           id: number
+          institution_number: string | null
+          institution_type: string | null
           name: string | null
           notes: string | null
+          principal_email: string | null
+          principal_name: string | null
           status: string | null
           user_id: string | null
         }
         Insert: {
+          address?: string | null
+          business_field?: string | null
+          city?: string | null
+          client_type?: string | null
           contact?: string | null
           created_at?: string | null
           email?: string | null
           id?: number
+          institution_number?: string | null
+          institution_type?: string | null
           name?: string | null
           notes?: string | null
+          principal_email?: string | null
+          principal_name?: string | null
           status?: string | null
           user_id?: string | null
         }
         Update: {
+          address?: string | null
+          business_field?: string | null
+          city?: string | null
+          client_type?: string | null
           contact?: string | null
           created_at?: string | null
           email?: string | null
           id?: number
+          institution_number?: string | null
+          institution_type?: string | null
           name?: string | null
           notes?: string | null
+          principal_email?: string | null
+          principal_name?: string | null
           status?: string | null
           user_id?: string | null
         }

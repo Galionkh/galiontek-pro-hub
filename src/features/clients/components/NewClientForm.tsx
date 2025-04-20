@@ -6,8 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ClientFormDialog } from "./ClientFormDialog";
-import { ClientFormField } from "./ClientFormField";
-import { ClientStatusSelector } from "./ClientStatusSelector";
+import { ClientTypeSelector } from "./ClientTypeSelector";
+import { EducationalClientForm } from "./EducationalClientForm";
+import { CompanyClientForm } from "./CompanyClientForm";
+import { IndividualClientForm } from "./IndividualClientForm";
 
 interface NewClientFormProps {
   onClientAdded: () => void;
@@ -17,39 +19,68 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [contact, setContact] = useState("");
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"active" | "pending" | "closed">("active");
-  const [notes, setNotes] = useState("");
+  const [clientType, setClientType] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    contact: "",
+    email: "",
+    status: "active",
+    notes: "",
+    institution_number: "",
+    institution_type: "",
+    city: "",
+    address: "",
+    principal_name: "",
+    principal_email: "",
+    business_field: "",
+  });
   const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
 
   const handleSubmit = async () => {
     if (!user) return;
+    if (!clientType) {
+      toast({
+        title: "שגיאה",
+        description: "יש לבחור סוג לקוח",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      console.log("Submitting client data with email:", email);
       const { error } = await supabase.from("clients").insert({
-        name,
-        contact,
-        email: email || null, // Using null for empty email strings
-        status,
-        notes,
+        ...formData,
         user_id: user.id,
+        client_type: clientType,
       });
 
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast({ title: "הלקוח נוסף בהצלחה" });
-      setName("");
-      setContact("");
-      setEmail("");
-      setStatus("active");
-      setNotes("");
+      setFormData({
+        name: "",
+        contact: "",
+        email: "",
+        status: "active",
+        notes: "",
+        institution_number: "",
+        institution_type: "",
+        city: "",
+        address: "",
+        principal_name: "",
+        principal_email: "",
+        business_field: "",
+      });
+      setClientType("");
       setIsOpen(false);
       onClientAdded();
     } catch (error: any) {
@@ -64,12 +95,18 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
     }
   };
 
-  const triggerButton = (
-    <Button variant="default" className="flex items-center gap-2">
-      <UserPlus className="h-4 w-4" />
-      לקוח חדש
-    </Button>
-  );
+  const renderFormByType = () => {
+    switch (clientType) {
+      case "educational":
+        return <EducationalClientForm formData={formData} onChange={handleChange} />;
+      case "company":
+        return <CompanyClientForm formData={formData} onChange={handleChange} />;
+      case "individual":
+        return <IndividualClientForm formData={formData} onChange={handleChange} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <ClientFormDialog
@@ -79,33 +116,17 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
       title="לקוח חדש"
       submitLabel="שמור לקוח"
       isLoading={loading}
-      triggerButton={triggerButton}
+      triggerButton={
+        <Button variant="default" className="flex items-center gap-2">
+          <UserPlus className="h-4 w-4" />
+          לקוח חדש
+        </Button>
+      }
     >
-      <ClientFormField
-        placeholder="שם הלקוח"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <ClientFormField
-        placeholder="פרטי קשר"
-        value={contact}
-        onChange={(e) => setContact(e.target.value)}
-      />
-      <ClientFormField
-        placeholder="דואר אלקטרוני"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        type="email"
-      />
-      <ClientFormField
-        placeholder="הערות"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-      />
-      <ClientStatusSelector
-        status={status}
-        onChange={(e) => setStatus(e.target.value as any)}
-      />
+      <div className="space-y-6">
+        <ClientTypeSelector value={clientType} onChange={setClientType} />
+        {renderFormByType()}
+      </div>
     </ClientFormDialog>
   );
 }
