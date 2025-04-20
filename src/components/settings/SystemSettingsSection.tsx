@@ -86,17 +86,47 @@ export function SystemSettingsSection() {
 
       // Save to Supabase if user is authenticated
       if (user) {
-        const { error } = await supabase
-          .from('user_preferences')
-          .upsert({
-            user_id: user.id,
-            system_name: tempSystemName
-          }, {
-            onConflict: 'user_id'
-          });
+        try {
+          // First check if a record already exists for this user
+          const { data, error: fetchError } = await supabase
+            .from('user_preferences')
+            .select('id')
+            .eq('user_id', user.id)
+            .limit(1);
 
-        if (error) {
-          console.error("Error saving to Supabase:", error);
+          if (fetchError) {
+            console.error("Error checking for existing preferences:", fetchError);
+            throw fetchError;
+          }
+
+          let saveError;
+          
+          if (data && data.length > 0) {
+            // Record exists, update it
+            const { error } = await supabase
+              .from('user_preferences')
+              .update({ system_name: tempSystemName })
+              .eq('user_id', user.id);
+            
+            saveError = error;
+          } else {
+            // Record doesn't exist, insert new one
+            const { error } = await supabase
+              .from('user_preferences')
+              .insert({
+                user_id: user.id,
+                system_name: tempSystemName
+              });
+            
+            saveError = error;
+          }
+
+          if (saveError) {
+            console.error("Error saving to Supabase:", saveError);
+            throw saveError;
+          }
+        } catch (error) {
+          console.error("Error saving preferences to Supabase:", error);
           throw error;
         }
       }
