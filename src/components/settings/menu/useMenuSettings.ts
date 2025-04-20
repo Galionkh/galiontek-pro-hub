@@ -39,9 +39,20 @@ export function useMenuSettings() {
           
           if (Array.isArray(sidebarItems) && sidebarItems.length > 0) {
             // Try to find menu customizations in the sidebar_items
-            const menuCustomizations = sidebarItems.filter(item => 
-              item.id && item.defaultTitle && item.href !== undefined
-            );
+            const menuCustomizations = sidebarItems
+              .filter(item => 
+                typeof item === 'object' && 
+                item !== null && 
+                'id' in item && 
+                'defaultTitle' in item && 
+                'href' in item
+              )
+              .map(item => ({
+                id: String(item.id || ''),
+                defaultTitle: String(item.defaultTitle || ''),
+                href: String(item.href || ''),
+                customTitle: item.customTitle ? String(item.customTitle) : ''
+              }));
             
             if (menuCustomizations.length > 0) {
               setMenuItems(menuCustomizations);
@@ -68,11 +79,19 @@ export function useMenuSettings() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
+      // Convert MenuItems to a compatible JSON object
+      const jsonMenuItems = menuItems.map(item => ({
+        id: item.id,
+        defaultTitle: item.defaultTitle,
+        href: item.href,
+        customTitle: item.customTitle
+      }));
+
       const { error } = await supabase
         .from('user_preferences')
         .upsert({
           user_id: session.user.id,
-          sidebar_items: menuItems,
+          sidebar_items: jsonMenuItems,
         });
 
       if (error) throw error;
