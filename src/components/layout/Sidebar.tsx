@@ -19,6 +19,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useSidebarPreferences } from "@/hooks/useSidebarPreferences";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -38,6 +39,7 @@ export default function Sidebar() {
   const { toast } = useToast();
   const { sidebarItems, loading } = useSidebarPreferences();
   const [systemName, setSystemName] = useState("GalionTek");
+  const [logoUrl, setLogoUrl] = useState("");
 
   useEffect(() => {
     const loadSystemPreferences = async () => {
@@ -47,18 +49,23 @@ export default function Sidebar() {
         
         const { data, error } = await supabase
           .from('user_preferences')
-          .select('system_name')
+          .select('system_name, logo_url')
           .eq('user_id', session.user.id)
           .order('updated_at', { ascending: false })
           .limit(1);
         
         if (error) {
-          console.error("Error loading system name:", error);
+          console.error("Error loading system preferences:", error);
           return;
         }
           
-        if (data && data.length > 0 && data[0].system_name) {
-          setSystemName(data[0].system_name);
+        if (data && data.length > 0) {
+          if (data[0].system_name) {
+            setSystemName(data[0].system_name);
+          }
+          if (data[0].logo_url) {
+            setLogoUrl(data[0].logo_url);
+          }
         }
       } catch (err) {
         console.error("Error in loadSystemPreferences:", err);
@@ -91,36 +98,16 @@ export default function Sidebar() {
 
   const visibleItems = sidebarItems.filter(item => item.visible);
 
-  const renderNavItems = (items: typeof visibleItems) => {
-    return items.map((item) => {
-      const isActive = location.pathname === item.href;
-      const Icon = iconMap[item.icon] || LayoutDashboard;
-      const displayTitle = item.customTitle || item.title;
-      
-      return (
-        <li key={item.href}>
-          <Link
-            to={item.href}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 transition-colors",
-              isActive
-                ? "bg-sidebar-accent text-white"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-            )}
-            onClick={isMobileMenuOpen ? toggleMobileMenu : undefined}
-          >
-            <Icon className="h-5 w-5" />
-            <span>{displayTitle}</span>
-          </Link>
-        </li>
-      );
-    });
-  };
-
   return (
     <>
       <div className="flex items-center justify-between p-4 lg:hidden bg-primary">
-        <h1 className="text-xl font-bold text-white">GalionTek</h1>
+        <div className="flex items-center gap-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={logoUrl} alt="System Logo" />
+            <AvatarFallback>{systemName.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <h1 className="text-xl font-bold text-white">{systemName}</h1>
+        </div>
         <Button variant="ghost" size="icon" onClick={toggleMobileMenu} className="text-white hover:bg-primary/90">
           {isMobileMenuOpen ? (
             <X className="h-6 w-6" />
@@ -137,7 +124,13 @@ export default function Sidebar() {
         )}
       >
         <div className="p-5">
-          <h1 className="text-2xl font-bold text-white mb-6">GalionTek</h1>
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={logoUrl} alt="System Logo" />
+              <AvatarFallback>{systemName.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <h1 className="text-2xl font-bold text-white">{systemName}</h1>
+          </div>
         </div>
         <nav className="px-3 flex flex-col justify-between h-[calc(100%-5rem)]">
           {loading ? (
@@ -146,7 +139,29 @@ export default function Sidebar() {
             </div>
           ) : (
             <ul className="space-y-2">
-              {renderNavItems(visibleItems)}
+              {visibleItems.map((item) => {
+                const isActive = location.pathname === item.href;
+                const Icon = iconMap[item.icon] || LayoutDashboard;
+                const displayTitle = item.customTitle || item.title;
+                
+                return (
+                  <li key={item.href}>
+                    <Link
+                      to={item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2 transition-colors",
+                        isActive
+                          ? "bg-sidebar-accent text-white"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      )}
+                      onClick={isMobileMenuOpen ? toggleMobileMenu : undefined}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{displayTitle}</span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           )}
           
@@ -168,7 +183,13 @@ export default function Sidebar() {
           <div className="fixed inset-0 z-40">
             <div className="fixed inset-y-0 right-0 w-full max-w-xs bg-sidebar overflow-y-auto p-4">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">GalionTek</h2>
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={logoUrl} alt="System Logo" />
+                    <AvatarFallback>{systemName.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <h2 className="text-xl font-bold text-white">{systemName}</h2>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -185,7 +206,29 @@ export default function Sidebar() {
                   </div>
                 ) : (
                   <ul className="space-y-3">
-                    {renderNavItems(visibleItems)}
+                    {visibleItems.map((item) => {
+                      const isActive = location.pathname === item.href;
+                      const Icon = iconMap[item.icon] || LayoutDashboard;
+                      const displayTitle = item.customTitle || item.title;
+                      
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            to={item.href}
+                            className={cn(
+                              "flex items-center gap-3 rounded-md px-3 py-2 transition-colors",
+                              isActive
+                                ? "bg-sidebar-accent text-white"
+                                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                            )}
+                            onClick={toggleMobileMenu}
+                          >
+                            <Icon className="h-5 w-5" />
+                            <span>{displayTitle}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
                 <div className="mt-auto pt-4">

@@ -51,7 +51,6 @@ export function SidebarCustomizationTab() {
           return;
         }
         
-        // Changed from .single() to .limit(1) to prevent multiple rows error
         const { data, error } = await supabase
           .from('user_preferences')
           .select('*')
@@ -124,41 +123,18 @@ export function SidebarCustomizationTab() {
           
         if (error) throw error;
       } else {
-        // Check if user already has a preferences entry
-        const { data: existingPrefs, error: queryError } = await supabase
+        // Create new preferences
+        const { data, error } = await supabase
           .from('user_preferences')
-          .select('id')
-          .eq('user_id', userId)
-          .limit(1);
+          .insert({
+            user_id: userId,
+            sidebar_items: sidebarItems,
+          })
+          .select()
+          .single();
           
-        if (queryError) throw queryError;
-        
-        if (existingPrefs && existingPrefs.length > 0) {
-          // Update the existing record
-          const { error } = await supabase
-            .from('user_preferences')
-            .update({
-              sidebar_items: sidebarItems,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', existingPrefs[0].id);
-            
-          if (error) throw error;
-          setPreferenceId(existingPrefs[0].id);
-        } else {
-          // Create new preferences
-          const { data, error } = await supabase
-            .from('user_preferences')
-            .insert({
-              user_id: userId,
-              sidebar_items: sidebarItems,
-            })
-            .select()
-            .single();
-            
-          if (error) throw error;
-          if (data) setPreferenceId(data.id);
-        }
+        if (error) throw error;
+        if (data) setPreferenceId(data.id);
       }
       
       toast({
@@ -182,7 +158,7 @@ export function SidebarCustomizationTab() {
     setSidebarItems([...defaultItems]);
     toast({
       title: "אופס לברירת מחדל",
-        description: "תפריט הניווט אופס להגדרות ברירת המחדל. לחץ על שמור כדי לשמור את השינויים.",
+      description: "תפריט הניווט אופס להגדרות ברירת המחדל. לחץ על שמור כדי לשמור את השינויים.",
     });
   };
 
@@ -233,7 +209,7 @@ export function SidebarCustomizationTab() {
       <CardHeader>
         <CardTitle>התאמה אישית של תפריט הניווט</CardTitle>
         <CardDescription>
-          ניתן לשנות את סדר הפריטים ואת השמות שלהם בתפריט הניווט הצדדי
+          גרור פריטים כדי לשנות את סדר הפריטים בתפריט הניווט, שנה את השמות או הסתר פריטים
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -251,37 +227,25 @@ export function SidebarCustomizationTab() {
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
-                        className="flex items-center gap-2 border rounded-md p-3 bg-background"
+                        className="flex items-center gap-2 p-2 bg-background rounded-md border"
                       >
-                        <div {...provided.dragHandleProps} className="cursor-grab">
-                          <GripVertical className="h-5 w-5 text-muted-foreground" />
+                        <div {...provided.dragHandleProps}>
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <div className="text-sm font-medium">{item.title}</div>
-                            {!item.visible && (
-                              <span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-                                מוסתר
-                              </span>
-                            )}
-                          </div>
-                          <Input
-                            className="h-8"
-                            placeholder={`שם מותאם אישית ל${item.title}`}
-                            value={item.customTitle || ""}
-                            onChange={(e) => updateItemTitle(index, e.target.value)}
-                          />
-                        </div>
+                        <Input
+                          value={item.customTitle || item.title}
+                          onChange={(e) => updateItemTitle(index, e.target.value)}
+                          className="flex-1"
+                        />
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="icon"
                           onClick={() => toggleItemVisibility(index)}
-                          title={item.visible ? "הסתר פריט" : "הצג פריט"}
                         >
                           {item.visible ? (
                             <X className="h-4 w-4" />
                           ) : (
-                            <div className="h-4 w-4 rounded-full border border-current" />
+                            <X className="h-4 w-4 opacity-50" />
                           )}
                         </Button>
                       </div>

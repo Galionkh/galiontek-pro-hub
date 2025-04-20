@@ -1,16 +1,21 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Sun, Moon, Palette } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Sun, Moon, Palette, Image, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppearanceTab() {
   const [darkMode, setDarkMode] = useState(false);
   const [colorScheme, setColorScheme] = useState("purple");
   const [fontSize, setFontSize] = useState(2);
+  const [systemName, setSystemName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -42,7 +47,109 @@ export function AppearanceTab() {
     
     // Apply font size
     applyFontSize(savedFontSize ? parseInt(savedFontSize) : 2);
+
+    // Load system preferences
+    loadSystemPreferences();
   }, []);
+
+  const loadSystemPreferences = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('system_name, logo_url')
+        .eq('user_id', session.user.id)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setSystemName(data[0].system_name || "");
+        setLogoUrl(data[0].logo_url || "");
+      }
+    } catch (error) {
+      console.error("Error loading system preferences:", error);
+      toast({
+        title: "שגיאה בטעינת העדפות המערכת",
+        description: "אירעה שגיאה בטעינת שם המערכת והלוגו",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSystemNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSystemName(e.target.value);
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsSaving(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      // Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(fileName);
+
+      setLogoUrl(publicUrl);
+      await saveSystemPreferences(publicUrl);
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast({
+        title: "שגיאה בהעלאת הלוגו",
+        description: "אירעה שגיאה בעת העלאת הלוגו",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const saveSystemPreferences = async (newLogoUrl?: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: session.user.id,
+          system_name: systemName,
+          logo_url: newLogoUrl || logoUrl,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "נשמר בהצלחה",
+        description: "העדפות המערכת נשמרו בהצלחה",
+      });
+    } catch (error) {
+      console.error("Error saving system preferences:", error);
+      toast({
+        title: "שגיאה בשמירה",
+        description: "אירעה שגיאה בשמירת העדפות המערכת",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Function to apply color scheme to document
   const applyColorScheme = (scheme: string) => {
@@ -181,6 +288,54 @@ export function AppearanceTab() {
         <CardDescription>התאם את התצוגה לפי העדפותיך</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* System Name Section */}
+        <div className="space-y-2">
+          <Label htmlFor="system-name">שם המערכת</Label>
+          <div className="flex gap-2">
+            <Input
+              id="system-name"
+              value={systemName}
+              onChange={handleSystemNameChange}
+              placeholder="הזן שם למערכת"
+              className="flex-1"
+            />
+            <Button onClick={() => saveSystemPreferences()}>
+              <Save className="h-4 w-4 mr-2" />
+              שמור
+            </Button>
+          </div>
+        </div>
+
+        {/* Logo Upload Section */}
+        <div className="space-y-2">
+          <Label>לוגו המערכת</Label>
+          <div className="flex items-center gap-4">
+            {logoUrl && (
+              <img
+                src={logoUrl}
+                alt="System Logo"
+                className="h-16 w-16 object-contain rounded-md border"
+              />
+            )}
+            <div className="flex-1">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+                id="logo-upload"
+              />
+              <Label
+                htmlFor="logo-upload"
+                className="flex items-center gap-2 cursor-pointer border rounded-md p-2 hover:bg-accent"
+              >
+                <Image className="h-4 w-4" />
+                {isSaving ? "מעלה..." : "העלה לוגו חדש"}
+              </Label>
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">

@@ -1,8 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GalionTek - ניהול מרצים ומנחי סדנאות</title>
     <meta name="description" content="כל מה שמרצה צריך, במקום אחד" />
@@ -16,6 +16,29 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <script>
+      // Load system preferences and set favicon
+      document.addEventListener('DOMContentLoaded', async () => {
+        try {
+          const response = await fetch('/api/system-preferences');
+          const data = await response.json();
+          
+          if (data.logo_url) {
+            const link = document.querySelector("link[rel~='icon']");
+            if (link) {
+              link.href = data.logo_url;
+            }
+          }
+          
+          if (data.system_name) {
+            document.title = data.system_name;
+          }
+        } catch (error) {
+          console.error('Error loading system preferences:', error);
+        }
+      });
+    </script>
   </head>
 
   <body>
