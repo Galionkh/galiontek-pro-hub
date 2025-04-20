@@ -6,36 +6,110 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { LogoUploadSection } from "./LogoUploadSection";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export function SystemSettingsSection() {
   const [systemName, setSystemName] = useState("GalionTek");
   const [tempSystemName, setTempSystemName] = useState("GalionTek");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const savedName = localStorage.getItem("system_name");
-    if (savedName) {
-      setSystemName(savedName);
-      setTempSystemName(savedName);
-    }
-  }, []);
+    const fetchSystemName = async () => {
+      // First check localStorage
+      const savedName = localStorage.getItem("system_name");
+      if (savedName) {
+        setSystemName(savedName);
+        setTempSystemName(savedName);
+      }
+
+      // Then check Supabase if user is authenticated
+      if (user) {
+        try {
+          const { data, error } = await supabase
+            .from('user_preferences')
+            .select('system_name')
+            .eq('user_id', user.id)
+            .limit(1);
+
+          if (error) throw error;
+
+          if (data && data.length > 0 && data[0].system_name) {
+            setSystemName(data[0].system_name);
+            setTempSystemName(data[0].system_name);
+            // Also update localStorage
+            localStorage.setItem("system_name", data[0].system_name);
+          }
+        } catch (error) {
+          console.error("Error fetching system name:", error);
+        }
+      }
+    };
+
+    fetchSystemName();
+  }, [user]);
 
   const handleSystemNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTempSystemName(event.target.value);
   };
 
-  const handleSave = () => {
-    setSystemName(tempSystemName);
-    localStorage.setItem("system_name", tempSystemName);
-    document.title = tempSystemName + " - ניהול מרצים ומנחי סדנאות";
-    
-    toast({
-      title: "שם המערכת עודכן",
-      description: `שם המערכת שונה ל-${tempSystemName}`,
-    });
+  const handleSave = async () => {
+    if (!tempSystemName.trim()) {
+      toast({
+        title: "שם המערכת לא יכול להיות ריק",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Refresh the page to update all components
-    window.location.reload();
+    setIsLoading(true);
+
+    try {
+      // Update localStorage
+      localStorage.setItem("system_name", tempSystemName);
+      
+      // Update document title
+      document.title = tempSystemName + " - ניהול מרצים ומנחי סדנאות";
+      
+      // Update system name state
+      setSystemName(tempSystemName);
+
+      // Dispatch a custom event to notify other components
+      window.dispatchEvent(new CustomEvent('system-name-updated', { 
+        detail: { systemName: tempSystemName }
+      }));
+
+      // Save to Supabase if user is authenticated
+      if (user) {
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .upsert({
+            user_id: user.id,
+            system_name: tempSystemName
+          }, {
+            onConflict: 'user_id'
+          });
+
+        if (error) throw error;
+      }
+      
+      toast({
+        title: "שם המערכת עודכן",
+        description: `שם המערכת שונה ל-${tempSystemName}`,
+      });
+
+    } catch (error) {
+      console.error("Error saving system name:", error);
+      toast({
+        title: "שגיאה בשמירת שם המערכת",
+        description: "אירעה שגיאה בעת שמירת שם המערכת",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -54,8 +128,8 @@ export function SystemSettingsSection() {
               onChange={handleSystemNameChange}
               placeholder="הכנס את שם המערכת"
             />
-            <Button onClick={handleSave}>
-              שמור
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading ? "שומר..." : "שמור"}
             </Button>
           </div>
         </div>

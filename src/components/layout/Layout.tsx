@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +14,48 @@ export default function Layout({ children }: LayoutProps) {
   const [systemName, setSystemName] = useState("GalionTek");
   const [systemLogo, setSystemLogo] = useState<string | null>(null);
 
+  const fetchUserPreferences = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log("No session found, using default system name");
+        return;
+      }
+
+      console.log("Fetching user preferences for layout");
+
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('system_name, logo_url')
+        .eq('user_id', session.user.id)
+        .limit(1);
+
+      if (error) {
+        console.error("Error fetching user preferences:", error);
+        throw error;
+      }
+      
+      console.log("Layout preferences data:", data);
+      
+      if (data && data.length > 0) {
+        if (data[0].system_name) {
+          console.log("Setting system name to:", data[0].system_name);
+          setSystemName(data[0].system_name);
+          
+          localStorage.setItem("system_name", data[0].system_name);
+          document.title = data[0].system_name + " - ניהול מרצים ומנחי סדנאות";
+        }
+        
+        if (data[0].logo_url) {
+          console.log("Setting system logo to:", data[0].logo_url);
+          setSystemLogo(data[0].logo_url);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     
@@ -24,44 +65,6 @@ export default function Layout({ children }: LayoutProps) {
       document.title = savedName + " - ניהול מרצים ומנחי סדנאות";
     }
     
-    const fetchUserPreferences = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.log("No session found, using default system name");
-          return;
-        }
-
-        console.log("Fetching user preferences for layout");
-
-        const { data, error } = await supabase
-          .from('user_preferences')
-          .select('system_name, logo_url')
-          .eq('user_id', session.user.id)
-          .limit(1);
-
-        if (error) {
-          console.error("Error fetching user preferences:", error);
-          throw error;
-        }
-        
-        console.log("Layout preferences data:", data);
-        
-        if (data && data.length > 0) {
-          if (data[0].system_name) {
-            console.log("Setting system name to:", data[0].system_name);
-            setSystemName(data[0].system_name);
-          }
-          if (data[0].logo_url) {
-            console.log("Setting system logo to:", data[0].logo_url);
-            setSystemLogo(data[0].logo_url);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching user preferences:", error);
-      }
-    };
-
     fetchUserPreferences();
     
     const handleStorageChange = (e: StorageEvent) => {
@@ -71,10 +74,22 @@ export default function Layout({ children }: LayoutProps) {
       }
     };
     
+    const handleCustomEvent = (e: CustomEvent<{systemName: string}>) => {
+      console.log("Received system-name-updated event:", e.detail);
+      setSystemName(e.detail.systemName);
+    };
+    
     window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("system-name-updated", handleCustomEvent as EventListener);
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      fetchUserPreferences();
+    });
     
     return () => {
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("system-name-updated", handleCustomEvent as EventListener);
+      subscription.unsubscribe();
     };
   }, []);
 

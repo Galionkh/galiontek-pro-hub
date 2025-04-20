@@ -28,9 +28,16 @@ export default function Sidebar({
   const { toast } = useToast();
   const { sidebarItems, loading } = useSidebarPreferences();
   const [logo, setLogo] = useState<string | null>(systemLogo);
+  const [localSystemName, setLocalSystemName] = useState(systemName);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   console.log("Sidebar component rendering with items:", sidebarItems);
+  console.log("Received system name:", systemName);
+
+  useEffect(() => {
+    // Update local state when prop changes
+    setLocalSystemName(systemName);
+  }, [systemName]);
 
   useEffect(() => {
     const fetchUserLogo = async () => {
@@ -59,6 +66,18 @@ export default function Sidebar({
     };
 
     fetchUserLogo();
+    
+    // Listen for system name updates
+    const handleCustomEvent = (e: CustomEvent<{systemName: string}>) => {
+      console.log("Sidebar received system-name-updated event:", e.detail);
+      setLocalSystemName(e.detail.systemName);
+    };
+    
+    window.addEventListener("system-name-updated", handleCustomEvent as EventListener);
+    
+    return () => {
+      window.removeEventListener("system-name-updated", handleCustomEvent as EventListener);
+    };
   }, []);
 
   const toggleMobileMenu = () => {
@@ -89,11 +108,12 @@ export default function Sidebar({
   // Make sure we have items to display, use defaults as fallback
   const itemsToDisplay = sidebarItems && sidebarItems.length > 0 ? sidebarItems : defaultSidebarItems;
   console.log("Final items to be rendered:", itemsToDisplay);
+  console.log("Final system name to be displayed:", localSystemName);
 
   return (
     <>
       <SidebarMobileHeader 
-        systemName={systemName}
+        systemName={localSystemName}
         logo={logo}
         isMobileMenuOpen={isMobileMenuOpen}
         toggleMobileMenu={toggleMobileMenu}
@@ -105,7 +125,7 @@ export default function Sidebar({
           "transition-all duration-300 ease-in-out"
         )}
       >
-        <SidebarHeader systemName={systemName} logo={logo} />
+        <SidebarHeader systemName={localSystemName} logo={logo} />
         <nav className="px-3 flex flex-col justify-between h-[calc(100%-5rem)]">
           <SidebarNavigation items={itemsToDisplay} loading={loading} />
           <LogoutButton onLogout={handleLogout} isLoading={isLoggingOut} />
@@ -117,7 +137,7 @@ export default function Sidebar({
           <div className="fixed inset-0 z-40">
             <div className="fixed inset-y-0 right-0 w-full max-w-xs bg-sidebar overflow-y-auto p-4">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">{systemName}</h2>
+                <h2 className="text-xl font-bold text-white">{localSystemName}</h2>
                 <Button
                   variant="ghost"
                   size="icon"
