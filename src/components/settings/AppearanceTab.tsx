@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Sun, Moon, Palette, Image, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function AppearanceTab() {
   const [darkMode, setDarkMode] = useState(false);
@@ -93,27 +95,63 @@ export function AppearanceTab() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
+      console.log("Starting logo upload process...");
+
+      // Check if storage bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const logosBucketExists = buckets?.some(bucket => bucket.name === 'logos');
+
+      if (!logosBucketExists) {
+        console.log("Logos bucket doesn't exist, attempting to create...");
+        // Try to create the bucket if it doesn't exist
+        const { error: createBucketError } = await supabase.storage.createBucket('logos', {
+          public: true
+        });
+        
+        if (createBucketError) {
+          console.error("Error creating bucket:", createBucketError);
+          throw new Error("Failed to create storage bucket");
+        }
+      }
+
       // Upload file to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+      console.log(`Uploading file ${fileName} to logos bucket...`);
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('logos')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+
+      console.log("File uploaded successfully:", uploadData);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('logos')
         .getPublicUrl(fileName);
 
+      console.log("Got public URL:", publicUrl);
+      
       setLogoUrl(publicUrl);
       await saveSystemPreferences(publicUrl);
+      
+      toast({
+        title: "הלוגו הועלה בהצלחה",
+        description: "הלוגו הועלה ונשמר בהצלחה",
+      });
     } catch (error) {
       console.error("Error uploading logo:", error);
       toast({
         title: "שגיאה בהעלאת הלוגו",
-        description: "אירעה שגיאה בעת העלאת הלוגו",
+        description: "אירעה שגיאה בעת העלאת הלוגו. אנא נסה שנית.",
         variant: "destructive",
       });
     } finally {
@@ -126,6 +164,8 @@ export function AppearanceTab() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
+      console.log("Saving system preferences...");
+      
       const { error } = await supabase
         .from('user_preferences')
         .upsert({
@@ -135,7 +175,10 @@ export function AppearanceTab() {
           updated_at: new Date().toISOString(),
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error saving to user_preferences:", error);
+        throw error;
+      }
 
       toast({
         title: "נשמר בהצלחה",
@@ -311,11 +354,10 @@ export function AppearanceTab() {
           <Label>לוגו המערכת</Label>
           <div className="flex items-center gap-4">
             {logoUrl && (
-              <img
-                src={logoUrl}
-                alt="System Logo"
-                className="h-16 w-16 object-contain rounded-md border"
-              />
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={logoUrl} alt="System Logo" />
+                <AvatarFallback>{systemName.charAt(0) || "G"}</AvatarFallback>
+              </Avatar>
             )}
             <div className="flex-1">
               <Input
@@ -332,6 +374,11 @@ export function AppearanceTab() {
                 <Image className="h-4 w-4" />
                 {isSaving ? "מעלה..." : "העלה לוגו חדש"}
               </Label>
+              {!logoUrl && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  טרם הועלה לוגו למערכת
+                </p>
+              )}
             </div>
           </div>
         </div>
