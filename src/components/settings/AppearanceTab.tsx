@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { Sun, Moon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SystemSettingsSection } from "./SystemSettingsSection";
+import { LogoUploadSection } from "./LogoUploadSection";
 
 export function AppearanceTab() {
   const [darkMode, setDarkMode] = useState(false);
@@ -162,6 +163,7 @@ export function AppearanceTab() {
   return (
     <div className="space-y-6">
       <SystemSettingsSection />
+      <LogoUploadSection />
       
       <Card>
         <CardHeader>
