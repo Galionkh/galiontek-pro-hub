@@ -314,6 +314,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          logo_url: string | null
           sidebar_items: Json
           system_icon: string | null
           system_name: string | null
@@ -323,6 +324,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          logo_url?: string | null
           sidebar_items?: Json
           system_icon?: string | null
           system_name?: string | null
@@ -332,6 +334,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          logo_url?: string | null
           sidebar_items?: Json
           system_icon?: string | null
           system_name?: string | null

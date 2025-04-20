@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -39,6 +38,7 @@ export default function Sidebar() {
   const { toast } = useToast();
   const { sidebarItems, loading } = useSidebarPreferences();
   const [systemName, setSystemName] = useState("GalionTek");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const loadSystemPreferences = async () => {
@@ -48,7 +48,7 @@ export default function Sidebar() {
 
         const { data, error } = await supabase
           .from('user_preferences')
-          .select('system_name')
+          .select('system_name, logo_url')
           .maybeSingle();
 
         if (error) {
@@ -56,8 +56,13 @@ export default function Sidebar() {
           return;
         }
 
-        if (data && typeof data === 'object' && 'system_name' in data) {
-          setSystemName(data.system_name);
+        if (data && typeof data === 'object') {
+          if ('system_name' in data) {
+            setSystemName(data.system_name);
+          }
+          if ('logo_url' in data) {
+            setLogoUrl(data.logo_url);
+          }
         }
       } catch (error) {
         console.error("Failed to load system preferences:", error);
@@ -119,7 +124,12 @@ export default function Sidebar() {
   return (
     <>
       <div className="flex items-center justify-between p-4 lg:hidden bg-primary">
-        <h1 className="text-xl font-bold text-white">{systemName}</h1>
+        <div className="flex items-center gap-2">
+          {logoUrl && (
+            <img src={logoUrl} alt="לוגו" className="h-8 w-8 object-contain" />
+          )}
+          <h1 className="text-xl font-bold text-white">{systemName}</h1>
+        </div>
         <Button variant="ghost" size="icon" onClick={toggleMobileMenu} className="text-white hover:bg-primary/90">
           {isMobileMenuOpen ? (
             <X className="h-6 w-6" />
@@ -134,7 +144,12 @@ export default function Sidebar() {
         "transition-all duration-300 ease-in-out"
       )}>
         <div className="p-5">
-          <h1 className="text-2xl font-bold text-white mb-6">{systemName}</h1>
+          <div className="flex items-center gap-2">
+            {logoUrl && (
+              <img src={logoUrl} alt="לוגו" className="h-8 w-8 object-contain" />
+            )}
+            <h1 className="text-2xl font-bold text-white">{systemName}</h1>
+          </div>
         </div>
         <nav className="px-3 flex flex-col justify-between h-[calc(100%-5rem)]">
           {loading ? (
