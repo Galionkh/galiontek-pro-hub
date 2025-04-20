@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -19,6 +19,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 import { useSidebarPreferences } from "@/hooks/useSidebarPreferences";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -37,6 +38,38 @@ export default function Sidebar() {
   const { signOut } = useAuth();
   const { toast } = useToast();
   const { sidebarItems, loading } = useSidebarPreferences();
+  const [systemName, setSystemName] = useState("GalionTek");
+
+  useEffect(() => {
+    const loadSystemPreferences = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        // Changed query to handle multiple records
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('system_name')
+          .eq('user_id', session.user.id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (error) {
+          console.error("Error loading system name:", error);
+          return;
+        }
+          
+        if (data?.system_name) {
+          setSystemName(data.system_name);
+        }
+      } catch (err) {
+        console.error("Error in loadSystemPreferences:", err);
+      }
+    };
+    
+    loadSystemPreferences();
+  }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);

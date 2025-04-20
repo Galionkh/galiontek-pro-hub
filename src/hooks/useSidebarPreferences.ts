@@ -29,12 +29,24 @@ export function useSidebarPreferences() {
           return;
         }
 
+        // Get the most recent preference record for this user
         const { data, error } = await supabase
           .from('user_preferences')
           .select('sidebar_items')
-          .maybeSingle();
+          .eq('user_id', session.user.id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
 
-        if (error) throw error;
+        if (error) {
+          // If no record is found, we'll just use the default items
+          if (error.code === 'PGRST116') {
+            console.log('No sidebar preferences found, using defaults');
+            setSidebarItems([...defaultSidebarItems]);
+            return;
+          }
+          throw error;
+        }
 
         if (data && data.sidebar_items) {
           // Type assertion to ensure we have a SidebarItem array

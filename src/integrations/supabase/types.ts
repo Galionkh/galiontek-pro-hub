@@ -313,22 +313,40 @@ export type Database = {
       user_preferences: {
         Row: {
           created_at: string
+          dark_mode: boolean | null
+          font_size: string | null
           id: string
+          logo_url: string | null
           sidebar_items: Json
+          system_icon: string | null
+          system_name: string | null
+          theme: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          dark_mode?: boolean | null
+          font_size?: string | null
           id?: string
+          logo_url?: string | null
           sidebar_items?: Json
+          system_icon?: string | null
+          system_name?: string | null
+          theme?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          dark_mode?: boolean | null
+          font_size?: string | null
           id?: string
+          logo_url?: string | null
           sidebar_items?: Json
+          system_icon?: string | null
+          system_name?: string | null
+          theme?: string | null
           updated_at?: string
           user_id?: string
         }

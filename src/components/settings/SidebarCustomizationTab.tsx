@@ -52,12 +52,20 @@ export function SidebarCustomizationTab() {
           return;
         }
         
+        // Changed from .maybeSingle() to .limit(1) to prevent multiple rows error
         const { data, error } = await supabase
           .from('user_preferences')
           .select('*')
-          .maybeSingle();
+          .eq('user_id', session.user.id)
+          .limit(1)
+          .single();
         
         if (error) {
+          // If no record is found, we'll just use the default items
+          if (error.code === 'PGRST116') {
+            console.log('No sidebar preferences found, using defaults');
+            return;
+          }
           throw error;
         }
         
@@ -122,18 +130,41 @@ export function SidebarCustomizationTab() {
           
         if (error) throw error;
       } else {
-        // Create new preferences
-        const { data, error } = await supabase
+        // Check if user already has a preferences entry
+        const { data: existingPrefs, error: queryError } = await supabase
           .from('user_preferences')
-          .insert({
-            user_id: userId,
-            sidebar_items: sidebarItems,
-          })
-          .select()
-          .single();
+          .select('id')
+          .eq('user_id', userId)
+          .limit(1);
           
-        if (error) throw error;
-        if (data) setPreferenceId(data.id);
+        if (queryError) throw queryError;
+        
+        if (existingPrefs && existingPrefs.length > 0) {
+          // Update the existing record
+          const { error } = await supabase
+            .from('user_preferences')
+            .update({
+              sidebar_items: sidebarItems,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingPrefs[0].id);
+            
+          if (error) throw error;
+          setPreferenceId(existingPrefs[0].id);
+        } else {
+          // Create new preferences
+          const { data, error } = await supabase
+            .from('user_preferences')
+            .insert({
+              user_id: userId,
+              sidebar_items: sidebarItems,
+            })
+            .select()
+            .single();
+            
+          if (error) throw error;
+          if (data) setPreferenceId(data.id);
+        }
       }
       
       toast({
