@@ -26,6 +26,7 @@ export function useSidebarPreferences() {
 
         if (!session) {
           setSidebarItems([...defaultSidebarItems]);
+          setLoading(false);
           return;
         }
 
@@ -35,24 +36,27 @@ export function useSidebarPreferences() {
           .select('sidebar_items')
           .eq('user_id', session.user.id)
           .order('updated_at', { ascending: false })
-          .limit(1)
-          .single();
+          .limit(1);
 
         if (error) {
-          // If no record is found, we'll just use the default items
-          if (error.code === 'PGRST116') {
-            console.log('No sidebar preferences found, using defaults');
-            setSidebarItems([...defaultSidebarItems]);
-            return;
-          }
           throw error;
         }
 
-        if (data && data.sidebar_items) {
+        // If no data found, use defaults
+        if (!data || data.length === 0) {
+          console.log('No sidebar preferences found, using defaults');
+          setSidebarItems([...defaultSidebarItems]);
+          return;
+        }
+
+        // Use the first (most recent) record
+        const preferences = data[0];
+
+        if (preferences.sidebar_items) {
           // Type assertion to ensure we have a SidebarItem array
           // Make sure all properties of SidebarItem are present
-          const typedItems = Array.isArray(data.sidebar_items) 
-            ? data.sidebar_items.map((item: any) => ({
+          const typedItems = Array.isArray(preferences.sidebar_items) 
+            ? preferences.sidebar_items.map((item: any) => ({
                 id: String(item.id || ''),
                 title: String(item.title || ''),
                 href: String(item.href || ''),
