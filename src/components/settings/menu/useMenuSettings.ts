@@ -47,12 +47,17 @@ export function useMenuSettings() {
                 'defaultTitle' in item && 
                 'href' in item
               )
-              .map(item => ({
-                id: String(item.id || ''),
-                defaultTitle: String(item.defaultTitle || ''),
-                href: String(item.href || ''),
-                customTitle: item.customTitle ? String(item.customTitle) : ''
-              }));
+              .map(item => {
+                // Safely cast the item to a record with string keys
+                const typedItem = item as Record<string, any>;
+                
+                return {
+                  id: String(typedItem.id || ''),
+                  defaultTitle: String(typedItem.defaultTitle || ''),
+                  href: String(typedItem.href || ''),
+                  customTitle: typedItem.customTitle ? String(typedItem.customTitle) : ''
+                } as MenuItem;
+              });
             
             if (menuCustomizations.length > 0) {
               setMenuItems(menuCustomizations);
