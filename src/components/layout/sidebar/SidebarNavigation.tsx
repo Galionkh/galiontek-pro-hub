@@ -2,7 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { iconMap } from "./iconMap";
-import { SidebarItem } from "@/components/settings/SidebarCustomizationTab";
+import { SidebarItem } from "@/components/settings/sidebar/types";
 import { Loader2 } from "lucide-react";
 import { defaultSidebarItems } from "@/hooks/useSidebarPreferences";
 

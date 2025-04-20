@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { SidebarItem } from "@/components/settings/SidebarCustomizationTab";
+import { SidebarItem } from "@/components/settings/sidebar/types";
 
 export const defaultSidebarItems: SidebarItem[] = [
   { id: "dashboard", title: "דשבורד", href: "/", icon: "LayoutDashboard", visible: true },
