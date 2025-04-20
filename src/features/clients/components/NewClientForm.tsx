@@ -33,6 +33,7 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
     principal_name: "",
     principal_email: "",
     business_field: "",
+    phone: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -79,6 +80,7 @@ export function NewClientForm({ onClientAdded }: NewClientFormProps) {
         principal_name: "",
         principal_email: "",
         business_field: "",
+        phone: "",
       });
       setClientType("");
       setIsOpen(false);

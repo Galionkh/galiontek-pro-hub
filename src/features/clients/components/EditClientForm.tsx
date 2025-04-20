@@ -35,6 +35,7 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
     principal_name: client.principal_name || "",
     principal_email: client.principal_email || "",
     business_field: client.business_field || "",
+    phone: client.phone || "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -52,6 +53,7 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
       principal_name: client.principal_name || "",
       principal_email: client.principal_email || "",
       business_field: client.business_field || "",
+      phone: client.phone || "",
     });
     setClientType(client.client_type || "");
   }, [client]);
