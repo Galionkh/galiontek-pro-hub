@@ -3,32 +3,38 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 export function SystemSettingsSection() {
   const [systemName, setSystemName] = useState("GalionTek");
+  const [tempSystemName, setTempSystemName] = useState("GalionTek");
   const { toast } = useToast();
 
-  // Load saved system name on component mount
   useEffect(() => {
     const savedName = localStorage.getItem("system_name");
     if (savedName) {
       setSystemName(savedName);
+      setTempSystemName(savedName);
     }
   }, []);
 
   const handleSystemNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = event.target.value;
-    setSystemName(newName);
-    localStorage.setItem("system_name", newName);
-    
-    // עדכון הכותרת בדפדפן
-    document.title = newName + " - ניהול מרצים ומנחי סדנאות";
+    setTempSystemName(event.target.value);
+  };
+
+  const handleSave = () => {
+    setSystemName(tempSystemName);
+    localStorage.setItem("system_name", tempSystemName);
+    document.title = tempSystemName + " - ניהול מרצים ומנחי סדנאות";
     
     toast({
       title: "שם המערכת עודכן",
-      description: `שם המערכת שונה ל-${newName}`,
+      description: `שם המערכת שונה ל-${tempSystemName}`,
     });
+
+    // Refresh the page to update all components
+    window.location.reload();
   };
 
   return (
@@ -40,12 +46,17 @@ export function SystemSettingsSection() {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="system-name">שם המערכת</Label>
-          <Input
-            id="system-name"
-            value={systemName}
-            onChange={handleSystemNameChange}
-            placeholder="הכנס את שם המערכת"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="system-name"
+              value={tempSystemName}
+              onChange={handleSystemNameChange}
+              placeholder="הכנס את שם המערכת"
+            />
+            <Button onClick={handleSave}>
+              שמור
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
