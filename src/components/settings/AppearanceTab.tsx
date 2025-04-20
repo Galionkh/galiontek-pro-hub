@@ -1,11 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Sun, Moon, Palette } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { SystemSettingsSection } from "./SystemSettingsSection";
 
 export function AppearanceTab() {
   const [darkMode, setDarkMode] = useState(false);
@@ -14,44 +14,34 @@ export function AppearanceTab() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for saved theme preference or system preference
     const savedTheme = localStorage.getItem('theme');
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     setDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
     
-    // Get saved color scheme
     const savedColorScheme = localStorage.getItem('colorScheme') || 'purple';
     setColorScheme(savedColorScheme);
     
-    // Get saved font size
     const savedFontSize = localStorage.getItem('fontSize');
     if (savedFontSize) {
       setFontSize(parseInt(savedFontSize));
     }
     
-    // Apply the theme on initial load
     if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
 
-    // Apply color scheme
     applyColorScheme(savedColorScheme || 'purple');
     
-    // Apply font size
     applyFontSize(savedFontSize ? parseInt(savedFontSize) : 2);
   }, []);
 
-  // Function to apply color scheme to document
   const applyColorScheme = (scheme: string) => {
-    // Remove any existing color scheme classes
     document.documentElement.classList.remove('theme-purple', 'theme-blue', 'theme-green', 'theme-orange');
-    // Add new color scheme class
     document.documentElement.classList.add(`theme-${scheme}`);
     
-    // Update CSS variables based on the color scheme
     let primary, secondary;
     switch(scheme) {
       case 'purple':
@@ -75,27 +65,24 @@ export function AppearanceTab() {
         secondary = '260 100% 97%';
     }
 
-    // Apply CSS variables for both light and dark mode
     const root = document.documentElement;
     root.style.setProperty('--primary', primary);
     root.style.setProperty('--secondary', secondary);
   };
 
-  // Function to apply font size
   const applyFontSize = (size: number) => {
     document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
     document.documentElement.classList.add(getFontSizeClass(size));
     
-    // Update font size on the body
     switch(size) {
       case 1:
-        document.body.style.fontSize = '0.875rem'; // text-sm
+        document.body.style.fontSize = '0.875rem';
         break;
       case 2:
-        document.body.style.fontSize = '1rem'; // text-base
+        document.body.style.fontSize = '1rem';
         break;
       case 3:
-        document.body.style.fontSize = '1.125rem'; // text-lg
+        document.body.style.fontSize = '1.125rem';
         break;
       default:
         document.body.style.fontSize = '1rem';
@@ -123,7 +110,6 @@ export function AppearanceTab() {
     setColorScheme(scheme);
     localStorage.setItem('colorScheme', scheme);
     
-    // Apply color scheme
     applyColorScheme(scheme);
     
     toast({
@@ -137,7 +123,6 @@ export function AppearanceTab() {
     setFontSize(newSize);
     localStorage.setItem('fontSize', newSize.toString());
     
-    // Apply font size
     applyFontSize(newSize);
     
     toast({
@@ -175,74 +160,78 @@ export function AppearanceTab() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>ערכת צבעים</CardTitle>
-        <CardDescription>התאם את התצוגה לפי העדפותיך</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              {darkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              <p className="font-medium">מצב בהיר / כהה</p>
+    <div className="space-y-6">
+      <SystemSettingsSection />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>ערכת צבעים</CardTitle>
+          <CardDescription>התאם את התצוגה לפי העדפותיך</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                {darkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                <p className="font-medium">מצב בהיר / כהה</p>
+              </div>
+              <p className="text-sm text-muted-foreground">החלף בין מצב בהיר למצב כהה</p>
             </div>
-            <p className="text-sm text-muted-foreground">החלף בין מצב בהיר למצב כהה</p>
+            <div className="flex items-center gap-2">
+              <Sun className="h-4 w-4 text-muted-foreground" />
+              <Switch id="theme-mode" checked={darkMode} onCheckedChange={toggleTheme} />
+              <Moon className="h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Sun className="h-4 w-4 text-muted-foreground" />
-            <Switch id="theme-mode" checked={darkMode} onCheckedChange={toggleTheme} />
-            <Moon className="h-4 w-4 text-muted-foreground" />
+          
+          <div className="space-y-2">
+            <Label htmlFor="color-scheme">ערכת צבעים</Label>
+            <div className="flex flex-row gap-2 mt-2">
+              <button 
+                onClick={() => handleColorSchemeChange('purple')}
+                className={`w-16 h-10 rounded-md bg-purple-500 text-white ${colorScheme === 'purple' ? 'ring-2 ring-primary' : ''}`}
+              >
+                סגול
+              </button>
+              <button 
+                onClick={() => handleColorSchemeChange('blue')}
+                className={`w-16 h-10 rounded-md bg-blue-500 text-white ${colorScheme === 'blue' ? 'ring-2 ring-primary' : ''}`}
+              >
+                כחול
+              </button>
+              <button 
+                onClick={() => handleColorSchemeChange('green')}
+                className={`w-16 h-10 rounded-md bg-green-500 text-white ${colorScheme === 'green' ? 'ring-2 ring-primary' : ''}`}
+              >
+                ירוק
+              </button>
+              <button 
+                onClick={() => handleColorSchemeChange('orange')}
+                className={`w-16 h-10 rounded-md bg-orange-500 text-white ${colorScheme === 'orange' ? 'ring-2 ring-primary' : ''}`}
+              >
+                כתום
+              </button>
+            </div>
           </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="color-scheme">ערכת צבעים</Label>
-          <div className="flex flex-row gap-2 mt-2">
-            <button 
-              onClick={() => handleColorSchemeChange('purple')}
-              className={`w-16 h-10 rounded-md bg-purple-500 text-white ${colorScheme === 'purple' ? 'ring-2 ring-primary' : ''}`}
-            >
-              סגול
-            </button>
-            <button 
-              onClick={() => handleColorSchemeChange('blue')}
-              className={`w-16 h-10 rounded-md bg-blue-500 text-white ${colorScheme === 'blue' ? 'ring-2 ring-primary' : ''}`}
-            >
-              כחול
-            </button>
-            <button 
-              onClick={() => handleColorSchemeChange('green')}
-              className={`w-16 h-10 rounded-md bg-green-500 text-white ${colorScheme === 'green' ? 'ring-2 ring-primary' : ''}`}
-            >
-              ירוק
-            </button>
-            <button 
-              onClick={() => handleColorSchemeChange('orange')}
-              className={`w-16 h-10 rounded-md bg-orange-500 text-white ${colorScheme === 'orange' ? 'ring-2 ring-primary' : ''}`}
-            >
-              כתום
-            </button>
+          
+          <div className="space-y-2">
+            <Label htmlFor="font-size">גודל טקסט</Label>
+            <div className="flex items-center gap-4">
+              <span className="text-sm">קטן</span>
+              <Slider
+                id="font-size"
+                min={1}
+                max={3}
+                step={1}
+                value={[fontSize]}
+                onValueChange={handleFontSizeChange}
+                className="flex-1"
+              />
+              <span className="text-sm">גדול</span>
+            </div>
           </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="font-size">גודל טקסט</Label>
-          <div className="flex items-center gap-4">
-            <span className="text-sm">קטן</span>
-            <Slider
-              id="font-size"
-              min={1}
-              max={3}
-              step={1}
-              value={[fontSize]}
-              onValueChange={handleFontSizeChange}
-              className="flex-1"
-            />
-            <span className="text-sm">גדול</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
