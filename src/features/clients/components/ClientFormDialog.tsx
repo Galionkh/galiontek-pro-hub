@@ -28,16 +28,16 @@ export function ClientFormDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {triggerButton && <DialogTrigger asChild>{triggerButton}</DialogTrigger>}
-      <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
+      <DialogContent className="max-w-2xl h-[85vh] flex flex-col" dir="rtl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="flex-grow pr-4">
-          <div className="space-y-4 pr-2">
+        <ScrollArea className="flex-grow pl-4">
+          <div className="space-y-4 pl-2">
             {children}
           </div>
         </ScrollArea>
-        <DialogFooter>
+        <DialogFooter className="sm:justify-start">
           <Button onClick={onSubmit} disabled={isLoading}>
             {isLoading ? "שומר..." : submitLabel}
           </Button>
