@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Task } from "@/hooks/tasks";
+import { useUpdateTask } from "@/hooks/tasks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -21,6 +22,7 @@ interface TaskCalendarViewProps {
 
 export function TaskCalendarView({ tasks }: TaskCalendarViewProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const updateTask = useUpdateTask();
   
   // הכנת מערך תאריכים עם משימות
   const datesWithTasks = tasks.reduce((acc, task) => {
@@ -38,6 +40,20 @@ export function TaskCalendarView({ tasks }: TaskCalendarViewProps) {
   // משימות של היום שנבחר
   const selectedDateStr = selectedDate?.toISOString().split('T')[0];
   const tasksOnSelectedDate = selectedDateStr ? datesWithTasks[selectedDateStr] || [] : [];
+  
+  const handleTaskClick = (task: Task) => {
+    // Toggle the task category
+    let newCategory = task.category === "urgent" 
+      ? "later" 
+      : task.category === "later" 
+        ? "completed" 
+        : "urgent";
+
+    updateTask.mutate({
+      ...task,
+      category: newCategory
+    });
+  };
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -97,13 +113,17 @@ export function TaskCalendarView({ tasks }: TaskCalendarViewProps) {
               {tasksOnSelectedDate.map(task => (
                 <li 
                   key={task.id}
-                  className="p-3 rounded-md border hover:bg-muted/50 transition-colors relative group"
+                  className="p-3 rounded-md border hover:bg-muted/50 transition-colors relative group cursor-pointer"
+                  onClick={() => handleTaskClick(task)}
                 >
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-medium">{task.title}</span>
                     <div className="flex items-center gap-2">
                       <PriorityBadge priority={task.priority} />
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div 
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => e.stopPropagation()} // Prevent triggering parent onClick
+                      >
                         <TaskActions task={task} />
                       </div>
                     </div>

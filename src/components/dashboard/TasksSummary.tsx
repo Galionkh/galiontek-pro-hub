@@ -2,14 +2,30 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useQueryTasks } from "@/hooks/tasks";
+import { useQueryTasks, useUpdateTask } from "@/hooks/tasks";
 import { TaskActions } from "@/components/tasks/TaskActions";
+import { Task } from "@/hooks/tasks";
 
 export default function TasksSummary() {
   const { tasks, groupedTasks } = useQueryTasks();
+  const updateTask = useUpdateTask();
   
   // Filter tasks to only include non-completed ones (urgent and later)
   const activeTasks = [...groupedTasks.urgent, ...groupedTasks.later];
+
+  const handleTaskClick = (task: Task) => {
+    // Toggle the task category
+    let newCategory = task.category === "urgent" 
+      ? "later" 
+      : task.category === "later" 
+        ? "completed" 
+        : "urgent";
+
+    updateTask.mutate({
+      ...task,
+      category: newCategory
+    });
+  };
 
   return (
     <Card className="card-hover">
@@ -31,7 +47,8 @@ export default function TasksSummary() {
             {activeTasks.map(task => (
               <li 
                 key={task.id}
-                className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors group relative"
+                className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors group relative cursor-pointer"
+                onClick={() => handleTaskClick(task)}
               >
                 {task.category === "urgent" ? (
                   <AlertCircle className="h-5 w-5 text-destructive mt-1 flex-shrink-0" />
@@ -46,7 +63,10 @@ export default function TasksSummary() {
                     )}>
                       {task.title}
                     </p>
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div 
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()} // Prevent triggering parent onClick
+                    >
                       <TaskActions task={task} />
                     </div>
                   </div>
