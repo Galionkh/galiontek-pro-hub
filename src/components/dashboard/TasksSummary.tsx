@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryTasks } from "@/hooks/tasks";
+import { TaskActions } from "@/components/tasks/TaskActions";
 
 export default function TasksSummary() {
   const { tasks, groupedTasks } = useQueryTasks();
@@ -30,7 +31,7 @@ export default function TasksSummary() {
             {activeTasks.map(task => (
               <li 
                 key={task.id}
-                className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors group relative"
               >
                 {task.category === "urgent" ? (
                   <AlertCircle className="h-5 w-5 text-destructive mt-1 flex-shrink-0" />
@@ -38,12 +39,17 @@ export default function TasksSummary() {
                   <Clock className="h-5 w-5 text-accent mt-1 flex-shrink-0" />
                 )}
                 <div className="flex-1">
-                  <p className={cn(
-                    "font-medium",
-                    task.category === "urgent" && "text-destructive"
-                  )}>
-                    {task.title}
-                  </p>
+                  <div className="flex items-start justify-between">
+                    <p className={cn(
+                      "font-medium",
+                      task.category === "urgent" && "text-destructive"
+                    )}>
+                      {task.title}
+                    </p>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <TaskActions task={task} />
+                    </div>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     תאריך יעד: {new Date(task.dueDate).toLocaleDateString('he-IL')}
                   </p>

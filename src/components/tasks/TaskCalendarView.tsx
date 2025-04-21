@@ -13,6 +13,7 @@ import {
   ArrowDown, 
   CalendarIcon 
 } from "lucide-react";
+import { TaskActions } from "./TaskActions";
 
 interface TaskCalendarViewProps {
   tasks: Task[];
@@ -96,11 +97,16 @@ export function TaskCalendarView({ tasks }: TaskCalendarViewProps) {
               {tasksOnSelectedDate.map(task => (
                 <li 
                   key={task.id}
-                  className="p-3 rounded-md border hover:bg-muted/50 transition-colors"
+                  className="p-3 rounded-md border hover:bg-muted/50 transition-colors relative group"
                 >
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-medium">{task.title}</span>
-                    <PriorityBadge priority={task.priority} />
+                    <div className="flex items-center gap-2">
+                      <PriorityBadge priority={task.priority} />
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <TaskActions task={task} />
+                      </div>
+                    </div>
                   </div>
                   {task.description && (
                     <p className="text-sm text-muted-foreground mb-1">{task.description}</p>

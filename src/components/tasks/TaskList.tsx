@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { Task, TaskCategory, TaskPriority } from "@/hooks/tasks";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
+import { TaskActions } from "./TaskActions";
 
 interface TaskListProps {
   tasks: Task[];
@@ -89,7 +90,7 @@ export function TaskList({ tasks, category }: TaskListProps) {
             <li 
               key={task.id}
               className={cn(
-                "p-3 rounded-md border bg-card hover:bg-accent/5 transition-colors",
+                "p-3 rounded-md border bg-card hover:bg-accent/5 transition-colors relative group",
               )}
             >
               <div className="flex justify-between items-start mb-2">
@@ -99,7 +100,12 @@ export function TaskList({ tasks, category }: TaskListProps) {
                 )}>
                   {task.title}
                 </div>
-                {getPriorityBadge(task.priority)}
+                <div className="flex items-center gap-2">
+                  {getPriorityBadge(task.priority)}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <TaskActions task={task} />
+                  </div>
+                </div>
               </div>
               
               {task.description && (
