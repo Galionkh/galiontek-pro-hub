@@ -10,7 +10,9 @@ interface EducationalClientFormProps {
     address: string;
     principal_name: string;
     principal_email: string;
+    principal_phone: string; // Added for principal phone
     contact: string;
+    contact_phone: string;  // Added for contact phone
     email: string;
     phone: string;
   };
@@ -83,6 +85,13 @@ export function EducationalClientForm({ formData, onChange }: EducationalClientF
         value={formData.principal_email}
         onChange={onChange}
       />
+      <FormField
+        id="principal_phone"
+        name="principal_phone"
+        label="טלפון"
+        value={formData.principal_phone || ""}
+        onChange={onChange}
+      />
       
       <h3 className="font-semibold mt-6 mb-2">פרטי איש קשר (ניהול/ניהולנית)</h3>
       <FormField
@@ -98,6 +107,13 @@ export function EducationalClientForm({ formData, onChange }: EducationalClientF
         label="דוא״ל"
         type="email"
         value={formData.email}
+        onChange={onChange}
+      />
+      <FormField
+        id="contact_phone"
+        name="contact_phone"
+        label="טלפון"
+        value={formData.contact_phone || ""}
         onChange={onChange}
       />
     </div>
