@@ -4,7 +4,7 @@ import { CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryTasks, useUpdateTask } from "@/hooks/tasks";
 import { TaskActions } from "@/components/tasks/TaskActions";
-import { Task } from "@/hooks/tasks";
+import { Task, TaskCategory } from "@/hooks/tasks";
 
 export default function TasksSummary() {
   const { tasks, groupedTasks } = useQueryTasks();
@@ -15,7 +15,7 @@ export default function TasksSummary() {
 
   const handleTaskClick = (task: Task) => {
     // Toggle the task category
-    let newCategory = task.category === "urgent" 
+    let newCategory: TaskCategory = task.category === "urgent" 
       ? "later" 
       : task.category === "later" 
         ? "completed" 

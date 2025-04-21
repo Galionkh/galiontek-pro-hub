@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { Task } from "@/hooks/tasks";
+import { Task, TaskCategory } from "@/hooks/tasks";
 import { useUpdateTask } from "@/hooks/tasks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -43,7 +43,7 @@ export function TaskCalendarView({ tasks }: TaskCalendarViewProps) {
   
   const handleTaskClick = (task: Task) => {
     // Toggle the task category
-    let newCategory = task.category === "urgent" 
+    let newCategory: TaskCategory = task.category === "urgent" 
       ? "later" 
       : task.category === "later" 
         ? "completed" 
