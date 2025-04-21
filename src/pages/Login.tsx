@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, LogIn, AlertCircle, WifiOff } from "lucide-react";
+import { Loader2, LogIn, AlertCircle, WifiOff, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -21,29 +21,41 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectionError, setConnectionError] = useState(false);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
 
   // Check connection to Supabase
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        // Simple ping to check connection
-        const { error } = await supabase.from('clients').select('id').limit(1);
-        if (error && (error.message.includes('Failed to fetch') || error.code === 'PGRST301')) {
-          console.error("Connection error:", error);
-          setConnectionError(true);
-        } else {
-          setConnectionError(false);
-        }
-      } catch (error) {
-        console.error("Connection check error:", error);
+  const checkConnection = async () => {
+    setIsCheckingConnection(true);
+    try {
+      // Simple ping to check connection
+      const { error } = await supabase.from('clients').select('id').limit(1);
+      if (error && (error.message.includes('Failed to fetch') || error.code === 'PGRST301')) {
+        console.error("Connection error:", error);
         setConnectionError(true);
+      } else {
+        setConnectionError(false);
+        setError(null); // Clear any previous errors if connection is restored
       }
-    };
-    
+    } catch (error) {
+      console.error("Connection check error:", error);
+      setConnectionError(true);
+    } finally {
+      setIsCheckingConnection(false);
+    }
+  };
+
+  useEffect(() => {
     checkConnection();
+    
+    // Set up a periodic check
+    const interval = setInterval(() => {
+      checkConnection();
+    }, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Redirect if already logged in
@@ -99,6 +111,10 @@ export default function Login() {
     }
   };
 
+  const handleRetryConnection = () => {
+    checkConnection();
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir="rtl">
       <Card className="w-full max-w-md">
@@ -112,8 +128,21 @@ export default function Login() {
           {connectionError && (
             <Alert variant="destructive">
               <WifiOff className="h-4 w-4" />
-              <AlertDescription>
-                אין חיבור למסד הנתונים. בדוק את חיבור האינטרנט שלך או נסה שוב מאוחר יותר.
+              <AlertDescription className="flex items-center justify-between">
+                <span>אין חיבור למסד הנתונים. בדוק את חיבור האינטרנט שלך או נסה שוב מאוחר יותר.</span>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleRetryConnection}
+                  disabled={isCheckingConnection}
+                  className="ml-2"
+                >
+                  {isCheckingConnection ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCcw className="h-4 w-4" />
+                  )}
+                </Button>
               </AlertDescription>
             </Alert>
           )}
@@ -164,7 +193,7 @@ export default function Login() {
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={isLoading || connectionError}
+                disabled={isLoading || connectionError || isCheckingConnection}
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin ml-2" />
