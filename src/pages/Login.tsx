@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, LogIn, AlertCircle } from "lucide-react";
+import { Loader2, LogIn, AlertCircle, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -20,9 +20,31 @@ interface LoginFormValues {
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [connectionError, setConnectionError] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Check connection to Supabase
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        // Simple ping to check connection
+        const { error } = await supabase.from('clients').select('id').limit(1);
+        if (error && (error.message.includes('Failed to fetch') || error.code === 'PGRST301')) {
+          console.error("Connection error:", error);
+          setConnectionError(true);
+        } else {
+          setConnectionError(false);
+        }
+      } catch (error) {
+        console.error("Connection check error:", error);
+        setConnectionError(true);
+      }
+    };
+    
+    checkConnection();
+  }, []);
 
   // Redirect if already logged in
   if (user) {
@@ -39,6 +61,15 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
+      if (connectionError) {
+        toast({
+          title: "שגיאת חיבור",
+          description: "אין חיבור למסד הנתונים, אנא נסה שוב מאוחר יותר",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
@@ -69,7 +100,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir="rtl">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">התחברות לפלטפורמה</CardTitle>
@@ -78,7 +109,16 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {error && (
+          {connectionError && (
+            <Alert variant="destructive">
+              <WifiOff className="h-4 w-4" />
+              <AlertDescription>
+                אין חיבור למסד הנתונים. בדוק את חיבור האינטרנט שלך או נסה שוב מאוחר יותר.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {error && !connectionError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
@@ -124,12 +164,12 @@ export default function Login() {
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={isLoading}
+                disabled={isLoading || connectionError}
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
                 ) : (
-                  <LogIn className="h-4 w-4 mr-2" />
+                  <LogIn className="h-4 w-4 ml-2" />
                 )}
                 התחבר
               </Button>
