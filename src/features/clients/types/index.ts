@@ -16,6 +16,8 @@ export type Client = {
   address?: string;
   principal_name?: string;
   principal_email?: string;
+  principal_phone?: string; // Added for principal phone
+  contact_phone?: string;   // Added for contact phone
   business_field?: string;
 };
 

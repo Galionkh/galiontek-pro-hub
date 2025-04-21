@@ -34,6 +34,8 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
     address: client.address || "",
     principal_name: client.principal_name || "",
     principal_email: client.principal_email || "",
+    principal_phone: client.principal_phone || "", // Added for principal phone
+    contact_phone: client.contact_phone || "",     // Added for contact phone 
     business_field: client.business_field || "",
     phone: client.phone || "",
   });
@@ -52,6 +54,8 @@ export function EditClientForm({ client, onClientUpdated }: EditClientFormProps)
       address: client.address || "",
       principal_name: client.principal_name || "",
       principal_email: client.principal_email || "",
+      principal_phone: client.principal_phone || "", // Added for principal phone
+      contact_phone: client.contact_phone || "",     // Added for contact phone
       business_field: client.business_field || "",
       phone: client.phone || "",
     });
