@@ -8,6 +8,7 @@ import {
   CheckSquare,
   Settings,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,

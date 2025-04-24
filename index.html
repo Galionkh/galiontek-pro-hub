@@ -19,10 +19,9 @@
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
     <script>
-      // Load system preferences from Supabase
-      document.addEventListener('DOMContentLoaded', async () => {
+      // Load system preferences from localStorage for fast initial loading
+      document.addEventListener('DOMContentLoaded', () => {
         try {
-          // Try to get user preferences from local storage first for fast loading
           const storedSystemName = localStorage.getItem('systemName');
           const storedLogoUrl = localStorage.getItem('logoUrl');
           
@@ -36,38 +35,9 @@
               link.href = storedLogoUrl;
             }
           }
-          
-          // Then try to get from Supabase Edge Function with cache busting
-          const timestamp = new Date().getTime();
-          const apiUrl = `https://vlgfagipxxpvnrcghyya.supabase.co/functions/v1/system-preferences?t=${timestamp}`;
-          const response = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-              'Cache-Control': 'no-cache',
-              'Pragma': 'no-cache'
-            }
-          });
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          
-          if (data.system_name) {
-            document.title = data.system_name;
-            localStorage.setItem('systemName', data.system_name);
-          }
-          
-          if (data.logo_url) {
-            const link = document.querySelector("link[rel~='icon']");
-            if (link) {
-              link.href = data.logo_url;
-            }
-            localStorage.setItem('logoUrl', data.logo_url);
-          }
         } catch (error) {
-          console.error('Error loading system preferences:', error);
+          console.error('Error loading system preferences from localStorage:', error);
+          // Fall back to default values if there's an error
         }
       });
     </script>

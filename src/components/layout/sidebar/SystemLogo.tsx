@@ -9,16 +9,31 @@ interface SystemLogoProps {
 }
 
 export const SystemLogo = ({ systemName, logoUrl, loading }: SystemLogoProps) => {
+  const [imageError, setImageError] = useState(false);
+
   if (loading) {
     return (
       <div className="h-8 w-8 rounded-full bg-primary-foreground/20 animate-pulse" />
     );
   }
 
+  // Handle empty or invalid logo URL
+  const handleImageError = () => {
+    setImageError(true);
+    console.warn("Failed to load logo image");
+  };
+
   return (
     <Avatar className="h-8 w-8">
-      <AvatarImage src={logoUrl} alt="System Logo" />
-      <AvatarFallback>{systemName.charAt(0)}</AvatarFallback>
+      {logoUrl && !imageError ? (
+        <AvatarImage 
+          src={logoUrl} 
+          alt="System Logo" 
+          onError={handleImageError}
+        />
+      ) : (
+        <AvatarFallback>{systemName.charAt(0).toUpperCase()}</AvatarFallback>
+      )}
     </Avatar>
   );
 };

@@ -20,7 +20,7 @@ export const SidebarHeader = ({ systemName, logoUrl, loadingPreferences }: Sideb
           {loadingPreferences ? (
             <div className="h-7 w-32 bg-sidebar-foreground/20 animate-pulse rounded" />
           ) : (
-            systemName
+            systemName || "GalionTek"
           )}
         </h1>
       </div>
