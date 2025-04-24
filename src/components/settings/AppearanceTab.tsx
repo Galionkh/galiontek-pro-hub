@@ -49,6 +49,20 @@ export function AppearanceTab() {
 
     // Load system preferences
     loadSystemPreferences();
+    
+    // Subscribe to system updates channel
+    const channel = supabase.channel('system-updates')
+      .on('broadcast', { event: 'system_name_update' }, (payload) => {
+        setSystemName(payload.payload.system_name);
+      })
+      .on('broadcast', { event: 'logo_update' }, (payload) => {
+        setLogoUrl(payload.payload.logo_url || '');
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadSystemPreferences = async () => {
@@ -66,8 +80,20 @@ export function AppearanceTab() {
       if (error) throw error;
 
       if (data) {
-        if (data.system_name) setSystemName(data.system_name);
-        if (data.logo_url) setLogoUrl(data.logo_url);
+        if (data.system_name) {
+          setSystemName(data.system_name);
+          // Update document title
+          document.title = data.system_name;
+        }
+        
+        if (data.logo_url) {
+          setLogoUrl(data.logo_url);
+          // Update favicon
+          const link = document.querySelector("link[rel~='icon']");
+          if (link) {
+            link.setAttribute('href', data.logo_url);
+          }
+        }
       }
     } catch (error) {
       console.error("Error loading system preferences:", error);

@@ -22,7 +22,7 @@
       // Load system preferences from Supabase
       document.addEventListener('DOMContentLoaded', async () => {
         try {
-          // Try to get user preferences from local storage first
+          // Try to get user preferences from local storage first for fast loading
           const storedSystemName = localStorage.getItem('systemName');
           const storedLogoUrl = localStorage.getItem('logoUrl');
           
@@ -37,9 +37,16 @@
             }
           }
           
-          // Then try to get from Supabase Edge Function
-          const apiUrl = 'https://vlgfagipxxpvnrcghyya.supabase.co/functions/v1/system-preferences';
-          const response = await fetch(apiUrl);
+          // Then try to get from Supabase Edge Function with cache busting
+          const timestamp = new Date().getTime();
+          const apiUrl = `https://vlgfagipxxpvnrcghyya.supabase.co/functions/v1/system-preferences?t=${timestamp}`;
+          const response = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          });
           
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

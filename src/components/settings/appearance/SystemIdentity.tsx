@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Save, Image } from "lucide-react";
+import { Save, Image, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,7 @@ export function SystemIdentity({
 }: SystemIdentityProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isRemovingLogo, setIsRemovingLogo] = useState(false);
   const { toast } = useToast();
 
   const handleSystemNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,6 +31,14 @@ export function SystemIdentity({
   };
 
   const saveSystemName = async () => {
+    if (!systemName.trim()) {
+      toast({
+        title: "שם המערכת לא יכול להיות ריק",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsSaving(true);
       const { data: { session } } = await supabase.auth.getSession();
@@ -39,7 +48,7 @@ export function SystemIdentity({
         .from('user_preferences')
         .upsert({
           user_id: session.user.id,
-          system_name: systemName,
+          system_name: systemName.trim(),
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id'
@@ -47,10 +56,26 @@ export function SystemIdentity({
 
       if (error) throw error;
       
+      // Update document title
+      document.title = systemName.trim();
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('systemName', systemName.trim());
+      
       toast({
         title: "שם המערכת נשמר בהצלחה",
-        description: `שם המערכת עודכן ל-${systemName}`,
+        description: `שם המערכת עודכן ל-${systemName.trim()}`,
       });
+
+      // Broadcast change to all other components
+      const channel = supabase.channel('system-updates');
+      await channel.send({
+        type: 'broadcast',
+        event: 'system_name_update',
+        payload: { system_name: systemName.trim() },
+      });
+      supabase.removeChannel(channel);
+      
     } catch (error) {
       console.error("Error saving system name:", error);
       toast({
@@ -72,31 +97,43 @@ export function SystemIdentity({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
+      // Delete previous logo if exists
+      if (logoUrl) {
+        try {
+          // Extract file path from the URL
+          const urlParts = logoUrl.split('/');
+          const bucketName = 'logos';
+          const fileName = urlParts[urlParts.length - 1];
+          
+          await supabase.storage
+            .from(bucketName)
+            .remove([fileName]);
+            
+          console.log("Previous logo deleted successfully");
+        } catch (deleteError) {
+          console.error("Error deleting previous logo:", deleteError);
+          // Continue with upload even if delete fails
+        }
+      }
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
 
-      // Check if logos bucket exists, create if it doesn't
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const logosBucket = buckets?.find(bucket => bucket.name === 'logos');
-      
-      if (!logosBucket) {
-        console.log("Creating logos bucket");
-        // This will fail for regular users without admin rights
-        // We assume bucket was created by admin
-      }
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      // Upload new logo
+      const { error: uploadError } = await supabase.storage
         .from('logos')
         .upload(fileName, file, {
-          cacheControl: '3600',
+          cacheControl: '0',  // No cache to ensure fresh content
           upsert: true
         });
 
       if (uploadError) throw uploadError;
 
+      // Get public URL with timestamp to prevent caching
+      const timestamp = new Date().getTime();
       const { data: { publicUrl } } = supabase.storage
         .from('logos')
-        .getPublicUrl(fileName);
+        .getPublicUrl(`${fileName}?t=${timestamp}`);
 
       onLogoChange(publicUrl);
 
@@ -113,6 +150,24 @@ export function SystemIdentity({
 
       if (updateError) throw updateError;
       
+      // Update favicon
+      const link = document.querySelector("link[rel~='icon']");
+      if (link) {
+        link.setAttribute('href', publicUrl);
+      }
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('logoUrl', publicUrl);
+
+      // Broadcast change to all other components
+      const channel = supabase.channel('system-updates');
+      await channel.send({
+        type: 'broadcast',
+        event: 'logo_update',
+        payload: { logo_url: publicUrl },
+      });
+      supabase.removeChannel(channel);
+      
       toast({
         title: "הלוגו הועלה בהצלחה",
         description: "הלוגו הועלה ונשמר בהצלחה",
@@ -126,6 +181,77 @@ export function SystemIdentity({
       });
     } finally {
       setIsUploadingLogo(false);
+      // Reset file input
+      const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+    }
+  };
+
+  const removeLogo = async () => {
+    if (!logoUrl) return;
+    
+    try {
+      setIsRemovingLogo(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      // Extract file path from the URL
+      const urlParts = logoUrl.split('/');
+      const bucketName = 'logos';
+      const fileName = urlParts[urlParts.length - 1].split('?')[0]; // Remove query params
+      
+      // Delete the file from storage
+      await supabase.storage
+        .from(bucketName)
+        .remove([fileName]);
+      
+      // Update user preferences to remove logo URL
+      const { error: updateError } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: session.user.id,
+          logo_url: null,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (updateError) throw updateError;
+      
+      // Update local state
+      onLogoChange('');
+      
+      // Remove from localStorage
+      localStorage.removeItem('logoUrl');
+      
+      // Reset favicon to default
+      const link = document.querySelector("link[rel~='icon']");
+      if (link) {
+        link.setAttribute('href', '/favicon.svg');
+      }
+      
+      // Broadcast change to all other components
+      const channel = supabase.channel('system-updates');
+      await channel.send({
+        type: 'broadcast',
+        event: 'logo_update',
+        payload: { logo_url: null },
+      });
+      supabase.removeChannel(channel);
+      
+      toast({
+        title: "הלוגו הוסר בהצלחה",
+        description: "הלוגו הוסר מהמערכת",
+      });
+    } catch (error) {
+      console.error("Error removing logo:", error);
+      toast({
+        title: "שגיאה בהסרת הלוגו",
+        description: "אירעה שגיאה בעת הסרת הלוגו. אנא נסה שנית.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRemovingLogo(false);
     }
   };
 
@@ -142,7 +268,7 @@ export function SystemIdentity({
             className="flex-1"
           />
           <Button onClick={saveSystemName} disabled={isSaving}>
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="h-4 w-4 ml-2" />
             {isSaving ? "שומר..." : "שמור"}
           </Button>
         </div>
@@ -153,11 +279,11 @@ export function SystemIdentity({
         <div className="flex items-center gap-4">
           {logoUrl && (
             <Avatar className="h-16 w-16">
-              <AvatarImage src={logoUrl} alt="System Logo" />
+              <AvatarImage src={`${logoUrl}`} alt="System Logo" />
               <AvatarFallback>{systemName.charAt(0) || "G"}</AvatarFallback>
             </Avatar>
           )}
-          <div className="flex-1">
+          <div className="flex-1 space-y-2">
             <Input
               type="file"
               accept="image/*"
@@ -165,13 +291,30 @@ export function SystemIdentity({
               className="hidden"
               id="logo-upload"
             />
-            <Label
-              htmlFor="logo-upload"
-              className="flex items-center gap-2 cursor-pointer border rounded-md p-2 hover:bg-accent"
-            >
-              <Image className="h-4 w-4" />
-              {isUploadingLogo ? "מעלה..." : "העלה לוגו חדש"}
-            </Label>
+            <div className="flex flex-wrap gap-2">
+              <Label
+                htmlFor="logo-upload"
+                className="flex items-center gap-2 cursor-pointer border rounded-md p-2 hover:bg-accent"
+              >
+                <Image className="h-4 w-4" />
+                {isUploadingLogo ? "מעלה..." : "העלה לוגו חדש"}
+              </Label>
+              
+              {logoUrl && (
+                <Button 
+                  variant="outline" 
+                  type="button" 
+                  size="sm"
+                  onClick={removeLogo}
+                  disabled={isRemovingLogo}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {isRemovingLogo ? "מוחק..." : "מחק לוגו"}
+                </Button>
+              )}
+            </div>
+            
             {!logoUrl && (
               <p className="text-sm text-muted-foreground mt-2">
                 טרם הועלה לוגו למערכת

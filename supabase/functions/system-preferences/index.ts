@@ -21,25 +21,39 @@ serve(async (req) => {
     )
 
     // Get the latest system preferences
-    // We get the first row, assuming it has the most common system name and logo
     const { data, error } = await supabaseClient
       .from('user_preferences')
-      .select('system_name, logo_url')
+      .select('system_name, logo_url, updated_at')
       .order('updated_at', { ascending: false })
       .limit(1)
       .single()
 
-    if (error) throw error
+    if (error && error.code !== 'PGRST116') {
+      throw error
+    }
+
+    // Add cache-busting query parameter to logo URL if exists
+    let logoUrl = null
+    if (data?.logo_url) {
+      const timestamp = new Date().getTime()
+      const urlObj = new URL(data.logo_url)
+      urlObj.searchParams.set('t', timestamp.toString())
+      logoUrl = urlObj.toString()
+    }
 
     return new Response(
       JSON.stringify({
         system_name: data?.system_name || 'GalionTek',
-        logo_url: data?.logo_url || null,
+        logo_url: logoUrl,
+        timestamp: new Date().toISOString(),
       }),
       {
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
         status: 200,
       },

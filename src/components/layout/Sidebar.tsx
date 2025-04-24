@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,22 @@ export default function Sidebar() {
     const loadSystemPreferences = async () => {
       try {
         setLoadingPreferences(true);
+        
+        // First check localStorage for faster initial load
+        const storedName = localStorage.getItem('systemName');
+        const storedLogo = localStorage.getItem('logoUrl');
+        
+        if (storedName) {
+          setSystemName(storedName);
+          document.title = storedName;
+        }
+        
+        if (storedLogo) {
+          setLogoUrl(storedLogo);
+          updateFavicon(storedLogo);
+        }
+        
+        // Then check Supabase for up-to-date data
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           setLoadingPreferences(false);
@@ -68,13 +85,18 @@ export default function Sidebar() {
           if (data.system_name) {
             setSystemName(data.system_name);
             document.title = data.system_name;
+            localStorage.setItem('systemName', data.system_name);
           }
+          
           if (data.logo_url) {
             setLogoUrl(data.logo_url);
-            const link = document.querySelector("link[rel~='icon']");
-            if (link) {
-              link.setAttribute('href', data.logo_url);
-            }
+            updateFavicon(data.logo_url);
+            localStorage.setItem('logoUrl', data.logo_url);
+          } else if (data.logo_url === null && storedLogo) {
+            // If logo was removed in database but still in localStorage
+            setLogoUrl('');
+            localStorage.removeItem('logoUrl');
+            updateFavicon('/favicon.svg');
           }
         }
         setLoadingPreferences(false);
@@ -84,12 +106,21 @@ export default function Sidebar() {
       }
     };
     
+    const updateFavicon = (url: string) => {
+      const link = document.querySelector("link[rel~='icon']");
+      if (link) {
+        link.setAttribute('href', url);
+      }
+    };
+    
     loadSystemPreferences();
 
+    // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(() => {
       loadSystemPreferences();
     });
 
+    // Listen for preference changes through database
     const prefsChannel = supabase
       .channel('user_preferences_changes')
       .on('postgres_changes', 
@@ -103,10 +134,33 @@ export default function Sidebar() {
         }
       )
       .subscribe();
+      
+    // Listen for broadcast updates
+    const broadcastChannel = supabase.channel('system-updates')
+      .on('broadcast', { event: 'system_name_update' }, (payload) => {
+        const newSystemName = payload.payload.system_name;
+        setSystemName(newSystemName);
+        document.title = newSystemName;
+        localStorage.setItem('systemName', newSystemName);
+      })
+      .on('broadcast', { event: 'logo_update' }, (payload) => {
+        const newLogoUrl = payload.payload.logo_url;
+        setLogoUrl(newLogoUrl || '');
+        
+        if (newLogoUrl) {
+          updateFavicon(newLogoUrl);
+          localStorage.setItem('logoUrl', newLogoUrl);
+        } else {
+          updateFavicon('/favicon.svg');
+          localStorage.removeItem('logoUrl');
+        }
+      })
+      .subscribe();
 
     return () => {
       authListener?.subscription.unsubscribe();
       supabase.removeChannel(prefsChannel);
+      supabase.removeChannel(broadcastChannel);
     };
   }, []);
 
@@ -224,7 +278,7 @@ export default function Sidebar() {
               className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-white"
               onClick={handleLogout}
             >
-              <LogOut className="h-5 w-5 mr-2" />
+              <LogOut className="h-5 w-5 ml-2" />
               התנתק
             </Button>
           </div>
@@ -299,7 +353,7 @@ export default function Sidebar() {
                     className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-white"
                     onClick={handleLogout}
                   >
-                    <LogOut className="h-5 w-5 mr-2" />
+                    <LogOut className="h-5 w-5 ml-2" />
                     התנתק
                   </Button>
                 </div>
