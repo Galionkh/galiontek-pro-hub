@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "@/components/ui/use-toast";
 
 interface SystemLogoProps {
   systemName: string;
@@ -53,7 +54,7 @@ export const SystemLogo = ({ systemName, logoUrl, loading }: SystemLogoProps) =>
     <Avatar className="h-8 w-8">
       {logoUrl && !imageError ? (
         <AvatarImage 
-          src={`${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${Date.now()}`}
+          src={logoUrl}
           alt="System Logo" 
           onError={handleImageError}
         />
