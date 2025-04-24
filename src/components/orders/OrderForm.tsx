@@ -27,78 +27,89 @@ export function OrderForm({ onClose, onSubmit, initialData, isEdit = false }: Or
   } = useOrderForm({ onClose, onSubmit, initialData });
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
-      <FormField
-        id="title"
-        name="title"
-        label="כותרת הטופס"
-        value={formData.title}
-        onChange={handleChange}
-        required={true}
-        error={validationErrors.title}
-      />
+    <form onSubmit={handleSubmit} className="space-y-6" dir="rtl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Basic Information Section */}
+        <div className="space-y-4">
+          <FormField
+            id="title"
+            name="title"
+            label="כותרת הטופס"
+            value={formData.title}
+            onChange={handleChange}
+            required={true}
+            error={validationErrors.title}
+          />
 
-      <ClientSelector 
-        clientId={formData.client_id} 
-        clients={clients} 
-        onClientSelect={(value) => handleSelectChange("client_id", value)}
-        isRequired={true}
-        error={validationErrors.client_id}
-      />
+          <ClientSelector 
+            clientId={formData.client_id} 
+            clients={clients} 
+            onClientSelect={(value) => handleSelectChange("client_id", value)}
+            isRequired={true}
+            error={validationErrors.client_id}
+          />
 
-      <DatePickerField 
-        id="date"
-        name="date"
-        label="תאריך"
-        value={formData.date}
-        onChange={handleChange}
-      />
+          <DatePickerField 
+            id="date"
+            name="date"
+            label="תאריך"
+            value={formData.date}
+            onChange={handleChange}
+          />
 
-      <FormField
-        id="service_topic"
-        name="service_topic"
-        label="נושא השירות / שם התוכנית"
-        value={formData.service_topic || ""}
-        onChange={handleChange}
-      />
+          <FormField
+            id="service_topic"
+            name="service_topic"
+            label="נושא השירות / שם התוכנית"
+            value={formData.service_topic || ""}
+            onChange={handleChange}
+          />
+        </div>
 
-      <PricingFields 
-        hours={formData.hours} 
-        hourlyRate={formData.hourly_rate} 
-        totalAmount={formData.total_amount} 
-        onChange={handleChange}
-      />
+        {/* Pricing and Status Section */}
+        <div className="space-y-4">
+          <PricingFields 
+            hours={formData.hours} 
+            hourlyRate={formData.hourly_rate} 
+            totalAmount={formData.total_amount} 
+            onChange={handleChange}
+          />
 
-      <FormField
-        id="payment_terms"
-        name="payment_terms"
-        label="תנאי תשלום"
-        value={formData.payment_terms || ""}
-        onChange={handleChange}
-      />
+          <FormField
+            id="payment_terms"
+            name="payment_terms"
+            label="תנאי תשלום"
+            value={formData.payment_terms || ""}
+            onChange={handleChange}
+          />
 
-      <StatusSelector 
-        status={formData.status} 
-        onStatusChange={(value) => handleSelectChange("status", value)}
-      />
+          <StatusSelector 
+            status={formData.status} 
+            onStatusChange={(value) => handleSelectChange("status", value)}
+          />
+        </div>
+      </div>
 
-      <TextareaField
-        id="description"
-        name="description"
-        label="תיאור"
-        value={formData.description || ""}
-        onChange={handleChange}
-      />
+      {/* Full Width Sections */}
+      <div className="space-y-4">
+        <TextareaField
+          id="description"
+          name="description"
+          label="תיאור"
+          value={formData.description || ""}
+          onChange={handleChange}
+        />
 
-      <TextareaField
-        id="notes"
-        name="notes"
-        label="הערות"
-        value={formData.notes || ""}
-        onChange={handleChange}
-      />
+        <TextareaField
+          id="notes"
+          name="notes"
+          label="הערות"
+          value={formData.notes || ""}
+          onChange={handleChange}
+        />
+      </div>
 
-      <div className="flex justify-end space-x-2 pt-4">
+      <div className="flex justify-end space-x-2 pt-6 border-t">
         <Button type="button" variant="outline" onClick={onClose} className="ml-2">
           ביטול
         </Button>
