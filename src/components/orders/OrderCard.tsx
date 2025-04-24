@@ -78,6 +78,7 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
           value={activeTab} 
           onValueChange={setActiveTab} 
           className="mt-4"
+          dir="rtl"
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="info">מידע</TabsTrigger>
@@ -86,43 +87,31 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
           
           <TabsContent value="info" className="pt-4">
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">תאריך:</span> {formattedDate}
+              <div className="text-right">
+                <span className="text-muted-foreground ml-1">תאריך:</span>
+                {formattedDate}
               </div>
-              <div>
-                <span className="text-muted-foreground">סכום:</span> {order.total_amount ? `₪${order.total_amount}` : "לא צוין"}
+              <div className="text-right">
+                <span className="text-muted-foreground ml-1">סכום:</span>
+                {order.total_amount ? `₪${order.total_amount}` : "לא צוין"}
               </div>
               {order.service_topic && (
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">נושא:</span> {order.service_topic}
+                <div className="col-span-2 text-right">
+                  <span className="text-muted-foreground ml-1">נושא:</span>
+                  {order.service_topic}
                 </div>
               )}
             </div>
           </TabsContent>
           
           <TabsContent value="meetings" className="pt-2">
-            <div className="max-h-[250px] overflow-y-auto">
+            <div className="max-h-[250px] overflow-y-auto text-right">
               <MeetingsTab order={order} />
             </div>
           </TabsContent>
         </Tabs>
         
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="ghost" size="sm" onClick={handleViewClick}>
-            <Eye className="h-4 w-4 ml-1" /> צפייה
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleEditClick}>
-            <Edit className="h-4 w-4 ml-1" /> עריכה
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleSendToClient}
-            disabled={order.status === "sent" || order.status === "confirmed" || order.status === "completed"}
-          >
-            <Send className="h-4 w-4 ml-1" /> שליחה
-          </Button>
-          
+        <div className="flex justify-start gap-2 mt-4">
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
@@ -147,6 +136,23 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleSendToClient}
+            disabled={order.status === "sent" || order.status === "confirmed" || order.status === "completed"}
+          >
+            <Send className="h-4 w-4 ml-1" /> שליחה
+          </Button>
+
+          <Button variant="ghost" size="sm" onClick={handleEditClick}>
+            <Edit className="h-4 w-4 ml-1" /> עריכה
+          </Button>
+
+          <Button variant="ghost" size="sm" onClick={handleViewClick}>
+            <Eye className="h-4 w-4 ml-1" /> צפייה
+          </Button>
         </div>
       </div>
     </Card>
