@@ -5,6 +5,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Cache-Control': 'no-cache, no-store, must-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0',
 }
 
 serve(async (req) => {
@@ -15,10 +19,14 @@ serve(async (req) => {
 
   try {
     // Create a Supabase client with the Admin key
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+    
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
     // Get the latest system preferences
     const { data, error } = await supabaseClient
@@ -29,43 +37,50 @@ serve(async (req) => {
       .maybeSingle()
 
     if (error && error.code !== 'PGRST116') {
-      console.error('Database error:', error)
-      throw error
+      console.error('Database error:', error);
+      throw error;
     }
 
     // Add cache-busting query parameter to logo URL if exists
-    let logoUrl = null
+    let logoUrl = null;
     if (data?.logo_url) {
       try {
-        const timestamp = new Date().getTime()
-        const urlObj = new URL(data.logo_url)
-        urlObj.searchParams.set('t', timestamp.toString())
-        logoUrl = urlObj.toString()
+        const timestamp = new Date().getTime();
+        const urlObj = new URL(data.logo_url);
+        
+        // Make sure we're using HTTPS
+        if (urlObj.protocol === 'http:') {
+          urlObj.protocol = 'https:';
+        }
+        
+        urlObj.searchParams.set('t', timestamp.toString());
+        logoUrl = urlObj.toString();
       } catch (urlError) {
-        console.error('Error parsing URL:', urlError)
-        logoUrl = data.logo_url
+        console.error('Error parsing URL:', urlError);
+        logoUrl = data?.logo_url;
       }
     }
 
+    const responseData = {
+      system_name: data?.system_name || 'GalionTek',
+      logo_url: logoUrl,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log('Returning system preferences:', JSON.stringify(responseData));
+
     return new Response(
-      JSON.stringify({
-        system_name: data?.system_name || 'GalionTek',
-        logo_url: logoUrl,
-        timestamp: new Date().toISOString(),
-      }),
+      JSON.stringify(responseData),
       {
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
         },
         status: 200,
       },
     )
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in system-preferences function:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Failed to get system preferences',

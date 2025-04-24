@@ -8,6 +8,9 @@
     <title>GalionTek - ניהול מרצים ומנחי סדנאות</title>
     <meta name="description" content="כל מה שמרצה צריך, במקום אחד" />
     <meta name="author" content="GalionTek" />
+    
+    <!-- Security meta tags -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 
     <meta property="og:title" content="GalionTek - ניהול מרצים ומנחי סדנאות" />
     <meta property="og:description" content="כל מה שמרצה צריך, במקום אחד" />
@@ -43,6 +46,48 @@
           // Fall back to default values if there's an error
         }
       });
+    </script>
+    
+    <!-- Add fallback handlers for SSL/Connection errors -->
+    <script>
+      window.addEventListener('error', function(event) {
+        if (event.message && (
+          event.message.includes('SSL') || 
+          event.message.includes('certificate') || 
+          event.message.includes('ERR_CERT_AUTHORITY_INVALID')
+        )) {
+          console.warn('SSL Certificate Error detected. Using fallback mode.');
+          
+          // Remove any loading indicators
+          const loaders = document.querySelectorAll('.loading-spinner, .loading-overlay');
+          loaders.forEach(el => el.style.display = 'none');
+          
+          // Show friendly message to user if root is available
+          const root = document.getElementById('root');
+          if (root) {
+            root.innerHTML = `
+              <div style="text-align: center; padding: 20px; font-family: sans-serif; max-width: 600px; margin: 50px auto;">
+                <h2>בעיית חיבור למערכת</h2>
+                <p>אנחנו מתנצלים, אך קיימת בעיית חיבור למערכת.</p>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 4px;">
+                  <p><strong>אפשרויות לפתרון:</strong></p>
+                  <ul style="text-align: right; list-style-position: inside;">
+                    <li>נקה את זיכרון המטמון של הדפדפן</li>
+                    <li>נסה להשתמש בדפדפן אחר</li>
+                    <li>אם אתה רואה אזהרת אבטחה, תוכל "להמשיך בכל זאת" (בהתאם להגדרות הדפדפן)</li>
+                    <li>נסה לרענן את הדף</li>
+                  </ul>
+                </div>
+                <button onclick="window.location.reload()" style="padding: 10px 20px; background-color: #4a76a8; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                  רענן את הדף
+                </button>
+              </div>
+            `;
+          }
+          
+          return true; // Prevent default error handling
+        }
+      }, true);
     </script>
   </head>
 
