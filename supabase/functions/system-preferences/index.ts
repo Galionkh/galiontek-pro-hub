@@ -26,19 +26,25 @@ serve(async (req) => {
       .select('system_name, logo_url, updated_at')
       .order('updated_at', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
 
     if (error && error.code !== 'PGRST116') {
+      console.error('Database error:', error)
       throw error
     }
 
     // Add cache-busting query parameter to logo URL if exists
     let logoUrl = null
     if (data?.logo_url) {
-      const timestamp = new Date().getTime()
-      const urlObj = new URL(data.logo_url)
-      urlObj.searchParams.set('t', timestamp.toString())
-      logoUrl = urlObj.toString()
+      try {
+        const timestamp = new Date().getTime()
+        const urlObj = new URL(data.logo_url)
+        urlObj.searchParams.set('t', timestamp.toString())
+        logoUrl = urlObj.toString()
+      } catch (urlError) {
+        console.error('Error parsing URL:', urlError)
+        logoUrl = data.logo_url
+      }
     }
 
     return new Response(
@@ -61,7 +67,12 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error:', error)
     return new Response(
-      JSON.stringify({ error: 'Failed to get system preferences' }),
+      JSON.stringify({ 
+        error: 'Failed to get system preferences',
+        message: error.message || 'Unknown error',
+        system_name: 'GalionTek', // Fallback values
+        logo_url: null,
+      }),
       {
         headers: {
           ...corsHeaders,

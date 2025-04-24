@@ -32,7 +32,7 @@ export const SystemLogo = ({ systemName, logoUrl, loading }: SystemLogoProps) =>
           onError={handleImageError}
         />
       ) : (
-        <AvatarFallback>{systemName.charAt(0).toUpperCase()}</AvatarFallback>
+        <AvatarFallback>{systemName && systemName.length > 0 ? systemName.charAt(0).toUpperCase() : "G"}</AvatarFallback>
       )}
     </Avatar>
   );
