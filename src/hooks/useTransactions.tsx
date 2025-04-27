@@ -11,6 +11,7 @@ export interface Transaction {
   amount: number;
   description: string;
   date: string;
+  notes?: string;
 }
 
 export type TransactionInput = Omit<Transaction, 'id'>;
@@ -45,7 +46,8 @@ export function useTransactions() {
         type: item.type as 'income' | 'expense',
         amount: item.amount,
         description: item.description || '',
-        date: item.date
+        date: item.date,
+        notes: item.notes
       }));
     },
     enabled: !!user,

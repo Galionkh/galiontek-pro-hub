@@ -5,6 +5,9 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"; 
+import { DialogFooter } from "@/components/ui/dialog";
+import { PiggyBank, Receipt, WalletCards } from "lucide-react";
 import type { TransactionInput } from "@/hooks/useTransactions";
 
 const transactionSchema = z.object({
@@ -12,6 +15,7 @@ const transactionSchema = z.object({
   amount: z.number().min(0.01, "הסכום חייב להיות גדול מ-0"),
   description: z.string().min(1, "נא להזין תיאור"),
   date: z.string().min(1, "נא לבחור תאריך"),
+  notes: z.string().optional(),
 });
 
 type TransactionFormProps = {
@@ -28,6 +32,7 @@ export function TransactionForm({ onSubmit, onClose, isSubmitting }: Transaction
       amount: 0,
       description: '',
       date: new Date().toISOString().split('T')[0],
+      notes: '',
     },
   });
 
@@ -39,6 +44,7 @@ export function TransactionForm({ onSubmit, onClose, isSubmitting }: Transaction
         amount: 0,
         description: '',
         date: new Date().toISOString().split('T')[0],
+        notes: '',
       });
       onClose();
     } catch (error) {
@@ -56,6 +62,7 @@ export function TransactionForm({ onSubmit, onClose, isSubmitting }: Transaction
             onClick={() => form.setValue('type', 'income')}
             className="w-full"
           >
+            <PiggyBank className="mr-2 h-4 w-4" />
             הכנסה
           </Button>
           <Button 
@@ -64,6 +71,7 @@ export function TransactionForm({ onSubmit, onClose, isSubmitting }: Transaction
             onClick={() => form.setValue('type', 'expense')}
             className="w-full"
           >
+            <Receipt className="mr-2 h-4 w-4" />
             הוצאה
           </Button>
         </div>
@@ -80,7 +88,7 @@ export function TransactionForm({ onSubmit, onClose, isSubmitting }: Transaction
                   step="0.01"
                   placeholder="0.00"
                   {...field}
-                  onChange={e => field.onChange(parseFloat(e.target.value))}
+                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                   className="text-right"
                 />
               </FormControl>
@@ -102,6 +110,25 @@ export function TransactionForm({ onSubmit, onClose, isSubmitting }: Transaction
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>הערות (אופציונלי)</FormLabel>
+              <FormControl>
+                <Textarea 
+                  {...field} 
+                  className="text-right resize-none"
+                  placeholder="הערות נוספות..."
+                  rows={3}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <FormField
           control={form.control}
@@ -117,13 +144,23 @@ export function TransactionForm({ onSubmit, onClose, isSubmitting }: Transaction
           )}
         />
         
-        <Button 
-          type="submit" 
-          className="w-full"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'שומר...' : 'שמור רישום'}
-        </Button>
+        <DialogFooter className="gap-2 mt-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose}
+          >
+            ביטול
+          </Button>
+          <Button 
+            type="submit" 
+            className="flex items-center gap-2"
+            disabled={isSubmitting}
+          >
+            <WalletCards className="h-4 w-4" />
+            {isSubmitting ? 'שומר...' : 'שמור רישום'}
+          </Button>
+        </DialogFooter>
       </form>
     </Form>
   );
