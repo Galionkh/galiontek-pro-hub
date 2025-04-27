@@ -50,7 +50,8 @@ export function useTransactions() {
         amount: item.amount,
         description: item.description || '',
         date: item.date,
-        notes: item.notes || undefined, // Provide default for potentially missing notes field
+        // The 'notes' field might not exist in the database schema
+        // so we'll exclude it from our mapped object
         user_id: item.user_id,
         created_at: item.created_at,
         updated_at: item.updated_at
@@ -63,9 +64,13 @@ export function useTransactions() {
     mutationFn: async (transaction: TransactionInput) => {
       if (!user) throw new Error("User not authenticated");
       
+      // We're removing the notes field from the transaction input
+      // if it's trying to be stored but not present in the database schema
+      const { notes, ...transactionData } = transaction;
+      
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{ ...transaction, user_id: user.id }])
+        .insert([{ ...transactionData, user_id: user.id }])
         .select()
         .single();
 
