@@ -66,20 +66,6 @@ export default function Finances() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">מאזן כולל</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {balance.toLocaleString('he-IL', {
-                style: 'currency',
-                currency: 'ILS'
-              })}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center">
               <span>הכנסות</span>
               <Badge variant="outline" className="mr-2 bg-green-50 text-green-700 border-green-200">+</Badge>
@@ -105,6 +91,20 @@ export default function Finances() {
           <CardContent>
             <p className="text-2xl font-bold text-red-600">
               {totalExpenses.toLocaleString('he-IL', {
+                style: 'currency',
+                currency: 'ILS'
+              })}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">מאזן כולל</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {balance.toLocaleString('he-IL', {
                 style: 'currency',
                 currency: 'ILS'
               })}
