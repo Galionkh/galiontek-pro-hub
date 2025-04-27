@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -10,9 +11,17 @@ interface OrderCardProps {
   order: Order;
   onDelete: (id: number) => Promise<void>;
   onSendToClient: (id: number) => Promise<void>;
+  onGenerateInvoice: (id: number) => Promise<void>;
+  onCancelInvoice: (id: number) => Promise<void>;
 }
 
-export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
+export function OrderCard({ 
+  order, 
+  onDelete, 
+  onSendToClient,
+  onGenerateInvoice,
+  onCancelInvoice 
+}: OrderCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft':
@@ -40,12 +49,8 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
 
   const handleDeleteOrder = () => onDelete(order.id);
   const handleSendToClient = () => onSendToClient(order.id);
-  const handleGenerateInvoice = () => {
-    // This will be implemented via OrderActions
-  };
-  const handleCancelInvoice = () => {
-    // This will be implemented via OrderActions
-  };
+  const handleGenerateInvoice = () => onGenerateInvoice(order.id);
+  const handleCancelInvoice = () => onCancelInvoice(order.id);
 
   return (
     <Card>

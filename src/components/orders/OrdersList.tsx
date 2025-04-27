@@ -3,23 +3,24 @@ import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { OrderCard } from "./OrderCard";
 import type { Order } from "@/hooks/useOrders";
-import { useOrders } from "@/hooks/useOrders";
 
 interface OrdersListProps {
   orders: Order[];
   isLoadingOrders: boolean;
   onDeleteOrder: (id: number) => Promise<void>;
   onSendToClient: (id: number) => Promise<void>;
+  onGenerateInvoice: (id: number) => Promise<void>;
+  onCancelInvoice: (id: number) => Promise<void>;
 }
 
 export const OrdersList = ({ 
   orders, 
   isLoadingOrders, 
   onDeleteOrder, 
-  onSendToClient 
+  onSendToClient,
+  onGenerateInvoice,
+  onCancelInvoice
 }: OrdersListProps) => {
-  const { generateInvoiceNumber, cancelInvoice } = useOrders();
-
   if (isLoadingOrders) {
     return (
       <Card className="p-6">
@@ -50,6 +51,8 @@ export const OrdersList = ({
           order={order} 
           onDelete={onDeleteOrder}
           onSendToClient={onSendToClient}
+          onGenerateInvoice={onGenerateInvoice}
+          onCancelInvoice={onCancelInvoice}
         />
       ))}
     </div>

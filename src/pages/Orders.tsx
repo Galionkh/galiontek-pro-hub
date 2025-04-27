@@ -70,6 +70,38 @@ export default function Orders() {
     }
   };
 
+  const handleGenerateInvoice = async (id: number) => {
+    try {
+      await generateInvoiceNumber(id);
+      toast({
+        title: "החשבונית נוצרה",
+        description: "החשבונית נוצרה בהצלחה"
+      });
+    } catch (error: any) {
+      toast({
+        title: "שגיאה ביצירת החשבונית",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCancelInvoice = async (id: number) => {
+    try {
+      await cancelInvoice(id);
+      toast({
+        title: "החשבונית בוטלה",
+        description: "החשבונית בוטלה בהצלחה"
+      });
+    } catch (error: any) {
+      toast({
+        title: "שגיאה בביטול החשבונית",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="h-[70vh] flex justify-center items-center" dir="rtl">
@@ -131,6 +163,8 @@ export default function Orders() {
           isLoadingOrders={isLoading} 
           onDeleteOrder={handleDeleteOrder} 
           onSendToClient={handleSendToClient}
+          onGenerateInvoice={handleGenerateInvoice}
+          onCancelInvoice={handleCancelInvoice}
         />
       )}
     </div>
