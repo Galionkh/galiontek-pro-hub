@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -24,17 +23,15 @@ interface FinancialChartsProps {
 }
 
 export function FinancialCharts({ transactions }: FinancialChartsProps) {
-  // Skip if no transactions
   if (transactions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
+      <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground" dir="rtl">
         <h2 className="text-xl font-semibold mb-2">אין נתונים להציג</h2>
         <p>הוסף רישומים כספיים כדי לראות את הגרפים</p>
       </div>
     );
   }
   
-  // Group transactions by month for the monthly chart
   const monthlyData = transactions.reduce((acc: Record<string, {income: number, expense: number}>, transaction) => {
     const date = new Date(transaction.date);
     const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -52,7 +49,6 @@ export function FinancialCharts({ transactions }: FinancialChartsProps) {
     return acc;
   }, {});
   
-  // Convert to array and sort by date
   const monthlyStats = Object.entries(monthlyData)
     .map(([monthYear, stats]) => {
       const [year, month] = monthYear.split('-');
@@ -67,9 +63,8 @@ export function FinancialCharts({ transactions }: FinancialChartsProps) {
       };
     })
     .sort((a, b) => a.monthYear.localeCompare(b.monthYear))
-    .slice(-6); // Show only last 6 months
+    .slice(-6);
   
-  // For pie chart - summarize by type
   const totalIncome = transactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -86,7 +81,7 @@ export function FinancialCharts({ transactions }: FinancialChartsProps) {
   const COLORS = ['#3b82f6', '#ef4444'];
   
   return (
-    <Tabs defaultValue="monthly">
+    <Tabs defaultValue="monthly" dir="rtl">
       <TabsList className="w-full justify-start mb-6">
         <TabsTrigger value="monthly">מגמות חודשיות</TabsTrigger>
         <TabsTrigger value="summary">סיכום</TabsTrigger>

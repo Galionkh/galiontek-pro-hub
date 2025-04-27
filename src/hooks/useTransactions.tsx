@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,9 +11,12 @@ export interface Transaction {
   description: string;
   date: string;
   notes?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export type TransactionInput = Omit<Transaction, 'id'>;
+export type TransactionInput = Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>;
 
 export function useTransactions() {
   const { toast } = useToast();
@@ -47,7 +49,10 @@ export function useTransactions() {
         amount: item.amount,
         description: item.description || '',
         date: item.date,
-        notes: item.notes
+        notes: item.notes,
+        user_id: item.user_id,
+        created_at: item.created_at,
+        updated_at: item.updated_at
       }));
     },
     enabled: !!user,

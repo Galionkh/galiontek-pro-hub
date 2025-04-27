@@ -62,7 +62,7 @@ export function TransactionsSummary({ transactions }: TransactionsSummaryProps) 
         <CardTitle>סיכום חודשי</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
+        <Table dir="rtl">
           <TableHeader>
             <TableRow>
               <TableHead className="text-right">חודש</TableHead>
@@ -74,22 +74,22 @@ export function TransactionsSummary({ transactions }: TransactionsSummaryProps) 
           <TableBody>
             {recentMonthlyStats.map((stat) => (
               <TableRow key={stat.monthYear}>
-                <TableCell className="font-medium">
+                <TableCell className="font-medium text-right">
                   {stat.monthName} {stat.year}
                 </TableCell>
-                <TableCell className="text-green-600">
+                <TableCell className="text-green-600 text-right">
                   {stat.income.toLocaleString('he-IL', {
                     style: 'currency',
                     currency: 'ILS'
                   })}
                 </TableCell>
-                <TableCell className="text-red-600">
+                <TableCell className="text-red-600 text-right">
                   {stat.expense.toLocaleString('he-IL', {
                     style: 'currency',
                     currency: 'ILS'
                   })}
                 </TableCell>
-                <TableCell className={stat.balance >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                <TableCell className={`${stat.balance >= 0 ? 'text-green-600' : 'text-red-600'} font-bold text-right`}>
                   {stat.balance.toLocaleString('he-IL', {
                     style: 'currency',
                     currency: 'ILS'

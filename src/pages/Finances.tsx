@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -47,7 +46,7 @@ export default function Finances() {
                 <span>רישום חדש</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent dir="rtl" className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle className="text-right">רישום כספי חדש</DialogTitle>
               </DialogHeader>

@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Loader2, Receipt, FileText, Filter } from "lucide-react";
 import type { Transaction } from "@/hooks/useTransactions";
@@ -24,7 +23,7 @@ export function TransactionsList({ transactions, isLoading }: TransactionsListPr
   if (isLoading) {
     return (
       <Card className="p-6">
-        <div className="flex flex-col items-center justify-center py-10">
+        <div className="flex flex-col items-center justify-center py-10" dir="rtl">
           <Loader2 className="h-8 w-8 animate-spin mb-2" />
           <p className="text-muted-foreground">טוען רישומים...</p>
         </div>
@@ -35,7 +34,7 @@ export function TransactionsList({ transactions, isLoading }: TransactionsListPr
   if (transactions.length === 0) {
     return (
       <Card className="p-6">
-        <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+        <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground" dir="rtl">
           <Receipt className="h-12 w-12 mb-4 opacity-30" />
           <h2 className="text-xl font-semibold mb-2">אין רישומים</h2>
           <p className="mb-6">לחץ על "רישום חדש" כדי להתחיל</p>
@@ -44,12 +43,10 @@ export function TransactionsList({ transactions, isLoading }: TransactionsListPr
     );
   }
   
-  // Filter transactions based on search term
   const filteredTransactions = transactions.filter(transaction => 
     transaction.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // Sort transactions
   const sortedTransactions = [...filteredTransactions].sort((a, b) => {
     switch(sortOrder) {
       case "newest":
@@ -66,7 +63,7 @@ export function TransactionsList({ transactions, isLoading }: TransactionsListPr
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir="rtl">
       <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="w-full max-w-sm">
           <Input
@@ -84,7 +81,7 @@ export function TransactionsList({ transactions, isLoading }: TransactionsListPr
               <span>מיון</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-48" dir="rtl">
             <DropdownMenuCheckboxItem
               checked={sortOrder === "newest"}
               onCheckedChange={() => setSortOrder("newest")}
