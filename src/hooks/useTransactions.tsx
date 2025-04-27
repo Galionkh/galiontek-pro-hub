@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +50,7 @@ export function useTransactions() {
         amount: item.amount,
         description: item.description || '',
         date: item.date,
-        notes: item.notes,
+        notes: item.notes || undefined, // Provide default for potentially missing notes field
         user_id: item.user_id,
         created_at: item.created_at,
         updated_at: item.updated_at

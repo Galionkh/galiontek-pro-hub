@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Loader2, Receipt, FileText, Filter } from "lucide-react";
 import type { Transaction } from "@/hooks/useTransactions";
@@ -81,7 +82,7 @@ export function TransactionsList({ transactions, isLoading }: TransactionsListPr
               <span>מיון</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48" dir="rtl">
+          <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuCheckboxItem
               checked={sortOrder === "newest"}
               onCheckedChange={() => setSortOrder("newest")}

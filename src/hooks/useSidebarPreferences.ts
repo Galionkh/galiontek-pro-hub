@@ -54,16 +54,20 @@ export function useSidebarPreferences() {
         }
 
         // If no data found or empty sidebar_items, use defaults
-        if (!data || data.length === 0 || !data[0].sidebar_items || data[0].sidebar_items.length === 0) {
+        if (!data || data.length === 0 || !data[0].sidebar_items) {
           console.log('No sidebar preferences found or empty, using defaults');
           setSidebarItems([...defaultSidebarItems]);
         } else {
           // Use the first (most recent) record
           const preferences = data[0];
 
+          // Check if sidebar_items is an array before accessing length
+          const sidebarItemsData = preferences.sidebar_items;
+          const isValidArray = Array.isArray(sidebarItemsData);
+          
           // Type assertion to ensure we have a SidebarItem array
-          const typedItems = Array.isArray(preferences.sidebar_items) 
-            ? preferences.sidebar_items.map((item: any) => ({
+          const typedItems = isValidArray && sidebarItemsData.length > 0
+            ? sidebarItemsData.map((item: any) => ({
                 id: String(item.id || ''),
                 title: String(item.title || ''),
                 href: String(item.href || ''),

@@ -28,7 +28,7 @@ export const SidebarHeader = ({ systemName, logoUrl, loadingPreferences }: Sideb
         toast({
           title: "שם המערכת לא נטען",
           description: "נמשך שימוש בשם ברירת המחדל עד להתחברות מחדש למסד הנתונים",
-          variant: "warning",
+          variant: "destructive",
           duration: 5000,
         });
         sessionStorage.setItem('system-name-warning-shown', 'true');
