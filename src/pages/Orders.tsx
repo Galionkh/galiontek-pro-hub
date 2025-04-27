@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,12 +13,10 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
 
 export default function Orders() {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const { orders, isLoading, fetchOrders, createOrder, deleteOrder, sendOrderToClient, generateInvoiceNumber, cancelInvoice } = useOrders();
+  const { orders, isLoading, fetchOrders, createOrder, deleteOrder, sendOrderToClient } = useOrders();
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -36,70 +33,6 @@ export default function Orders() {
 
   const handleCloseForm = () => {
     setIsOrderDialogOpen(false);
-  };
-
-  const handleDeleteOrder = async (id: number) => {
-    try {
-      await deleteOrder(id);
-      toast({
-        title: "ההזמנה נמחקה",
-        description: "ההזמנה נמחקה בהצלחה מהמערכת"
-      });
-    } catch (error: any) {
-      toast({
-        title: "שגיאה במחיקת ההזמנה",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSendToClient = async (id: number) => {
-    try {
-      await sendOrderToClient(id);
-      toast({
-        title: "ההזמנה נשלחה",
-        description: "ההזמנה נשלחה בהצלחה ללקוח"
-      });
-    } catch (error: any) {
-      toast({
-        title: "שגיאה בשליחת ההזמנה",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleGenerateInvoice = async (id: number) => {
-    try {
-      await generateInvoiceNumber(id);
-      toast({
-        title: "החשבונית נוצרה",
-        description: "החשבונית נוצרה בהצלחה"
-      });
-    } catch (error: any) {
-      toast({
-        title: "שגיאה ביצירת החשבונית",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleCancelInvoice = async (id: number) => {
-    try {
-      await cancelInvoice(id);
-      toast({
-        title: "החשבונית בוטלה",
-        description: "החשבונית בוטלה בהצלחה"
-      });
-    } catch (error: any) {
-      toast({
-        title: "שגיאה בביטול החשבונית",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
   };
 
   if (isLoading) {
@@ -161,10 +94,8 @@ export default function Orders() {
         <OrdersList 
           orders={orders} 
           isLoadingOrders={isLoading} 
-          onDeleteOrder={handleDeleteOrder} 
-          onSendToClient={handleSendToClient}
-          onGenerateInvoice={handleGenerateInvoice}
-          onCancelInvoice={handleCancelInvoice}
+          onDeleteOrder={deleteOrder} 
+          onSendToClient={sendOrderToClient}
         />
       )}
     </div>

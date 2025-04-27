@@ -1,65 +1,56 @@
 
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { FileText, Pencil, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Send } from "lucide-react";
 import type { Order } from "@/hooks/useOrders";
 
 interface OrderHeaderProps {
   order: Order;
   onEdit: () => void;
   onDelete: () => void;
-  onSendToClient: () => void;
-  onGenerateInvoice: () => void;
-  onCancelInvoice: () => void;
+  onSendToClient: () => Promise<void>;
 }
 
-export function OrderHeader({ 
+export const OrderHeader: React.FC<OrderHeaderProps> = ({ 
   order, 
   onEdit, 
   onDelete, 
-  onSendToClient,
-  onGenerateInvoice,
-  onCancelInvoice
-}: OrderHeaderProps) {
+  onSendToClient 
+}) => {
+  const navigate = useNavigate();
+  
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{order.title}</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {order.client_name && `לקוח: ${order.client_name}`}
-        </p>
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => navigate("/orders")}
+        >
+          <ArrowLeft className="h-4 w-4 ml-1" />
+          חזרה
+        </Button>
+        <h1 className="text-3xl font-bold">{order.title}</h1>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {order.status === 'draft' && (
-          <Button variant="outline" size="sm" onClick={onSendToClient}>
-            <Send className="h-4 w-4 ml-2" />
-            שלח ללקוח
-          </Button>
-        )}
-
-        {!order.invoice_issued && (
-          <Button variant="outline" size="sm" onClick={onGenerateInvoice}>
-            <FileText className="h-4 w-4 ml-2" />
-            הנפק חשבונית
-          </Button>
-        )}
-
-        {order.invoice_issued && order.payment_status !== 'cancelled' && (
-          <Button variant="outline" size="sm" className="text-red-600" onClick={onCancelInvoice}>
-            <FileText className="h-4 w-4 ml-2" />
-            בטל חשבונית
-          </Button>
-        )}
-
-        <Button variant="outline" size="sm" onClick={onEdit}>
-          <Pencil className="h-4 w-4 ml-2" />
+      <div className="flex gap-2">
+        <Button 
+          variant="outline" 
+          onClick={onSendToClient}
+          disabled={order.status === "sent" || order.status === "confirmed" || order.status === "completed"}
+        >
+          <Send className="h-4 w-4 ml-1" />
+          שלח ללקוח
+        </Button>
+        <Button onClick={onEdit}>
+          <Edit className="h-4 w-4 ml-1" />
           ערוך
         </Button>
-
-        <Button variant="outline" size="sm" className="text-red-600" onClick={onDelete}>
-          <Trash2 className="h-4 w-4 ml-2" />
+        <Button variant="destructive" onClick={onDelete}>
+          <Trash2 className="h-4 w-4 ml-1" />
           מחק
         </Button>
       </div>
     </div>
   );
-}
+};

@@ -1,123 +1,160 @@
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns";
-import { he } from "date-fns/locale";
-import { OrderActions } from "./OrderActions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Eye, Edit, Trash2, Send, Calendar } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import type { Order } from "@/hooks/useOrders";
+import { MeetingsTab } from "@/components/meetings/MeetingsTab";
 
 interface OrderCardProps {
   order: Order;
   onDelete: (id: number) => Promise<void>;
   onSendToClient: (id: number) => Promise<void>;
-  onGenerateInvoice: (id: number) => Promise<void>;
-  onCancelInvoice: (id: number) => Promise<void>;
 }
 
-export function OrderCard({ 
-  order, 
-  onDelete, 
-  onSendToClient,
-  onGenerateInvoice,
-  onCancelInvoice 
-}: OrderCardProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'sent':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'confirmed':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'completed':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+// Function to get status badge color and text
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case "draft":
+      return { className: "bg-yellow-200 text-yellow-800", text: "טיוטה" };
+    case "sent":
+      return { className: "bg-blue-200 text-blue-800", text: "נשלח" };
+    case "confirmed":
+      return { className: "bg-green-200 text-green-800", text: "מאושר" };
+    case "completed":
+      return { className: "bg-purple-200 text-purple-800", text: "הושלם" };
+    default:
+      return { className: "bg-gray-200 text-gray-800", text: status };
+  }
+};
+
+export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
+  const navigate = useNavigate();
+  const statusBadge = getStatusBadge(order.status);
+  const [activeTab, setActiveTab] = useState<string>("info");
+  
+  // Format date if available
+  const formattedDate = order.date ? new Date(order.date).toLocaleDateString('he-IL') : "לא צוין";
+  
+  // Handle view click - directly navigate to order details
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(`/orders/${order.id}`);
+  };
+  
+  // Handle edit click - navigate to order details
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(`/orders/${order.id}`);
+  };
+  
+  // Handle send to client
+  const handleSendToClient = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await onSendToClient(order.id);
   };
 
-  const formatStatus = (status: string) => {
-    switch (status) {
-      case 'draft': return 'טיוטה';
-      case 'sent': return 'נשלח';
-      case 'confirmed': return 'מאושר';
-      case 'completed': return 'הושלם';
-      default: return status;
-    }
+  // Handle delete click
+  const handleDeleteClick = async () => {
+    await onDelete(order.id);
   };
-
-  const handleDeleteOrder = () => onDelete(order.id);
-  const handleSendToClient = () => onSendToClient(order.id);
-  const handleGenerateInvoice = () => onGenerateInvoice(order.id);
-  const handleCancelInvoice = () => onCancelInvoice(order.id);
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold">{order.title}</h3>
-              <Badge variant="outline" className={getStatusColor(order.status || 'draft')}>
-                {formatStatus(order.status || 'draft')}
-              </Badge>
-              {order.invoice_issued && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  הונפקה חשבונית
-                </Badge>
+    <Card className="overflow-hidden transition-all hover:shadow-md" dir="rtl">
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h3 className="text-lg font-semibold">{order.title}</h3>
+            <p className="text-sm text-muted-foreground">{order.client_name || "ללא לקוח"}</p>
+          </div>
+          <Badge className={statusBadge.className}>{statusBadge.text}</Badge>
+        </div>
+        
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab} 
+          className="mt-4"
+          dir="rtl"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="info">מידע</TabsTrigger>
+            <TabsTrigger value="meetings">מפגשים</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="info" className="pt-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div className="text-right">
+                <span className="text-muted-foreground ml-1">תאריך:</span>
+                {formattedDate}
+              </div>
+              <div className="text-right">
+                <span className="text-muted-foreground ml-1">סכום:</span>
+                {order.total_amount ? `₪${order.total_amount}` : "לא צוין"}
+              </div>
+              {order.service_topic && (
+                <div className="col-span-2 text-right">
+                  <span className="text-muted-foreground ml-1">נושא:</span>
+                  {order.service_topic}
+                </div>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              {order.client_name || 'לא צוין לקוח'}
-            </p>
-          </div>
-          <OrderActions 
-            order={order}
-            onGenerateInvoice={handleGenerateInvoice}
-            onCancelInvoice={handleCancelInvoice}
-            onSendInvoice={handleSendToClient}
-            onDelete={handleDeleteOrder}
-          />
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="meetings" className="pt-2">
+            <div className="max-h-[250px] overflow-y-auto text-right">
+              <MeetingsTab order={order} />
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="flex justify-start gap-2 mt-4">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4 ml-1" /> מחיקה
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>האם אתה בטוח שברצונך למחוק?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  פעולה זו לא ניתנת לביטול. זה יסיר לצמיתות את ההזמנה וכל המידע הקשור אליה.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDeleteClick} 
+                  className="bg-destructive text-destructive-foreground"
+                >
+                  מחק
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
-        <Separator className="my-4" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleSendToClient}
+            disabled={order.status === "sent" || order.status === "confirmed" || order.status === "completed"}
+          >
+            <Send className="h-4 w-4 ml-1" /> שליחה
+          </Button>
 
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-muted-foreground">תאריך</p>
-            <p className="font-medium">
-              {order.date ? format(new Date(order.date), 'dd/MM/yyyy', { locale: he }) : 'לא צוין'}
-            </p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">סכום</p>
-            <p className="font-medium">
-              {order.total_amount?.toLocaleString('he-IL', {
-                style: 'currency',
-                currency: 'ILS'
-              }) || 'לא צוין'}
-            </p>
-          </div>
-          {order.invoice_number && (
-            <>
-              <div>
-                <p className="text-muted-foreground">מספר חשבונית</p>
-                <p className="font-medium">{order.invoice_number}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">סטטוס תשלום</p>
-                <p className="font-medium">
-                  {order.payment_status === 'paid' ? 'שולם' : 
-                   order.payment_status === 'pending' ? 'ממתין לתשלום' : 
-                   order.payment_status === 'overdue' ? 'באיחור' : 
-                   order.payment_status === 'cancelled' ? 'בוטל' : 'לא ידוע'}
-                </p>
-              </div>
-            </>
-          )}
+          <Button variant="ghost" size="sm" onClick={handleEditClick}>
+            <Edit className="h-4 w-4 ml-1" /> עריכה
+          </Button>
+
+          <Button variant="ghost" size="sm" onClick={handleViewClick}>
+            <Eye className="h-4 w-4 ml-1" /> צפייה
+          </Button>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

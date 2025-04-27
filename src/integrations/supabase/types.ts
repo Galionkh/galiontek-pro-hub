@@ -189,17 +189,10 @@ export type Database = {
           hourly_rate: number | null
           hours: number | null
           id: number
-          invoice_date: string | null
-          invoice_due_date: string | null
-          invoice_issued: boolean | null
-          invoice_number: string | null
           notes: string | null
-          payment_date: string | null
-          payment_status: string | null
           payment_terms: string | null
           service_topic: string | null
           status: string | null
-          tax_rate: number | null
           title: string
           total_amount: number | null
           user_id: string | null
@@ -214,17 +207,10 @@ export type Database = {
           hourly_rate?: number | null
           hours?: number | null
           id?: number
-          invoice_date?: string | null
-          invoice_due_date?: string | null
-          invoice_issued?: boolean | null
-          invoice_number?: string | null
           notes?: string | null
-          payment_date?: string | null
-          payment_status?: string | null
           payment_terms?: string | null
           service_topic?: string | null
           status?: string | null
-          tax_rate?: number | null
           title: string
           total_amount?: number | null
           user_id?: string | null
@@ -239,17 +225,10 @@ export type Database = {
           hourly_rate?: number | null
           hours?: number | null
           id?: number
-          invoice_date?: string | null
-          invoice_due_date?: string | null
-          invoice_issued?: boolean | null
-          invoice_number?: string | null
           notes?: string | null
-          payment_date?: string | null
-          payment_status?: string | null
           payment_terms?: string | null
           service_topic?: string | null
           status?: string | null
-          tax_rate?: number | null
           title?: string
           total_amount?: number | null
           user_id?: string | null

@@ -9,17 +9,13 @@ interface OrdersListProps {
   isLoadingOrders: boolean;
   onDeleteOrder: (id: number) => Promise<void>;
   onSendToClient: (id: number) => Promise<void>;
-  onGenerateInvoice: (id: number) => Promise<void>;
-  onCancelInvoice: (id: number) => Promise<void>;
 }
 
 export const OrdersList = ({ 
   orders, 
   isLoadingOrders, 
   onDeleteOrder, 
-  onSendToClient,
-  onGenerateInvoice,
-  onCancelInvoice
+  onSendToClient 
 }: OrdersListProps) => {
   if (isLoadingOrders) {
     return (
@@ -51,8 +47,6 @@ export const OrdersList = ({
           order={order} 
           onDelete={onDeleteOrder}
           onSendToClient={onSendToClient}
-          onGenerateInvoice={onGenerateInvoice}
-          onCancelInvoice={onCancelInvoice}
         />
       ))}
     </div>

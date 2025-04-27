@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +9,7 @@ export type Order = {
   id: number;
   title: string;
   client_name: string;
-  client_id: string;
+  client_id: string;  // Now matching the database schema
   date: string;
   status: string;
   created_at: string;
@@ -20,13 +21,6 @@ export type Order = {
   hours?: number;
   hourly_rate?: number;
   total_amount?: number;
-  invoice_number?: string;
-  invoice_date?: string;
-  payment_status?: string;
-  invoice_issued?: boolean;
-  tax_rate?: number;
-  invoice_due_date?: string;
-  payment_date?: string;
 };
 
 export const useOrders = () => {
@@ -81,6 +75,7 @@ export const useOrders = () => {
     try {
       setIsLoading(true);
       
+      // Log the orderData before insertion to debug
       console.log("Order data being inserted:", orderData);
       
       const { data, error } = await supabase
@@ -126,6 +121,7 @@ export const useOrders = () => {
 
       if (error) throw error;
 
+      // Update local state to remove the deleted order
       setOrders(orders.filter(order => order.id !== id));
 
       toast({
@@ -147,82 +143,13 @@ export const useOrders = () => {
 
       if (error) throw error;
 
+      // Update the status in the local state
       setOrders(orders.map(order => 
         order.id === id ? { ...order, status: "sent" } : order
       ));
     } catch (error: any) {
       console.error("Error sending order to client:", error.message);
       throw error;
-    }
-  };
-
-  const generateInvoiceNumber = async (orderId: number) => {
-    try {
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      
-      const { data: existingInvoices } = await supabase
-        .from("orders")
-        .select("invoice_number")
-        .like('invoice_number', `INV-${year}${month}-%`);
-
-      const currentCount = (existingInvoices?.length || 0) + 1;
-      const invoiceNumber = `INV-${year}${month}-${String(currentCount).padStart(3, '0')}`;
-
-      const { error } = await supabase
-        .from("orders")
-        .update({ 
-          invoice_number: invoiceNumber,
-          invoice_date: date.toISOString(),
-          invoice_issued: true,
-          payment_status: 'pending',
-          invoice_due_date: new Date(date.setDate(date.getDate() + 30)).toISOString()
-        })
-        .eq("id", orderId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "החשבונית נוצרה בהצלחה",
-        description: `מספר חשבונית: ${invoiceNumber}`,
-      });
-
-      await fetchOrders();
-    } catch (error: any) {
-      console.error("Error generating invoice:", error.message);
-      toast({
-        title: "שגיאה ביצירת החשבונית",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const cancelInvoice = async (orderId: number) => {
-    try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ 
-          payment_status: 'cancelled'
-        })
-        .eq("id", orderId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "החשבונית בוטלה",
-        description: "החשבונית סומנה כמבוטלת",
-      });
-
-      await fetchOrders();
-    } catch (error: any) {
-      console.error("Error cancelling invoice:", error.message);
-      toast({
-        title: "שגיאה בביטול החשבונית",
-        description: error.message,
-        variant: "destructive",
-      });
     }
   };
 
@@ -237,7 +164,5 @@ export const useOrders = () => {
     createOrder,
     deleteOrder,
     sendOrderToClient,
-    generateInvoiceNumber,
-    cancelInvoice
   };
 };

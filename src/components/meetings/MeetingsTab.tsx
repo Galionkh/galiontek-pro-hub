@@ -12,7 +12,7 @@ import { useMeetings, type Meeting } from "@/hooks/useMeetings";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Calendar } from "lucide-react";
-import type { Order } from "@/hooks/useOrders";
+import type { Order } from "@/features/clients/types";
 
 interface MeetingsTabProps {
   order: Order;
