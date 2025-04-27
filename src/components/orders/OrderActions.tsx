@@ -35,7 +35,10 @@ export function OrderActions({
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" dir="rtl">
+        <DropdownMenuContent 
+          align="end" 
+          className="rtl:flex rtl:flex-col"
+        >
           <DropdownMenuItem 
             onClick={() => setShowInvoiceDetails(true)}
             disabled={!order.invoice_issued}
