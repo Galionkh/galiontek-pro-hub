@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -39,6 +38,15 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
     }
   };
 
+  const handleDeleteOrder = () => onDelete(order.id);
+  const handleSendToClient = () => onSendToClient(order.id);
+  const handleGenerateInvoice = () => {
+    // This will be implemented via OrderActions
+  };
+  const handleCancelInvoice = () => {
+    // This will be implemented via OrderActions
+  };
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -61,6 +69,9 @@ export function OrderCard({ order, onDelete, onSendToClient }: OrderCardProps) {
           </div>
           <OrderActions 
             order={order}
+            onGenerateInvoice={handleGenerateInvoice}
+            onCancelInvoice={handleCancelInvoice}
+            onSendInvoice={handleSendToClient}
           />
         </div>
 

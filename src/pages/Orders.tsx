@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,10 +14,12 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Orders() {
   const { user } = useAuth();
-  const { orders, isLoading, fetchOrders, createOrder, deleteOrder, sendOrderToClient } = useOrders();
+  const { toast } = useToast();
+  const { orders, isLoading, fetchOrders, createOrder, deleteOrder, sendOrderToClient, generateInvoiceNumber, cancelInvoice } = useOrders();
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -33,6 +36,38 @@ export default function Orders() {
 
   const handleCloseForm = () => {
     setIsOrderDialogOpen(false);
+  };
+
+  const handleDeleteOrder = async (id: number) => {
+    try {
+      await deleteOrder(id);
+      toast({
+        title: "ההזמנה נמחקה",
+        description: "ההזמנה נמחקה בהצלחה מהמערכת"
+      });
+    } catch (error: any) {
+      toast({
+        title: "שגיאה במחיקת ההזמנה",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSendToClient = async (id: number) => {
+    try {
+      await sendOrderToClient(id);
+      toast({
+        title: "ההזמנה נשלחה",
+        description: "ההזמנה נשלחה בהצלחה ללקוח"
+      });
+    } catch (error: any) {
+      toast({
+        title: "שגיאה בשליחת ההזמנה",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   if (isLoading) {
@@ -94,8 +129,8 @@ export default function Orders() {
         <OrdersList 
           orders={orders} 
           isLoadingOrders={isLoading} 
-          onDeleteOrder={deleteOrder} 
-          onSendToClient={sendOrderToClient}
+          onDeleteOrder={handleDeleteOrder} 
+          onSendToClient={handleSendToClient}
         />
       )}
     </div>
