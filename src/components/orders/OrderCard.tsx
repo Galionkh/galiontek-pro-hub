@@ -77,6 +77,7 @@ export function OrderCard({
             onGenerateInvoice={handleGenerateInvoice}
             onCancelInvoice={handleCancelInvoice}
             onSendInvoice={handleSendToClient}
+            onDelete={handleDeleteOrder}
           />
         </div>
 

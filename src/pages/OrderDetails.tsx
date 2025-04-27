@@ -27,10 +27,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useOrders } from "@/hooks/useOrders";
 
 export default function OrderDetails() {
   const { id } = useParams();
+  const orderId = parseInt(id || "0");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { toast } = useToast();
+  const { generateInvoiceNumber, cancelInvoice } = useOrders();
+  
   const {
     order,
     isLoading,
@@ -40,11 +46,47 @@ export default function OrderDetails() {
     isEditDialogOpen,
     setIsEditDialogOpen,
     handleEdit
-  } = useOrderDetails(parseInt(id || "0"));
+  } = useOrderDetails(orderId);
 
   const onDeleteConfirm = async () => {
     await handleDelete();
     setShowDeleteDialog(false);
+  };
+  
+  const handleGenerateInvoice = async () => {
+    if (!order) return;
+    
+    try {
+      await generateInvoiceNumber(order.id);
+      toast({
+        title: "החשבונית נוצרה",
+        description: "החשבונית נוצרה בהצלחה"
+      });
+    } catch (error: any) {
+      toast({
+        title: "שגיאה ביצירת החשבונית",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCancelInvoice = async () => {
+    if (!order) return;
+    
+    try {
+      await cancelInvoice(order.id);
+      toast({
+        title: "החשבונית בוטלה",
+        description: "החשבונית בוטלה בהצלחה"
+      });
+    } catch (error: any) {
+      toast({
+        title: "שגיאה בביטול החשבונית",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -62,6 +104,8 @@ export default function OrderDetails() {
                 onEdit={handleEdit}
                 onDelete={() => setShowDeleteDialog(true)}
                 onSendToClient={handleSendToClient}
+                onGenerateInvoice={handleGenerateInvoice}
+                onCancelInvoice={handleCancelInvoice}
               />
               <Separator />
               <OrderInfo order={order} />

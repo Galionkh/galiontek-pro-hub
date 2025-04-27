@@ -13,16 +13,18 @@ import { InvoiceDetailsDialog } from "@/components/invoices/InvoiceDetailsDialog
 
 interface OrderActionsProps {
   order: Order;
-  onGenerateInvoice?: () => void;
-  onCancelInvoice?: () => void;
-  onSendInvoice?: () => void;
+  onGenerateInvoice: () => void;
+  onCancelInvoice: () => void;
+  onSendInvoice: () => void;
+  onDelete?: () => void;
 }
 
 export function OrderActions({ 
   order, 
   onGenerateInvoice, 
   onCancelInvoice,
-  onSendInvoice 
+  onSendInvoice,
+  onDelete
 }: OrderActionsProps) {
   const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
 
@@ -69,6 +71,16 @@ export function OrderActions({
                 <span>בטל חשבונית</span>
               </DropdownMenuItem>
             </>
+          )}
+          
+          {onDelete && (
+            <DropdownMenuItem 
+              onClick={onDelete}
+              className="text-red-600"
+            >
+              <Ban className="h-4 w-4 ml-2" />
+              <span>מחק הזמנה</span>
+            </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
