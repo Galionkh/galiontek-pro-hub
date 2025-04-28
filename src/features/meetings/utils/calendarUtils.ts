@@ -51,6 +51,13 @@ export const exportEventsToICS = async (events: any[]): Promise<string> => {
         icsContent += `DESCRIPTION:${event.description}\n`;
       }
       icsContent += `UID:${event.id}@yourdomain.com\n`;
+      // Add recurring event information if applicable
+      if (event.is_recurring && event.recurrence_pattern) {
+        const rrule = formatRecurrenceRule(event.recurrence_pattern);
+        if (rrule) {
+          icsContent += `RRULE:${rrule}\n`;
+        }
+      }
       icsContent += "END:VEVENT\n";
     });
     
@@ -83,14 +90,19 @@ export const importEventsFromICS = async (icsContent: string): Promise<any[]> =>
         const dateMatch = eventContent.match(/DTSTART:(.*?)(?:\r?\n)/);
         const locationMatch = eventContent.match(/LOCATION:(.*?)(?:\r?\n)/);
         const descriptionMatch = eventContent.match(/DESCRIPTION:(.*?)(?:\r?\n)/);
+        const rruleMatch = eventContent.match(/RRULE:(.*?)(?:\r?\n)/);
         
         if (titleMatch && dateMatch) {
-          events.push({
+          const event: any = {
             title: titleMatch[1],
             date: parseICSDate(dateMatch[1]),
             location: locationMatch ? locationMatch[1] : "",
-            description: descriptionMatch ? descriptionMatch[1] : ""
-          });
+            description: descriptionMatch ? descriptionMatch[1] : "",
+            is_recurring: !!rruleMatch,
+            recurrence_pattern: rruleMatch ? parseRecurrenceRule(rruleMatch[1]) : null
+          };
+          
+          events.push(event);
         }
       }
     });
@@ -116,4 +128,33 @@ function parseICSDate(icsDate: string): string {
   const month = icsDate.substring(4, 6);
   const day = icsDate.substring(6, 8);
   return `${year}-${month}-${day}`;
+}
+
+// הפונקציות החדשות לטיפול בתדירויות של אירועים חוזרים
+function formatRecurrenceRule(pattern: string): string | null {
+  switch (pattern) {
+    case 'daily':
+      return 'FREQ=DAILY';
+    case 'weekly':
+      return 'FREQ=WEEKLY';
+    case 'monthly':
+      return 'FREQ=MONTHLY';
+    case 'yearly':
+      return 'FREQ=YEARLY';
+    default:
+      return null;
+  }
+}
+
+function parseRecurrenceRule(rrule: string): string | null {
+  if (rrule.includes('FREQ=DAILY')) {
+    return 'daily';
+  } else if (rrule.includes('FREQ=WEEKLY')) {
+    return 'weekly';
+  } else if (rrule.includes('FREQ=MONTHLY')) {
+    return 'monthly';
+  } else if (rrule.includes('FREQ=YEARLY')) {
+    return 'yearly';
+  }
+  return null;
 }
