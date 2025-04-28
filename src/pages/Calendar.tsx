@@ -81,6 +81,21 @@ export default function CalendarPage() {
   useEffect(() => {
     if (user) {
       fetchEvents();
+      
+      const channel = supabase
+        .channel('public:events')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'events' },
+          (payload) => {
+            console.log('Real-time event received:', payload);
+            fetchEvents();
+          }
+        )
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      };
     } else {
       setEvents([]);
       setIsLoadingEvents(false);
@@ -161,7 +176,10 @@ export default function CalendarPage() {
         description: "האירוע החדש נוצר בהצלחה",
       });
 
-      fetchEvents();
+      if (data) {
+        setEvents(prevEvents => [...prevEvents, ...data]);
+      }
+      
       setOpenCreateDialog(false);
       form.reset();
     } catch (error: any) {
@@ -182,7 +200,7 @@ export default function CalendarPage() {
     try {
       setIsLoading(true);
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("events")
         .update({
           title: values.title,
@@ -194,7 +212,8 @@ export default function CalendarPage() {
           reminder: values.reminder,
           reminder_time: values.reminder ? values.reminder_time : null,
         })
-        .eq("id", currentEvent.id);
+        .eq("id", currentEvent.id)
+        .select();
 
       if (error) throw error;
 
@@ -203,7 +222,12 @@ export default function CalendarPage() {
         description: "האירוע עודכן בהצלחה",
       });
 
-      fetchEvents();
+      if (data && data.length > 0) {
+        setEvents(prevEvents => prevEvents.map(event => 
+          event.id === currentEvent.id ? data[0] : event
+        ));
+      }
+
       setOpenEditDialog(false);
       setCurrentEvent(null);
     } catch (error: any) {
@@ -236,11 +260,11 @@ export default function CalendarPage() {
         description: "האירוע נמחק בהצלחה",
       });
 
-      fetchEvents();
+      setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
     } catch (error: any) {
       console.error("Error deleting event:", error.message);
       toast({
-        title: "שגיאה ב��חיקת אירוע",
+        title: "שגיאה במחיקת אירוע",
         description: error.message,
         variant: "destructive",
       });
