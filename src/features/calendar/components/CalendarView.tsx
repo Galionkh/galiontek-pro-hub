@@ -33,11 +33,13 @@ export const CalendarView = ({
   eventsDateMap
 }: CalendarViewProps) => {
   const nextMonth = () => {
-    setCurrentMonth(prevMonth => addMonths(prevMonth, 1));
+    const nextDate = addMonths(currentMonth, 1);
+    setCurrentMonth(nextDate);
   };
 
   const prevMonth = () => {
-    setCurrentMonth(prevMonth => addMonths(prevMonth, -1));
+    const prevDate = addMonths(currentMonth, -1);
+    setCurrentMonth(prevDate);
   };
 
   const getEventsForDate = (date: Date) => {

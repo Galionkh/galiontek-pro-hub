@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,9 +6,9 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format, isToday, isThisWeek, isThisMonth } from "date-fns";
+import { format, isToday, isThisWeek, isThisMonth, addMonths } from "date-fns";
 import { he } from "date-fns/locale";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   exportEventsToICS, 
@@ -48,6 +48,7 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterMode, setFilterMode] = useState<"all" | "today" | "week" | "month">("all");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -239,7 +240,7 @@ export default function CalendarPage() {
     } catch (error: any) {
       console.error("Error deleting event:", error.message);
       toast({
-        title: "שגיאה במחיקת אירוע",
+        title: "שגיאה ב��חיקת אירוע",
         description: error.message,
         variant: "destructive",
       });
@@ -254,11 +255,13 @@ export default function CalendarPage() {
   };
 
   const nextMonth = () => {
-    setCurrentMonth(prevMonth => addMonths(prevMonth, 1));
+    const nextDate = addMonths(currentMonth, 1);
+    setCurrentMonth(nextDate);
   };
 
   const prevMonth = () => {
-    setCurrentMonth(prevMonth => addMonths(prevMonth, -1));
+    const prevDate = addMonths(currentMonth, -1);
+    setCurrentMonth(prevDate);
   };
 
   const handleExportEvents = async () => {
@@ -266,7 +269,6 @@ export default function CalendarPage() {
       setIsLoading(true);
       const icsContent = await exportEventsToICS(events);
       
-      // Create blob and download link
       const blob = new Blob([icsContent], { type: 'text/calendar' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -306,7 +308,6 @@ export default function CalendarPage() {
               const icsContent = e.target.result;
               const importedEvents = await importEventsFromICS(icsContent);
               
-              // ייבוא האירועים לבסיס הנתונים
               for (const event of importedEvents) {
                 await supabase.from("events").insert([
                   {
@@ -347,7 +348,6 @@ export default function CalendarPage() {
       });
     } finally {
       setIsLoading(false);
-      // נקה את הקובץ שנבחר כדי לאפשר בחירה חוזרת של אותו קובץ
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
