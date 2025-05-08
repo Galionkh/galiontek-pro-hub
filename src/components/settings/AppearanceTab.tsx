@@ -9,10 +9,12 @@ import { FontSizeControl } from "./appearance/FontSizeControl";
 import { SystemIdentity } from "./appearance/SystemIdentity";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { hexToHSL, generateSecondaryColor } from "@/lib/colorUtils"; 
 
 export function AppearanceTab() {
   const [darkMode, setDarkMode] = useState(false);
   const [colorScheme, setColorScheme] = useState("purple");
+  const [customColor, setCustomColor] = useState<string | undefined>();
   const [fontSize, setFontSize] = useState(2);
   const [systemName, setSystemName] = useState("GalionTek");
   const [logoUrl, setLogoUrl] = useState("");
@@ -30,6 +32,12 @@ export function AppearanceTab() {
     const savedColorScheme = localStorage.getItem('colorScheme') || 'purple';
     setColorScheme(savedColorScheme);
     
+    // Get saved custom color
+    const savedCustomColor = localStorage.getItem('customColor');
+    if (savedCustomColor && savedColorScheme === 'custom') {
+      setCustomColor(savedCustomColor);
+    }
+    
     // Get saved font size
     const savedFontSize = localStorage.getItem('fontSize');
     if (savedFontSize) {
@@ -44,7 +52,12 @@ export function AppearanceTab() {
     }
 
     // Apply color scheme and font size
-    applyColorScheme(savedColorScheme || 'purple');
+    if (savedColorScheme === 'custom' && savedCustomColor) {
+      applyCustomColorScheme(savedCustomColor, savedTheme === 'dark');
+    } else {
+      applyColorScheme(savedColorScheme || 'purple');
+    }
+    
     applyFontSize(savedFontSize ? parseInt(savedFontSize) : 2);
 
     // Load system preferences
@@ -103,7 +116,8 @@ export function AppearanceTab() {
 
   const applyColorScheme = (scheme: string) => {
     // Remove any existing color scheme classes
-    document.documentElement.classList.remove('theme-purple', 'theme-blue', 'theme-green', 'theme-orange');
+    document.documentElement.classList.remove('theme-purple', 'theme-blue', 'theme-green', 'theme-orange', 'theme-custom');
+    
     // Add new color scheme class
     document.documentElement.classList.add(`theme-${scheme}`);
     
@@ -137,6 +151,47 @@ export function AppearanceTab() {
     root.style.setProperty('--secondary', secondary);
   };
 
+  const applyCustomColorScheme = (hexColor: string, isDarkMode: boolean) => {
+    try {
+      // Remove any existing color scheme classes
+      document.documentElement.classList.remove('theme-purple', 'theme-blue', 'theme-green', 'theme-orange');
+      document.documentElement.classList.add('theme-custom');
+      
+      // Convert HEX to HSL
+      const primaryHsl = hexToHSL(hexColor);
+      const secondaryHsl = generateSecondaryColor(primaryHsl, isDarkMode);
+      
+      // Apply CSS variables
+      const root = document.documentElement;
+      root.style.setProperty('--primary', primaryHsl);
+      root.style.setProperty('--secondary', secondaryHsl);
+      
+      // Set sidebar colors derived from primary
+      root.style.setProperty('--sidebar-background', primaryHsl);
+      root.style.setProperty('--sidebar-accent', adjustLightness(primaryHsl, isDarkMode ? 1.2 : 0.8));
+      root.style.setProperty('--sidebar-border', adjustLightness(primaryHsl, isDarkMode ? 0.8 : 0.9));
+      
+      console.log(`Applied custom color: ${hexColor}, HSL: ${primaryHsl}, secondary: ${secondaryHsl}`);
+    } catch (error) {
+      console.error("Error applying custom color:", error);
+      // Fallback to default purple
+      applyColorScheme('purple');
+    }
+  };
+
+  // Helper function to adjust lightness of HSL color for derived colors
+  const adjustLightness = (hsl: string, factor: number): string => {
+    const parts = hsl.split(' ');
+    if (parts.length < 3) return hsl;
+    
+    const h = parts[0];
+    const s = parts[1];
+    const l = parseInt(parts[2]);
+    const newL = Math.min(100, Math.max(0, Math.round(l * factor)));
+    
+    return `${h} ${s} ${newL}%`;
+  };
+
   const applyFontSize = (size: number) => {
     document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
     document.documentElement.classList.add(getFontSizeClass(size));
@@ -160,7 +215,23 @@ export function AppearanceTab() {
   const handleColorSchemeChange = (scheme: string) => {
     setColorScheme(scheme);
     localStorage.setItem('colorScheme', scheme);
-    applyColorScheme(scheme);
+    
+    // If not custom, apply predefined scheme
+    if (scheme !== 'custom') {
+      applyColorScheme(scheme);
+    } 
+    // If custom and we have a custom color, apply it
+    else if (customColor) {
+      applyCustomColorScheme(customColor, darkMode);
+    }
+  };
+
+  const handleCustomColorChange = (hexColor: string) => {
+    setCustomColor(hexColor);
+    localStorage.setItem('customColor', hexColor);
+    localStorage.setItem('colorScheme', 'custom');
+    setColorScheme('custom');
+    applyCustomColorScheme(hexColor, darkMode);
   };
 
   const handleFontSizeChange = (newSize: number) => {
@@ -207,11 +278,22 @@ export function AppearanceTab() {
           onLogoChange={handleLogoChange}
         />
         
-        <ThemeToggle initialDarkMode={darkMode} />
+        <ThemeToggle 
+          initialDarkMode={darkMode}
+          onThemeChange={(isDark) => {
+            setDarkMode(isDark);
+            // Re-apply color scheme when theme changes for custom colors
+            if (colorScheme === 'custom' && customColor) {
+              applyCustomColorScheme(customColor, isDark);
+            }
+          }}
+        />
         
         <ColorSchemeSelector
           currentScheme={colorScheme}
           onSchemeChange={handleColorSchemeChange}
+          customColor={customColor}
+          onCustomColorChange={handleCustomColorChange}
         />
         
         <FontSizeControl

@@ -1,72 +1,56 @@
 
 import { useState, useEffect } from "react";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Sun, Moon, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ThemeToggleProps {
   initialDarkMode: boolean;
+  onThemeChange?: (isDarkMode: boolean) => void;
 }
 
-export function ThemeToggle({ initialDarkMode }: ThemeToggleProps) {
+export function ThemeToggle({ initialDarkMode, onThemeChange }: ThemeToggleProps) {
   const [darkMode, setDarkMode] = useState(initialDarkMode);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const toggleTheme = () => {
-    try {
-      setDarkMode(!darkMode);
-      
-      if (!darkMode) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-      }
-      
-      toast({
-        title: "ערכת הנושא השתנתה",
-        description: `עברת למצב ${!darkMode ? 'כהה' : 'בהיר'}`,
-      });
-      
-      setError(null);
-    } catch (error) {
-      console.error("Error toggling theme:", error);
-      setError("אירעה שגיאה בעת שינוי ערכת הנושא");
-      
-      toast({
-        variant: "destructive",
-        title: "שגיאה בשינוי ערכת הנושא",
-        description: "נתקלנו בבעיה בעת שינוי ערכת הנושא. יתכן והחיבור לשרת נכשל.",
-      });
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
+    
+    // Notify parent component about theme change
+    if (onThemeChange) {
+      onThemeChange(newDarkMode);
+    }
+    
+    toast({
+      title: newDarkMode ? "מצב כהה הופעל" : "מצב בהיר הופעל",
+      description: newDarkMode 
+        ? "המערכת עברה למצב תצוגה כהה" 
+        : "המערכת עברה למצב תצוגה בהיר",
+    });
   };
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            {darkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            <p className="font-medium">מצב בהיר / כהה</p>
-          </div>
-          <p className="text-sm text-muted-foreground">החלף בין מצב בהיר למצב כהה</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Sun className="h-4 w-4 text-muted-foreground" />
-          <Switch id="theme-mode" checked={darkMode} onCheckedChange={toggleTheme} />
-          <Moon className="h-4 w-4 text-muted-foreground" />
-        </div>
+    <div className="flex flex-col space-y-2">
+      <Label htmlFor="dark-mode">מצב כהה</Label>
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="dark-mode"
+          checked={darkMode}
+          onCheckedChange={toggleTheme}
+        />
+        <Label htmlFor="dark-mode" className="mr-2 cursor-pointer">
+          {darkMode ? "מופעל" : "כבוי"}
+        </Label>
       </div>
-      
-      {error && (
-        <Alert variant="destructive" className="mt-2">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
     </div>
   );
 }

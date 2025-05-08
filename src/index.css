@@ -111,6 +111,11 @@
     --sidebar-accent: 27 96% 51%;
     --sidebar-border: 27 96% 56%;
   }
+  
+  /* Custom theme colors will be applied via inline styles */
+  .theme-custom {
+    /* Variables will be set directly via JavaScript */
+  }
 
   .dark.theme-blue {
     --primary: 210 100% 50%;
@@ -179,3 +184,4 @@
     }
   }
 }
+
