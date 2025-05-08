@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -44,6 +43,10 @@ export function useProfile() {
           email,
           tel: "",
           orgname: "",
+          business_type: "", // Added
+          id_number: "",     // Added
+          business_name: "", // Added
+          address: "",       // Added
         });
       }
     } catch (error: any) {
@@ -78,6 +81,10 @@ export function useProfile() {
         email: data.email,
         tel: data.tel,
         orgname: data.orgname,
+        business_type: data.business_type, // Added
+        id_number: data.id_number,         // Added
+        business_name: data.business_name, // Added
+        address: data.address,             // Added
       };
       
       if (profile && profile.id) {

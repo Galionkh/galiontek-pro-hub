@@ -273,25 +273,34 @@ export type Database = {
           email: string | null
           id: number
           name: string
-          orgname: string | null
+          business_name: string | null
           tel: string | null
           user_id: string | null
+          business_type: string | null
+          id_number: string | null
+          address: string | null
         }
         Insert: {
           email?: string | null
           id?: number
           name: string
-          orgname?: string | null
+          business_name?: string | null
           tel?: string | null
           user_id?: string | null
+          business_type?: string | null
+          id_number?: string | null
+          address?: string | null
         }
         Update: {
           email?: string | null
           id?: number
           name?: string
-          orgname?: string | null
+          business_name?: string | null
           tel?: string | null
           user_id?: string | null
+          business_type?: string | null
+          id_number?: string | null
+          address?: string | null
         }
         Relationships: []
       }

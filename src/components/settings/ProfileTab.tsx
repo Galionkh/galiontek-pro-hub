@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, Loader2 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -13,7 +13,10 @@ export type ProfileFormValues = {
   name: string;
   email: string;
   tel: string;
-  orgname: string;
+  business_name: string;
+  address: string;
+  business_type: string;
+  id_number: string;
 };
 
 export function ProfileTab() {
@@ -26,7 +29,10 @@ export function ProfileTab() {
       name: profile?.name || "",
       email: profile?.email || "",
       tel: profile?.tel || "",
-      orgname: profile?.orgname || "",
+      business_name: profile?.business_name || "",
+      address: profile?.address || "",
+      business_type: profile?.business_type || "",
+      id_number: profile?.id_number || "",
     },
   });
   
@@ -37,7 +43,10 @@ export function ProfileTab() {
         name: profile.name || "",
         email: profile.email || "",
         tel: profile.tel || "",
-        orgname: profile.orgname || "",
+        business_name: profile.business_name || "",
+        address: profile.address || "",
+        business_type: profile.business_type || "",
+        id_number: profile.id_number || "",
       });
     }
   }, [profile, form]);
@@ -51,7 +60,7 @@ export function ProfileTab() {
   };
 
   return (
-    <Card>
+    <Card dir="rtl">
       <CardHeader>
         <CardTitle>פרטים אישיים</CardTitle>
         <CardDescription>עדכן את הפרטים האישיים שלך</CardDescription>
@@ -100,12 +109,61 @@ export function ProfileTab() {
             
             <FormField
               control={form.control}
-              name="orgname"
+              name="business_name"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel htmlFor="business">שם העסק</FormLabel>
+                  <FormLabel htmlFor="business_name">שם העסק</FormLabel>
                   <FormControl>
-                    <Input id="business" placeholder="שם העסק" {...field} className="text-right" />
+                    <Input id="business_name" placeholder="שם העסק" {...field} className="text-right" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel htmlFor="address">כתובת</FormLabel>
+                  <FormControl>
+                    <Input id="address" placeholder="כתובת" {...field} className="text-right" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="business_type"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel htmlFor="business_type">סוג עסק</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger id="business_type" className="text-right">
+                        <SelectValue placeholder="בחר סוג עסק" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="company">חברה</SelectItem>
+                      <SelectItem value="authorized_dealer">עוסק מורשה</SelectItem>
+                      <SelectItem value="exempt_dealer">עסק פטור</SelectItem>
+                      <SelectItem value="employee">שכיר</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="id_number"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel htmlFor="id_number">מספר תעודת זהות או ח.פ</FormLabel>
+                  <FormControl>
+                    <Input id="id_number" placeholder="מספר תעודת זהות או ח.פ" {...field} className="text-right" />
                   </FormControl>
                 </FormItem>
               )}
