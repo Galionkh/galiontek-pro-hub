@@ -13,6 +13,10 @@ export function ThemeToggle({ initialDarkMode, onThemeChange }: ThemeToggleProps
   const [darkMode, setDarkMode] = useState(initialDarkMode);
   const { toast } = useToast();
 
+  useEffect(() => {
+    setDarkMode(initialDarkMode);
+  }, [initialDarkMode]);
+
   const toggleTheme = () => {
     const newDarkMode = !darkMode;
     setDarkMode(newDarkMode);
